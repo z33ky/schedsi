@@ -1,71 +1,46 @@
 #!/usr/bin/env python3
 """Defines a Round Robin scheduler."""
 
-def scheduler(module, cpu, current_time, timer_quantum, log):
-    """Schedule the next thread of module.
+from schedsi import scheduler
 
-    The remaining timeslice is returned.
-    """
-    #HACK
-    data = module.scheduler.scheduler_data
-    num_threads = len(module.threads)
+class RoundRobin(scheduler.Scheduler):
+    """RoundRobin scheduler."""
 
-    if num_threads == 0:
-        log.schedule_none(cpu, current_time, module)
-        return timer_quantum
+    def __init__(self, module):
+        """Create a RoundRobin scheduler."""
+        super().__init__(module)
+        self._next_idx = 0
 
-    thread = None
-    idx = data.next_idx
-    last_idx = idx - 1 if idx != 0 else num_threads - 1
-    while True:
-        thread = module.threads[idx]
-        if thread.starttime >= 0 and thread.starttime <= current_time:
-            break
-        if idx == last_idx:
-            #tried all threads, but no thread ready
-            log.schedule_none(cpu, current_time, module)
-            return timer_quantum
+    def schedule(self, cpu, current_time, run_time, log):
+        """Schedule the next thread.
 
-        idx = idx + 1 if idx != num_threads - 1 else 0
+        The remaining timeslice is returned.
+        """
+        num_threads = len(self.threads)
 
-    data.next_idx = idx + 1 if idx != num_threads - 1 else 0
+        if num_threads == 0:
+            return self._run_thread(None, cpu, current_time, run_time, log)
 
-    #cost for context switch
-    cost = 0 if module == thread.module else 1
-    if timer_quantum < cost:
-        #not enough time to do the switch
-        log.schedule_thread_fail(cpu, current_time, module, timer_quantum)
-        return 0
+        thread = None
+        idx = self._next_idx
+        last_idx = idx - 1 if idx != 0 else num_threads - 1
+        while True:
+            thread = self.threads[idx]
+            if thread.start_time >= 0 and thread.start_time <= current_time:
+                break
+            if idx == last_idx:
+                #tried all threads, but no thread ready
+                log.schedule_none(cpu, current_time, self.module)
+                return run_time
 
-    log.schedule_thread(cpu, current_time, thread, cost)
-    timer_quantum -= cost
-    current_time += cost
+            idx = idx + 1 if idx != num_threads - 1 else 0
 
-    left = thread.execute(cpu, current_time, timer_quantum, log)
-    if left < 0:
-        raise RuntimeError('Executed too much')
-    if left == 0:
-        return 0
+        self._next_idx = idx + 1 if idx != num_threads - 1 else 0
 
-    current_time += timer_quantum - left
+        left = self._run_thread(thread, cpu, current_time, run_time, log)
+        if left == 0:
+            return 0
 
-    #thread yielded
-    #context switch back to parent
-    if left < cost:
-        #not enough time to do the switch
-        log.schedule_thread_fail(cpu, current_time, module, left)
-        return 0
+        current_time += run_time - left
 
-    left -= cost
-    current_time += cost
-    return scheduler(module, cpu, current_time, left, log)
-
-class SchedulerData: # pylint: disable=too-few-public-methods
-    """State for the scheduler."""
-    def __init__(self):
-        self.next_idx = 0
-
-def init_scheduler_thread(thread):
-    """Set this as the scheduler for the SchedulerThread."""
-    thread.scheduler = scheduler
-    thread.scheduler_data = SchedulerData()
+        return self.schedule(cpu, current_time, left, log)
