@@ -2,6 +2,7 @@
 """Defines the TextLog."""
 
 import collections
+import sys
 
 TextLogAlign = collections.namedtuple('TextLogAlign', 'cpu time module thread')
 
@@ -16,7 +17,7 @@ class TextLog:
     """
     def __init__(self, filename, align=TextLogAlign(0, 0, 0, 0)):
         """Create a TextLog."""
-        self.file = open(filename, 'x')
+        self.file = open(filename, 'x') if filename != '-' else sys.stdout
         self.align = align
 
     def _ct(self, cpu, time):

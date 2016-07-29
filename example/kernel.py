@@ -7,6 +7,7 @@ one with periodic bursts.
 """
 
 import datetime
+import sys
 from schedsi import textlog, module, round_robin, threads, world
 
 def main():
@@ -24,12 +25,14 @@ def main():
     ])
 
     cpu = world.Core(0, 10)
-    log_file = textlog.TextLog(datetime.datetime.now().isoformat() + ".log", # pylint: disable=too-many-function-args
+    log_file_name = sys.argv[1] if len(sys.argv) > 1 \
+                                else datetime.datetime.now().isoformat() + ".log"
+    log_file = textlog.TextLog(log_file_name, # pylint: disable=too-many-function-args
                                textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1)) # pylint: disable=no-member
 
     the_world = world.World(cpu, kernel)
     while the_world.step(log_file) < 150:
         pass
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
