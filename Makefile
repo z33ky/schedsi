@@ -3,8 +3,9 @@ example: .PHONY
 
 test: .PHONY
 	PYTHONPATH=. tests/example.py
+	PYTHONPATH=. tests/simple.py
 
 pylint: .PHONY
-	pylint schedsi example/kernel.py tests/example.py
+	pylint schedsi example tests
 
 .PHONY:
