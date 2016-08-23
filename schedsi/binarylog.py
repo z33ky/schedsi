@@ -8,15 +8,7 @@ import msgpack
 #types emulating schedsi classes for the textlog
 Core = collections.namedtuple('Core', 'uid')
 Thread = collections.namedtuple('Thread', 'tid module')
-
-#since we deal with string here that we need to decode
-#a proper class is required
-class Module: #pylint: disable=too-few-public-methods
-    """Emulation for module.Module."""
-
-    def __init__(self, name):
-        """Create a Module."""
-        self.name = name.decode("utf-8")
+Module = collections.namedtuple('Module', 'name')
 
 class GenericEvent: #pylint: disable=too-few-public-methods
     """A generic events.
@@ -57,8 +49,8 @@ def encode(thing):
     elif isinstance(thing, threads.Thread):
         thing = {'module': thing.module, 'tid': thing.tid}
     elif isinstance(thing, GenericEvent):
-        thing = {'type': EntryType.event.value, 'cpu': encode(thing.cpu),
-                 'time': thing.time, 'event': thing.event.value}
+        thing = {'type': EntryType.event.name, 'cpu': encode(thing.cpu),
+                 'time': thing.time, 'event': thing.event.name}
     return thing
 
 def encode_event(cpu, time, event, args=None):
@@ -122,45 +114,45 @@ def decode_generic_event(entry):
 
     Returns None on failure.
     """
-    if entry[b'type'] == EntryType.event.value:
-        return GenericEvent(Core(entry[b'cpu'][b'uid']), entry[b'time'], entry[b'event'])
+    if entry['type'] == EntryType.event.name:
+        return GenericEvent(Core(entry['cpu']['uid']), entry['time'], entry['event'])
     return None
 
-def decode_module(entry, key=b'module'):
+def decode_module(entry, key='module'):
     """Extract a Module from a dict-entry.  """
-    return Module(entry[key][b'name'])
+    return Module(entry[key]['name'])
 
-def decode_thread(entry, key=b'thread'):
+def decode_thread(entry, key='thread'):
     """Extract a Thread from a dict-entry."""
     thread = entry[key]
-    return Thread(thread[b'tid'], decode_module(thread))
+    return Thread(thread['tid'], decode_module(thread))
 
 def replay(binary, log):
     """Play a MessagePack file to a TextLog."""
-    for entry in msgpack.Unpacker(binary):
+    for entry in msgpack.Unpacker(binary, encoding='utf-8'):
         event = decode_generic_event(entry)
         if event:
-            if event.event == Event.schedule_none.value:
+            if event.event == Event.schedule_none.name:
                 log.schedule_none(*event.as_args(), decode_module(entry))
-            elif event.event == Event.schedule_thread.value:
+            elif event.event == Event.schedule_thread.name:
                 log.schedule_thread(*event.as_args(), decode_thread(entry))
-            elif event.event == Event.context_switch.value:
+            elif event.event == Event.context_switch.name:
                 log.context_switch(*event.as_args(),
-                                   decode_module(entry, b'module_from'),
-                                   decode_module(entry, b'module_to'),
-                                   entry[b'cost'])
-            elif event.event == Event.context_switch_fail.value:
+                                   decode_module(entry, 'module_from'),
+                                   decode_module(entry, 'module_to'),
+                                   entry['cost'])
+            elif event.event == Event.context_switch_fail.name:
                 log.context_switch_fail(*event.as_args(),
-                                        decode_module(entry, b'module_from'),
-                                        decode_module(entry, b'module_to'),
-                                        entry[b'cost'])
-            elif event.event == Event.thread_execute.value:
-                log.thread_execute(*event.as_args(), decode_thread(entry), entry[b'runtime'])
-            elif event.event == Event.thread_yield.value:
+                                        decode_module(entry, 'module_from'),
+                                        decode_module(entry, 'module_to'),
+                                        entry['cost'])
+            elif event.event == Event.thread_execute.name:
+                log.thread_execute(*event.as_args(), decode_thread(entry), entry['runtime'])
+            elif event.event == Event.thread_yield.name:
                 log.thread_yield(*event.as_args(), decode_thread(entry))
-            elif event.event == Event.cpu_idle.value:
-                log.cpu_idle(*event.as_args(), entry[b'idle_time'])
-            elif event.event == Event.timer_interrupt.value:
+            elif event.event == Event.cpu_idle.name:
+                log.cpu_idle(*event.as_args(), entry['idle_time'])
+            elif event.event == Event.timer_interrupt.name:
                 log.timer_interrupt(*event.as_args())
             else:
                 print("Unknown event:", event)
