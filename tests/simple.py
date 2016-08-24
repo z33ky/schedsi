@@ -4,7 +4,7 @@
 import difflib
 import io
 import unittest
-from schedsi import cpu, textlog, world
+from schedsi import textlog, world
 from tests import common, simple_hierarchy
 
 class TestExample(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestExample(unittest.TestCase):
         text_log = textlog.TextLog(text_buf,
                                    textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1))
 
-        the_world = world.World(cpu.Core(0, 10), simple_hierarchy.KERNEL, text_log)
+        the_world = world.World(1, 10, simple_hierarchy.KERNEL, text_log)
         while the_world.step() < 150:
             pass
 

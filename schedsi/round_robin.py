@@ -11,7 +11,7 @@ class RoundRobin(scheduler.Scheduler):
         super().__init__(module)
         self._next_idx = 0
 
-    def schedule(self, cpu, current_time, run_time, log):
+    def schedule(self, cpu):
         """Schedule the next thread.
 
         The remaining timeslice is returned.
@@ -19,28 +19,26 @@ class RoundRobin(scheduler.Scheduler):
         num_threads = len(self.threads)
 
         if num_threads == 0:
-            return self._run_thread(None, cpu, current_time, run_time, log)
+            return self._run_thread(None, cpu)
 
         thread = None
         idx = self._next_idx
         last_idx = idx - 1 if idx != 0 else num_threads - 1
         while True:
             thread = self.threads[idx]
-            if thread.start_time >= 0 and thread.start_time <= current_time:
+            if thread.start_time >= 0 and thread.start_time <= cpu.status.current_time:
                 break
             if idx == last_idx:
                 #tried all threads, but no thread ready
-                log.schedule_none(cpu, current_time, self.module)
-                return run_time
+                cpu.yield_module(self.module)
+                return 0
 
             idx = idx + 1 if idx != num_threads - 1 else 0
 
         self._next_idx = idx + 1 if idx != num_threads - 1 else 0
 
-        left = self._run_thread(thread, cpu, current_time, run_time, log)
-        if left == 0:
+        run_time = self._run_thread(thread, cpu)
+        if cpu.status.pending_interrupt:
             return 0
 
-        current_time += run_time - left
-
-        return self.schedule(cpu, current_time, left, log)
+        return run_time + self.schedule(cpu)

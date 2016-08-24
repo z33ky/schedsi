@@ -20,12 +20,12 @@ class Module:
         self._scheduler_thread = threads.SchedulerThread(0, scheduler(self))
         self._vcpus = []
 
-    def schedule(self, cpu, current_time, timer_quantum, log):
+    def schedule(self, cpu):
         """Run the scheduler.
 
         Returns the remaining timeslice is returned.
         """
-        return self._scheduler_thread.execute(cpu, current_time, timer_quantum, log)
+        return self._scheduler_thread.execute(cpu)
 
     def register_vcpu(self, vcpu):
         """Register a VCPU.

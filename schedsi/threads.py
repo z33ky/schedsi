@@ -24,36 +24,49 @@ class Thread: # pylint: disable=too-few-public-methods
         self.total_run_time = 0
         self.total_wait_time = 0
 
-    def execute(self, cpu, current_time, run_time, log):
+    def execute(self, cpu, run_time=None):
         """Simulate execution.
 
         The thread will run for as long as it can.
 
         The remaining timeslice is returned.
         """
+        assert self.start_time != -1 and self.start_time <= cpu.status.current_time
+        assert self.remaining == -1 or self.remaining > 0
 
-        self.total_wait_time += current_time - self.start_time
+        if not run_time is None:
+            #only a sub-class is allowed to pass run_time
+            assert self.execute != Thread.execute
+        if run_time is None or (run_time > self.remaining and self.remaining != -1):
+            run_time = self.remaining
 
-        if self.remaining > run_time or self.remaining == -1:
-            #not enough time to complete the job
-            self.total_run_time += run_time
-            log.thread_execute(cpu, current_time, self, run_time)
-            self.remaining -= run_time
-            current_time += run_time
-            self.start_time = self.last_deschedule = current_time
+        run_time = cpu.crunch(self, run_time)
+        if run_time == 0:
             return 0
-        else:
-            #the job will be complete in the time
-            log.thread_execute(cpu, current_time, self, self.remaining)
-            run_time -= self.remaining
-            current_time += self.remaining
-            self.remaining = 0
+
+        current_time = cpu.status.current_time
+
+        self._update_timing_stats(current_time - run_time, run_time, current_time)
+
+        if self.remaining != -1:
+            self.remaining -= run_time
+            assert self.remaining >= 0
+
+        if self.remaining == 0:
+            #the job was completed within the slice
             #never start again
             self.start_time = -1
-            #a.k.a. finished_time
-            self.last_deschedule = current_time
-            log.thread_yield(cpu, current_time, self)
-            return run_time
+        else:
+            #not enough time to complete the job
+            self.start_time = current_time
+
+        return run_time
+
+    def _update_timing_stats(self, wait_time, run_time, current_time):
+        """Update total_wait_time, total_run_time, last_deschedule."""
+        self.total_wait_time += wait_time
+        self.total_run_time += run_time
+        self.last_deschedule = current_time
 
 class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
     """A thread representing a VCPU for a child.
@@ -68,15 +81,15 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
         super().__init__(scheduler.module, tid, scheduler.next_start_time(), -1)
         self.scheduler = scheduler
 
-    def execute(self, cpu, current_time, run_time, log):
+    def execute(self, cpu): # pylint: disable=arguments-differ
         """Simulate execution.
 
         Simply forward to the scheduler.
         """
-        left = self.scheduler.schedule(cpu, current_time, run_time, log) # pylint: disable=not-callable
+        run_time = self.scheduler.schedule(cpu) # pylint: disable=not-callable
         self.start_time = self.scheduler.next_start_time()
-        self.total_run_time += current_time - left
-        return left
+        self.total_run_time += run_time
+        return run_time
 
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
@@ -100,41 +113,22 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         if not isinstance(self._thread, SchedulerThread):
             print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".")
 
-    def execute(self, cpu, current_time, run_time, log):
+    def execute(self, cpu): # pylint: disable=arguments-differ
         """Simulate execution.
 
         Switch context and forward to child thread.
         """
-        #cost for context switch
-        cost = 0 if self.module == self._thread.module else 1
-        if run_time < cost:
-            #not enough time to do the switch
-            log.context_switch_fail(cpu, current_time, self._thread.module, self.module, run_time)
-            return 0
+        run_time = cpu.switch_module(self._thread.module)
+        run_time += self._thread.execute(cpu)
 
-        log.context_switch(cpu, current_time, self.module, self._thread.module, cost)
-        run_time -= cost
-        current_time += cost
-
-        left = self._thread.execute(cpu, current_time, run_time, log)
         self.update_child_state()
-        self.remaining = self._thread.remaining
-        elapsed = run_time - left
-        self.total_run_time += elapsed
-        current_time += elapsed
 
-        #thread yielded
-        if left == 0:
-            return 0
-        #context switch back to parent
-        if left < cost:
-            #not enough time to do the switch
-            log.context_switch_fail(cpu, current_time, self._thread.module, self.module, left)
-            return 0
+        run_time += cpu.switch_module(self.module)
 
-        left -= cost
+        current_time = cpu.status.current_time
+        self._update_timing_stats(current_time - run_time, run_time, current_time)
 
-        return left
+        return run_time
 
     def update_child_state(self):
         """Update start_time.
@@ -143,6 +137,7 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         to reflect their new requirements.
         """
         self.start_time = self._thread.start_time
+        self.remaining = self._thread.remaining
 
 class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
     """A thread needing periodic bursts of CPU."""
@@ -156,10 +151,10 @@ class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
         self.burst = burst
 
     #will run as long as the summed up bursts require
-    def execute(self, cpu, current_time, run_time, log):
+    def execute(self, cpu): # pylint: disable=arguments-differ
         """Simulate execution."""
         #how often we wanted to be executed (including this one)
-        activations = int((current_time - self.original_start_time) / self.period) + 1
+        activations = int((cpu.status.current_time - self.original_start_time) / self.period) + 1
         quota = activations * self.burst
 
         if quota < 0:
@@ -168,13 +163,12 @@ class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
         if quota_left < 0:
             raise RuntimeError('Executed too much')
 
-        exec_time = quota_left if quota_left <= run_time else run_time
+        run_time = super().execute(cpu, quota_left)
 
-        left = run_time - exec_time + super().execute(cpu, current_time, exec_time, log)
+        assert run_time <= quota_left
+        if self.remaining > 0:
+            if quota_left == run_time:
+                #set start_time to next burst arrival
+                self.start_time = self.original_start_time + activations * self.period
 
-        if left > 0 and self.remaining > 0:
-            if exec_time < quota_left:
-                raise RuntimeError('Executed too little')
-            self.start_time = self.original_start_time + activations * self.period
-
-        return left
+        return run_time

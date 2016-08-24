@@ -20,7 +20,7 @@ class Scheduler:
             return -1
         return min(active_thread_start_times)
 
-    def schedule(self, cpu, current_time, run_time, log):
+    def schedule(self, cpu):
         """Schedule the next thread.
 
         This scheduler is a base class.
@@ -31,21 +31,17 @@ class Scheduler:
         """
         num_threads = len(self.threads)
         if num_threads == 0:
-            return self._run_thread(None, cpu, current_time, run_time, log)
+            return self._run_thread(None, cpu)
         if num_threads == 1:
-            return self._run_thread(self.threads[0], cpu, current_time, run_time, log)
+            return self._run_thread(self.threads[0], cpu)
         raise RuntimeError('Scheduler cannot make scheduling decision.')
 
-    def _run_thread(self, thread, cpu, current_time, run_time, log):
+    def _run_thread(self, thread, cpu):
         """Run a thread.
 
-        The remaining timeslice is returned.
+        The time spent executing is returned.
         """
         if thread is None:
-            log.schedule_none(cpu, current_time, self.module)
-            return run_time
-        log.schedule_thread(cpu, current_time, thread)
-        left = thread.execute(cpu, current_time, run_time, log)
-        if left < 0:
-            raise RuntimeError('Executed too much')
-        return left
+            cpu.yield_module(self.module)
+            return 0
+        return cpu.switch_thread(thread) + thread.execute(cpu)

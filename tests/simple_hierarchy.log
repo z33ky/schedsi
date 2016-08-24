@@ -3,6 +3,7 @@ cpu 0 @   0: thread 0-1       runs for 10 units.
 cpu 0 @  10: timer interrupt.
 cpu 0 @  10: module 0         selects 2.
 cpu 0 @  10: thread 0-2       runs for 5 units.
+cpu 0 @  15: thread 0-2       yields.
 cpu 0 @  15: module 0         selects 3.
 cpu 0 @  15: module 0         spends 1 unit to switch to 0.0.
 cpu 0 @  16: module 0.0       selects 1.
@@ -13,6 +14,7 @@ cpu 0 @  20: thread 0-1       runs for 10 units.
 cpu 0 @  30: timer interrupt.
 cpu 0 @  30: module 0         selects 2.
 cpu 0 @  30: thread 0-2       runs for 5 units.
+cpu 0 @  35: thread 0-2       yields.
 cpu 0 @  35: module 0         selects 3.
 cpu 0 @  35: module 0         spends 1 unit to switch to 0.0.
 cpu 0 @  36: module 0.0       selects 1.
@@ -23,6 +25,7 @@ cpu 0 @  40: thread 0-1       runs for 10 units.
 cpu 0 @  50: timer interrupt.
 cpu 0 @  50: module 0         selects 2.
 cpu 0 @  50: thread 0-2       runs for 5 units.
+cpu 0 @  55: thread 0-2       yields.
 cpu 0 @  55: module 0         selects 3.
 cpu 0 @  55: module 0         spends 1 unit to switch to 0.0.
 cpu 0 @  56: module 0.0       selects 1.
@@ -33,6 +36,7 @@ cpu 0 @  60: thread 0-1       runs for 10 units.
 cpu 0 @  70: timer interrupt.
 cpu 0 @  70: module 0         selects 2.
 cpu 0 @  70: thread 0-2       runs for 5 units.
+cpu 0 @  75: thread 0-2       yields.
 cpu 0 @  75: module 0         selects 3.
 cpu 0 @  75: module 0         spends 1 unit to switch to 0.0.
 cpu 0 @  76: module 0.0       selects 1.
@@ -44,6 +48,7 @@ cpu 0 @  90: thread 0-1       yields.
 cpu 0 @  90: timer interrupt.
 cpu 0 @  90: module 0         selects 2.
 cpu 0 @  90: thread 0-2       runs for 5 units.
+cpu 0 @  95: thread 0-2       yields.
 cpu 0 @  95: module 0         selects 3.
 cpu 0 @  95: module 0         spends 1 unit to switch to 0.0.
 cpu 0 @  96: module 0.0       selects 1.
@@ -54,23 +59,25 @@ cpu 0 @ 100: module 0         spends 1 unit to switch to 0.0.
 cpu 0 @ 101: module 0.0       selects 1.
 cpu 0 @ 101: thread 0.0-1     runs for 5 units.
 cpu 0 @ 106: thread 0.0-1     yields.
-cpu 0 @ 106: module 0.0       has no threads to schedule.
+cpu 0 @ 106: module 0.0       spends 1 unit to switch to 0.
 cpu 0 @ 107: module 0         selects 2.
 cpu 0 @ 107: thread 0-2       runs for 3 units.
 cpu 0 @ 110: timer interrupt.
 cpu 0 @ 110: module 0         selects 2.
 cpu 0 @ 110: thread 0-2       runs for 2 units.
-cpu 0 @ 112: module 0         has no threads to schedule.
+cpu 0 @ 112: thread 0-2       yields.
+cpu 0 @ 112: module 0         yields.
 cpu 0 @ 112: idle for 8 units.
 cpu 0 @ 120: timer interrupt.
-cpu 0 @ 120: module 0         has no threads to schedule.
+cpu 0 @ 120: module 0         yields.
 cpu 0 @ 120: idle for 10 units.
 cpu 0 @ 130: timer interrupt.
 cpu 0 @ 130: module 0         selects 2.
 cpu 0 @ 130: thread 0-2       runs for 5 units.
-cpu 0 @ 135: module 0         has no threads to schedule.
+cpu 0 @ 135: thread 0-2       yields.
+cpu 0 @ 135: module 0         yields.
 cpu 0 @ 135: idle for 5 units.
 cpu 0 @ 140: timer interrupt.
-cpu 0 @ 140: module 0         has no threads to schedule.
+cpu 0 @ 140: module 0         yields.
 cpu 0 @ 140: idle for 10 units.
 cpu 0 @ 150: timer interrupt.

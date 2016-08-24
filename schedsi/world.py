@@ -2,26 +2,26 @@
 """Defines the World."""
 
 import io
-from schedsi import binarylog
+from schedsi import binarylog, cpu
 
 class World: # pylint: disable=too-few-public-methods
     """The World."""
 
-    def __init__(self, cpu, kernel, log=binarylog.BinaryLog(io.BytesIO())):
+    def __init__(self, cores, timer_quantum, kernel, log=binarylog.BinaryLog(io.BytesIO())):
         """Creates a world."""
-        self.current_time = 0
-        self.cpu = cpu
+        if cores > 1:
+            #supporting this will be difficult
+            #one approach might be using coroutines
+            raise RuntimeError("Does not support more than 1 core yet.")
+        self.cores = [cpu.Core(idx, timer_quantum, kernel, log) for idx in range(0, cores)]
         self.kernel = kernel
         self.log = log
 
     def step(self):
         """Executes one timer quantum for each CPU in the world."""
-        left = self.kernel.schedule(self.cpu, self.current_time, self.cpu.timer_quantum, self.log)
-        self.current_time += self.cpu.timer_quantum - left
+        assert len(self.cores) == 1
+        core = self.cores[0]
+        self.kernel.schedule(core)
         #FIXME: threads becoming ready while idling
-        if left > 0:
-            self.log.cpu_idle(self.cpu, self.current_time, left)
-        self.current_time += left
-        self.log.timer_interrupt(self.cpu, self.current_time)
-        #FIXME: context switch from * back to kernel
-        return self.current_time
+        core.finish_step(self.kernel)
+        return core.status.current_time

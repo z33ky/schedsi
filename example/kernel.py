@@ -9,7 +9,7 @@ one with periodic bursts.
 import datetime
 import io
 import sys
-from schedsi import binarylog, cpu, module, round_robin, textlog, threads, world
+from schedsi import binarylog, module, round_robin, textlog, threads, world
 
 def main():
     """Run the test"""
@@ -19,6 +19,7 @@ def main():
     top_module = module.Module("0.0", kernel, round_robin.RoundRobin)
 
     #Add two work threads to the kernel and one scheduler thread to run the child.
+    #this is the same as tests/simple_hierarchy.py
     #pylint: disable=duplicate-code
     kernel.add_threads([
         threads.Thread(kernel, 1, 0, 50),
@@ -33,22 +34,24 @@ def main():
     #Create the logger.
     now = datetime.datetime.now().isoformat()
     log_file_name = sys.argv[1] if len(sys.argv) > 1 else now + ".msgpack"
-    log_file = open(log_file_name, 'xb') if log_file_name != "-" else io.BytesIO()
-    binary_log = binarylog.BinaryLog(log_file)
+    buffer_log = log_file_name == "-"
+    with io.BytesIO() if buffer_log else open(log_file_name, 'xb') as log_file:
+        binary_log = binarylog.BinaryLog(log_file)
 
-    #Create and run the world.
-    the_world = world.World(cpu.Core(0, 10), kernel, binary_log)
-    while the_world.step() < 150:
-        pass
+        #Create and run the world.
+        the_world = world.World(1, 10, kernel, binary_log)
+        while the_world.step() < 150:
+            pass
+        log_file.flush()
 
-    #Create a human-readable log.
-    text_log_file_name = sys.argv[2] if len(sys.argv) > 2 else now + ".log"
-    text_log_file = open(text_log_file_name, 'x') if text_log_file_name != '-' else sys.stdout
-    text_log = textlog.TextLog(text_log_file,
-                               textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1))
-    log_input = open(log_file_name, 'rb') if not isinstance(log_file, io.BytesIO) \
-                                          else io.BytesIO(log_file.getvalue())
-    binarylog.replay(log_input, text_log)
+        #Create a human-readable log.
+        text_log_file_name = sys.argv[2] if len(sys.argv) > 2 else now + ".log"
+        stdout_log = text_log_file_name == '-'
+        with sys.stdout if stdout_log else open(text_log_file_name, 'x') as text_log_file:
+            text_log = textlog.TextLog(text_log_file,
+                                       textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1))
+            log_input = io.BytesIO(log_file.getvalue()) if buffer_log else open(log_file_name, 'rb')
+            binarylog.replay(log_input, text_log)
 
 if __name__ == '__main__':
     main()
