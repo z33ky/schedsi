@@ -51,10 +51,6 @@ class TextLog:
         align = self.align.module + self.align.thread + 1
         return self._ct(cpu) + "module {:<{module_align}} ".format(module.name, module_align=align)
 
-    def module_yield(self, cpu, module_to, time, required):
-        """Log an "module yields (usually to parent)" event."""
-        self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(module_to, time, required)))
-
     def schedule_thread(self, cpu):
         """Log an successful scheduling event."""
         thread = cpu.status.context.thread

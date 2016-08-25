@@ -15,7 +15,6 @@ GenericEvent = collections.namedtuple('GenericEvent', 'cpu event')
 
 EntryType = enum.Enum('EntryType', 'event')
 Event = enum.Enum('Event', [
-    'module_yield',
     'schedule_thread',
     'context_switch',
     'thread_execute',
@@ -54,7 +53,7 @@ def encode_event(cpu, event, args=None):
         encoded.update(args)
     return encoded
 
-def encode_ctxsw(event, cpu, module_to, time, required):
+def encode_ctxsw(cpu, module_to, time, required):
     """Encode a context switching event to a dict."""
     module_from = cpu.status.context.module
     if module_from.parent == module_to:
@@ -63,7 +62,7 @@ def encode_ctxsw(event, cpu, module_to, time, required):
         direction = 'child'
     else:
         direction = 'unrelated'
-    return encode_event(cpu, event,
+    return encode_event(cpu, Event.context_switch,
                         {'direction': direction, 'module_to': module_to,
                          'time': time, 'required': required})
 
@@ -78,17 +77,13 @@ class BinaryLog:
         """Write data to the MessagePack file."""
         self.stream.write(self.packer.pack(data))
 
-    def module_yield(self, cpu, module_to, time, required):
-        """Log an "module yields (usually to parent)" event."""
-        self._write(encode_ctxsw(Event.module_yield, cpu, module_to, time, required))
-
     def schedule_thread(self, cpu):
         """Log an successful scheduling event."""
         self._write(encode_event(cpu, Event.schedule_thread))
 
     def context_switch(self, cpu, module_to, time, required):
         """Log an context switch event."""
-        self._write(encode_ctxsw(Event.context_switch, cpu, module_to, time, required))
+        self._write(encode_ctxsw(cpu, module_to, time, required))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
@@ -157,9 +152,7 @@ def replay(binary, log):
     for entry in msgpack.Unpacker(binary, encoding='utf-8'):
         event = decode_generic_event(entry)
         if event:
-            if event.event == Event.module_yield.name:
-                log.module_yield(event.cpu, *decode_ctxsw(entry))
-            elif event.event == Event.schedule_thread.name:
+            if event.event == Event.schedule_thread.name:
                 log.schedule_thread(event.cpu)
             elif event.event == Event.context_switch.name:
                 log.context_switch(event.cpu, *decode_ctxsw(entry))

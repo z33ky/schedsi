@@ -54,10 +54,8 @@ class _Context:
             if self.yield_to:
                 if self.yield_to != module:
                     raise RuntimeError('yield_to is not yielded to')
-                log.module_yield(self.cpu, self.yield_to, time, CTXSW_COST)
                 self.yield_to = None
-            else:
-                log.context_switch(self.cpu, module, time, CTXSW_COST)
+            log.context_switch(self.cpu, module, time, CTXSW_COST)
 
             status.update_time(interrupted, time)
             self.ctxsw_stats.module_time += time
