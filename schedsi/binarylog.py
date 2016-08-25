@@ -10,8 +10,15 @@ CPUContext = collections.namedtuple('CPUContext', 'module thread')
 CPUStatus = collections.namedtuple('CPUStatus', 'current_time context')
 Core = collections.namedtuple('Core', 'uid status')
 Thread = collections.namedtuple('Thread', 'tid module')
-Module = collections.namedtuple('Module', 'name')
 GenericEvent = collections.namedtuple('GenericEvent', 'cpu event')
+
+#this is not a namedtuple because we want parent to be mutable when decoding
+class Module: # pylint: disable=too-few-public-methods
+    """A :class:`module.Module` emulation class."""
+    def __init__(self, name):
+        """Create a :class:`Module`."""
+        self.name = name
+        self.parent = None
 
 EntryType = enum.Enum('EntryType', 'event')
 Event = enum.Enum('Event', [
@@ -56,8 +63,14 @@ def encode_event(cpu, event, args=None):
 def encode_ctxsw(cpu, module_to, time, required):
     """Encode a context switching event to a dict."""
     module_from = cpu.status.context.module
-    if module_from.parent == module_to:
+    if module_from is None:
+        assert module_to.parent is None
+        direction = 'kernel'
+    #parent direction weights more than kernel
+    elif module_from.parent == module_to:
         direction = 'parent'
+    elif module_to.parent is None:
+        direction = 'kernel'
     elif module_to.parent == module_from:
         direction = 'child'
     else:
@@ -143,9 +156,20 @@ def decode_module(entry):
         return None
     return Module(entry['name'])
 
-def decode_ctxsw(entry):
+def decode_ctxsw(cpu, entry):
     """Extract context switch arguments from a dict-entry."""
-    return (decode_module(entry['module_to']), entry['time'], entry['required'])
+    module_to = decode_module(entry['module_to'])
+    direction = entry['direction']
+    if direction == 'parent':
+        cpu.status.context.module.parent = module_to
+        module_to.parent = Module(None)
+    elif direction == 'child':
+        module_to.parent = cpu.status.context.module
+    elif direction == 'unrelated':
+        module_to.parent = Module(None)
+    else:
+        assert direction == 'kernel'
+    return (cpu, module_to, entry['time'], entry['required'])
 
 def replay(binary, log):
     """Play a MessagePack file to a TextLog."""
@@ -155,7 +179,7 @@ def replay(binary, log):
             if event.event == Event.schedule_thread.name:
                 log.schedule_thread(event.cpu)
             elif event.event == Event.context_switch.name:
-                log.context_switch(event.cpu, *decode_ctxsw(entry))
+                log.context_switch(*decode_ctxsw(event.cpu, entry))
             elif event.event == Event.thread_execute.name:
                 log.thread_execute(event.cpu, entry['runtime'])
             elif event.event == Event.thread_yield.name:
