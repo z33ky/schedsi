@@ -82,8 +82,6 @@ class _Context:
             raise RuntimeError('Module != current context')
         if module.parent:
             self.yield_to = module.parent
-        else:
-            self.cpu.log.kernel_yield(self.cpu)
 
     def switch_thread(self, thread):
         """See :func:`_Status.switch_thread`."""

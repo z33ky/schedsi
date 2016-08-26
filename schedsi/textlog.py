@@ -68,10 +68,6 @@ class TextLog:
         """Log a thread yield event."""
         self.stream.write(self._ctt(cpu) + "yields.\n")
 
-    def kernel_yield(self, cpu):
-        """Log a kernel yield event."""
-        self.stream.write(self._ctm(cpu) + "yields.\n")
-
     def cpu_idle(self, cpu, idle_time):
         """Log an CPU idle event."""
         self.stream.write(self._ct(cpu) + "idle for {}.\n".format(_timespan(idle_time)))

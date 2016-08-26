@@ -26,7 +26,6 @@ Event = enum.Enum('Event', [
     'context_switch',
     'thread_execute',
     'thread_yield',
-    'kernel_yield',
     'cpu_idle',
     'timer_interrupt'
 ])
@@ -106,10 +105,6 @@ class BinaryLog:
         """Log an thread yielded event."""
         self._write(encode_event(cpu, Event.thread_yield))
 
-    def kernel_yield(self, cpu):
-        """Log a kernel yield event."""
-        self._write(encode_event(cpu, Event.kernel_yield))
-
     def cpu_idle(self, cpu, idle_time):
         """Log an CPU idle event."""
         self._write(encode_event(cpu, Event.cpu_idle, {'idle_time': idle_time}))
@@ -184,8 +179,6 @@ def replay(binary, log):
                 log.thread_execute(event.cpu, entry['runtime'])
             elif event.event == Event.thread_yield.name:
                 log.thread_yield(event.cpu)
-            elif event.event == Event.kernel_yield.name:
-                log.kernel_yield(event.cpu)
             elif event.event == Event.cpu_idle.name:
                 log.cpu_idle(event.cpu, entry['idle_time'])
             elif event.event == Event.timer_interrupt.name:
