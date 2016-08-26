@@ -166,7 +166,7 @@ class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
         run_time = super().execute(cpu, quota_left)
 
         assert run_time <= quota_left
-        if self.remaining > 0:
+        if self.remaining > 0 or self.remaining == -1:
             if quota_left == run_time:
                 #set start_time to next burst arrival
                 self.start_time = self.original_start_time + activations * self.period
