@@ -15,20 +15,34 @@ def main():
     """Run the test"""
 
     #Create a hierarchy of a kernel module and a child module.
-    kernel = module.Module("0", None, round_robin.RoundRobin)
-    top_module = module.Module("0.0", kernel, round_robin.RoundRobin)
-
-    #Add two work threads to the kernel and one scheduler thread to run the child.
     #this is the same as tests/simple_hierarchy.py
     #pylint: disable=duplicate-code
+    kernel = module.Module("0", None, round_robin.RoundRobin)
+    top_module = module.Module("0.0", kernel, round_robin.RoundRobin)
+    bottom_module_a = module.Module("0.0.0", top_module, round_robin.RoundRobin)
+    bottom_module_b = module.Module("0.0.1", top_module, round_robin.RoundRobin)
+
+    #Add two work threads to the kernel and one scheduler thread to run the child.
     kernel.add_threads([
         threads.Thread(kernel, 1, 0, 50),
         threads.PeriodicWorkThread(kernel, 2, 5, 50, 20, 5),
         threads.VCPUThread(kernel, 3, top_module)
     ])
-    #Add one work thread to the child.
+    #Add one work thread to the child and two scheduler threads for its children.
     top_module.add_threads([
-        threads.Thread(top_module, 1, 0, 25)
+        threads.Thread(top_module, 1, 0, 25),
+        threads.VCPUThread(top_module, 2, bottom_module_a),
+        threads.VCPUThread(top_module, 3, bottom_module_b)
+    ])
+    #Add work threads to the grandchildren.
+    bottom_module_a.add_threads([
+        threads.Thread(bottom_module_a, 1, 0, 10),
+        threads.Thread(bottom_module_a, 2, 50, 25)
+    ])
+    bottom_module_b.add_threads([
+        threads.PeriodicWorkThread(bottom_module_b, 1, 0, 10, 10, 2),
+        threads.PeriodicWorkThread(bottom_module_b, 2, 0, -1, 10, 2),
+        threads.Thread(bottom_module_b, 3, 10, 10)
     ])
 
     #Create the logger.
@@ -40,7 +54,7 @@ def main():
 
         #Create and run the world.
         the_world = world.World(1, 10, kernel, binary_log)
-        while the_world.step() < 150:
+        while the_world.step() < 400:
             pass
         log_file.flush()
 
