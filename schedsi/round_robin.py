@@ -38,7 +38,7 @@ class RoundRobin(scheduler.Scheduler):
         self._next_idx = idx + 1 if idx != num_threads - 1 else 0
 
         run_time = self._run_thread(thread, cpu)
-        if cpu.status.pending_interrupt:
+        if cpu.status.pending_interrupt or run_time == 0:
             return 0
 
         return run_time + self.schedule(cpu)
