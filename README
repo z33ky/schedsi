@@ -1,0 +1,10 @@
+schedsi - a scheduling simulator
+
+This tool was written to draw scheduling charts given scheduling algorithms and some threads.
+
+Since I'm working on a hierarchical operating system, hierarchical scheduling is of interest to me,
+and as such this tool supports building process hierarchies and stack schedulers long that hierarchy.
+Each process, referred to as `Module`, has its own scheduler, which gets executed by a `VCPUThread` of the parent.
+A single scheduler taking care of a bunch of threads is easily done by just using a single `Module` owning all threads.
+
+There's a simple example in `examples/`. You can also read `HACKING` for an overview of the inner workings.
