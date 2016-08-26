@@ -44,10 +44,11 @@ class _Context:
             return 0
         else:
             if self.module_int:
-                self.module = module
+                assert self.cpu.status.pending_interrupt is False
+                self.module = self.module_int
                 self.module_int = None
-                self.ctxsw_stats.module_succ += 1
-                return 0
+                if module == self.module:
+                    return 0
 
             interrupted, time = status.calc_time(CTXSW_COST)
 
@@ -65,12 +66,14 @@ class _Context:
             else:
                 self.ctxsw_stats.module_fail += 1
                 self.interrupt()
+                self.module_int = None
             return time
 
     def interrupt(self):
         """Prepare for context switch after timer interrupt."""
         self.module_int = self.module
         self.module = None
+        self.thread = None
 
     def yield_module(self, module):
         """See :func:`_Status.yield_module`."""

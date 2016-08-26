@@ -48,8 +48,9 @@ class TextLog:
         """Stringifies a CPU, time and a module."""
         #we add alignment to align with _ctt output
         module = cpu.status.context.module
+        module = module.name if module is not None else "!"
         align = self.align.module + self.align.thread + 1
-        return self._ct(cpu) + "module {:<{module_align}} ".format(module.name, module_align=align)
+        return self._ct(cpu) + "module {:<{module_align}} ".format(module, module_align=align)
 
     def schedule_thread(self, cpu):
         """Log an successful scheduling event."""
