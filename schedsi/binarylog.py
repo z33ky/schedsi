@@ -5,23 +5,8 @@ import collections
 import enum
 import msgpack
 
-#types emulating schedsi classes for the textlog
-CPUContext = collections.namedtuple('CPUContext', 'module thread')
-CPUStatus = collections.namedtuple('CPUStatus', 'current_time context')
-Core = collections.namedtuple('Core', 'uid status')
-Thread = collections.namedtuple('Thread', 'tid module')
-GenericEvent = collections.namedtuple('GenericEvent', 'cpu event')
-
-#this is not a namedtuple because we want parent to be mutable when decoding
-class Module: # pylint: disable=too-few-public-methods
-    """A :class:`module.Module` emulation class."""
-    def __init__(self, name):
-        """Create a :class:`Module`."""
-        self.name = name
-        self.parent = None
-
-EntryType = enum.Enum('EntryType', 'event')
-Event = enum.Enum('Event', [
+_EntryType = enum.Enum('EntryType', 'event')
+_Event = enum.Enum('Event', [
     'schedule_thread',
     'context_switch',
     'thread_execute',
@@ -30,36 +15,50 @@ Event = enum.Enum('Event', [
     'timer_interrupt'
 ])
 
-def encode(thing):
-    """Encode emulation types and GenericEvent to a dict."""
+_GenericEvent = collections.namedtuple('_GenericEvent', 'cpu event')
+
+def _get_from_class(thing, keys):
+    """Returns a :obj:`dict` with all the keys from `thing`."""
+    return _get_from_dict(thing.__dict__, keys)
+
+def _get_from_tuple(thing, keys):
+    """Returns a :obj:`dict` with all the keys from `thing`."""
+    return _get_from_dict(dict(thing._asdict()), keys)
+
+def _get_from_dict(thing, keys):
+    """Returns a :obj:`dict` with all the keys from `thing`."""
+    return {k: thing[k] for k in keys}
+
+def _encode(thing):
+    """Encode emulation types and :class:`_GenericEvent` to a dict."""
     from schedsi import cpu, module, threads
 
     if isinstance(thing, cpu._Context): # pylint: disable=protected-access
-        thing = {'thread': encode(thing.thread), 'module': encode(thing.module)}
+        thing = _get_from_class(thing, ['thread', 'module'])
     elif isinstance(thing, cpu._Status): # pylint: disable=protected-access
-        thing = {'current_time': encode(thing.current_time), 'context': encode(thing.context)}
+        thing = _get_from_class(thing, ['current_time', 'context'])
     elif isinstance(thing, cpu.Core):
-        thing = {'uid': thing.uid, 'status': encode(thing.status)}
+        thing = _get_from_class(thing, ['uid', 'status'])
     elif isinstance(thing, module.Module):
-        thing = {'name': thing.name}
+        thing = _get_from_class(thing, ['name'])
     elif isinstance(thing, threads.Thread):
-        thing = {'module': encode(thing.module), 'tid': thing.tid}
-    elif isinstance(thing, GenericEvent):
-        thing = {'type': EntryType.event.name, 'cpu': encode(thing.cpu),
-                 'event': thing.event.name}
+        thing = _get_from_class(thing, ['module', 'tid'])
+    elif isinstance(thing, _GenericEvent):
+        thing = _get_from_tuple(thing, ['cpu', 'event'])
+        thing['type'] = _EntryType.event.name
     return thing
 
-def encode_event(cpu, event, args=None):
-    """Encode a generic event to a dict.
+def _encode_event(cpu, event, args=None):
+    """Create a :class:`_GenericEvent`.
 
     args can contain additional parameters to put in the dict.
     """
-    encoded = encode(GenericEvent(cpu, event))
+    encoded = _encode(_GenericEvent(cpu, event))
     if args:
         encoded.update(args)
     return encoded
 
-def encode_ctxsw(cpu, module_to, time, required):
+def _encode_ctxsw(cpu, module_to, time, required):
     """Encode a context switching event to a dict."""
     module_from = cpu.status.context.module
     if module_from is None:
@@ -74,114 +73,134 @@ def encode_ctxsw(cpu, module_to, time, required):
         direction = 'child'
     else:
         direction = 'unrelated'
-    return encode_event(cpu, Event.context_switch,
-                        {'direction': direction, 'module_to': module_to,
-                         'time': time, 'required': required})
+    return _encode_event(cpu, _Event.context_switch.name,
+                         {'direction': direction, 'module_to': module_to,
+                          'time': time, 'required': required})
 
 class BinaryLog:
     """Binary logger using MessagePack."""
     def __init__(self, stream):
         """Create a BinaryLog."""
         self.stream = stream
-        self.packer = msgpack.Packer(default=encode)
+        self.packer = msgpack.Packer(default=_encode)
 
     def _write(self, data):
         """Write data to the MessagePack file."""
         self.stream.write(self.packer.pack(data))
 
+    def _encode(self, cpu, event, args=None):
+        """Encode an event and write data to the MessagePack file.
+
+        See :func:`encode_event`."""
+        self._write(_encode_event(cpu, event.name, args))
+
     def schedule_thread(self, cpu):
         """Log an successful scheduling event."""
-        self._write(encode_event(cpu, Event.schedule_thread))
+        self._encode(cpu, _Event.schedule_thread)
 
     def context_switch(self, cpu, module_to, time, required):
         """Log an context switch event."""
-        self._write(encode_ctxsw(cpu, module_to, time, required))
+        self._write(_encode_ctxsw(cpu, module_to, time, required))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
-        self._write(encode_event(cpu, Event.thread_execute, {'runtime': runtime}))
+        self._encode(cpu, _Event.thread_execute, {'runtime': runtime})
 
     def thread_yield(self, cpu):
         """Log an thread yielded event."""
-        self._write(encode_event(cpu, Event.thread_yield))
+        self._encode(cpu, _Event.thread_yield)
 
     def cpu_idle(self, cpu, idle_time):
         """Log an CPU idle event."""
-        self._write(encode_event(cpu, Event.cpu_idle, {'idle_time': idle_time}))
+        self._encode(cpu, _Event.cpu_idle, {'idle_time': idle_time})
 
     def timer_interrupt(self, cpu):
         """Log an timer interrupt event."""
-        self._write(encode_event(cpu, Event.timer_interrupt))
+        self._encode(cpu, _Event.timer_interrupt)
 
-def decode_generic_event(entry):
-    """Convert a dict-entry to a GenericEvent.
+#types emulating schedsi classes for other logs
+_CPUContext = collections.namedtuple('_CPUContext', 'module thread')
+_CPUStatus = collections.namedtuple('_CPUStatus', 'current_time context')
+_Core = collections.namedtuple('_Core', 'uid status')
+_Thread = collections.namedtuple('_Thread', 'tid module')
+
+#this is not a namedtuple because we want parent to be mutable when decoding
+class _Module: # pylint: disable=too-few-public-methods
+    """A :class:`module.Module` emulation class."""
+    def __init__(self, name):
+        """Create a :class:`_Module`."""
+        self.name = name
+        self.parent = None
+
+def _decode_generic_event(entry):
+    """Convert a dict-entry to a :class:`_GenericEvent`.
 
     Returns None on failure.
     """
-    if entry['type'] == EntryType.event.name:
-        return GenericEvent(decode_core(entry), entry['event'])
+    if entry['type'] == _EntryType.event.name:
+        return _GenericEvent(_decode_core(entry), entry['event'])
     return None
 
-def decode_core(entry):
-    """Extract a Core from a dict-entry."""
+def _decode_core(entry):
+    """Extract a :class:`_Core` from a dict-entry."""
     core = entry['cpu']
-    return Core(core['uid'], decode_status(core['status']))
+    return _Core(core['uid'], _decode_status(core['status']))
 
-def decode_status(entry):
-    """Extract CPUStatus from a dict-entry."""
-    return CPUStatus(entry['current_time'], decode_context(entry['context']))
+def _decode_status(entry):
+    """Extract :class:`_CPUStatus` from a dict-entry."""
+    return _CPUStatus(entry['current_time'], _decode_context(entry['context']))
 
-def decode_context(entry):
-    """Extract CPUContext from a dict-entry."""
-    return CPUContext(decode_module(entry['module']), decode_thread(entry['thread']))
+def _decode_context(entry):
+    """Extract :class:`_CPUContext` from a dict-entry."""
+    return _CPUContext(_decode_module(entry['module']), _decode_thread(entry['thread']))
 
-def decode_thread(entry):
-    """Extract a Thread from a dict-entry.
-
-    Returns None if entry is None."""
-    if not entry:
-        return None
-    return Thread(entry['tid'], decode_module(entry['module']))
-
-def decode_module(entry):
-    """Extract a Module from a dict-entry.
+def _decode_thread(entry):
+    """Extract a :class:`_Thread` from a dict-entry.
 
     Returns None if entry is None."""
     if not entry:
         return None
-    return Module(entry['name'])
+    return _Thread(entry['tid'], _decode_module(entry['module']))
 
-def decode_ctxsw(cpu, entry):
+def _decode_module(entry):
+    """Extract a :class:`_Module` from a dict-entry.
+
+    Returns None if entry is None."""
+    if not entry:
+        return None
+    return _Module(entry['name'])
+
+def _decode_ctxsw(cpu, entry):
     """Extract context switch arguments from a dict-entry."""
-    module_to = decode_module(entry['module_to'])
+    module_to = _decode_module(entry['module_to'])
     direction = entry['direction']
     if direction == 'parent':
         cpu.status.context.module.parent = module_to
-        module_to.parent = Module(None)
+        module_to.parent = _Module(None)
     elif direction == 'child':
         module_to.parent = cpu.status.context.module
     elif direction == 'unrelated':
-        module_to.parent = Module(None)
+        module_to.parent = _Module(None)
     else:
         assert direction == 'kernel'
     return (cpu, module_to, entry['time'], entry['required'])
 
 def replay(binary, log):
-    """Play a MessagePack file to a TextLog."""
+    """Play a MessagePack file to another log."""
     for entry in msgpack.Unpacker(binary, encoding='utf-8'):
-        event = decode_generic_event(entry)
+        event = _decode_generic_event(entry)
         if event:
-            if event.event == Event.schedule_thread.name:
+            if event.event == _Event.schedule_thread.name:
                 log.schedule_thread(event.cpu)
-            elif event.event == Event.context_switch.name:
-                log.context_switch(*decode_ctxsw(event.cpu, entry))
-            elif event.event == Event.thread_execute.name:
+            elif event.event == _Event.context_switch.name:
+                log.context_switch(*_decode_ctxsw(event.cpu, entry))
+            elif event.event == _Event.thread_execute.name:
                 log.thread_execute(event.cpu, entry['runtime'])
-            elif event.event == Event.thread_yield.name:
+            elif event.event == _Event.thread_yield.name:
                 log.thread_yield(event.cpu)
-            elif event.event == Event.cpu_idle.name:
+            elif event.event == _Event.cpu_idle.name:
                 log.cpu_idle(event.cpu, entry['idle_time'])
-            elif event.event == Event.timer_interrupt.name:
+            elif event.event == _Event.timer_interrupt.name:
                 log.timer_interrupt(event.cpu)
             else:
                 print("Unknown event:", event)
