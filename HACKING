@@ -25,9 +25,11 @@ All events are logged in a logger class.
 These logger classes are not loggers in the sense that they expect a string and store it somewhere, instead there is a function for each relevant event and the log will aggregate the relevant information for that event.
 I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `class BinaryLog`), since it has a `replay()` function.
 Replaying is a bit of a hack and relies on Pythons duck-typing to work via "emulation classes" that pretend to be the real deal.
-Currently the `TextLog` (`schedsi/textlog.py`) is the only other logger, but hopefully the `replay()` function should work for future loggers also.
-The `TextLog` is easier to understand than the binary logger, since it simply pulls out some information from the `Core` it received the event from and formats it to a string.
 If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy in the log file.
+The other loggers are the `TextLog` (`schedsi/textlog.py`) and the `GraphLog` (`schedsi/graphlog.py`). Both work fine with `BinaryLog.replay()`.
+The `TextLog` is the easiest to understand, since it simply pulls out some information from the `Core` it received the event from and formats it to a string.
+The `BinaryLog` is less straight-forward; It aggregates 'relevant' information in a dictionary of primitive types and writes that to a MessagePack stream.
+The `GraphLog` also needs to keep track of some state for drawing, for instance what the current hierarchy depth is.
 
 The only schedulers implemented at the moment is a preemptive round robin scheduler (`schedsi/round_robin.py`) and a single-thread scheduler serving as a base class (`schedsi/scheduler.py`).
 
