@@ -11,4 +11,5 @@ The graph gets written as a SVG and to present hierarchical scheduling they are 
 Time still flows horizontally, but the vertical axis represents the depth of the hierarchy. Threads can be differentiated by their ID written on the bar.
 Context switches are also modeled to take time (though it can be set to 0) and are also drawn as triangles going up or down the vertical axis.
 
-There's a simple example in `examples/`. You can also read `HACKING` for an overview of the inner workings.
+A simple example is in `examples/kernel.py`. You can also read `HACKING` for an overview of the inner workings.
+The example script produces a binary log file (MessagePack). To view the log you can use `./replay.py` to convert it to either a text log or a SVG graph.

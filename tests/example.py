@@ -9,7 +9,7 @@ class TestExample(unittest.TestCase):
 
     def test_example(self):
         """Test that the example works."""
-        self.assertEqual(subprocess.check_call(["example/kernel.py", "-"]), 0)
+        subprocess.run(["example/kernel.py", "-"], stdout=subprocess.DEVNULL, check=True)
 
 if __name__ == '__main__':
     unittest.main()

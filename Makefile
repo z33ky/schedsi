@@ -1,5 +1,11 @@
 example: .PHONY
-	PYTHONPATH=. example/kernel.py
+	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py -
+
+text: .PHONY
+	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py - --text
+
+graph: .PHONY
+	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py - --graph
 
 test: .PHONY
 	PYTHONPATH=. tests/example.py
