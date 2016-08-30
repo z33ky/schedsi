@@ -120,9 +120,6 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         """
         run_time = cpu.switch_module(self._thread.module)
         run_time += self._thread.execute(cpu)
-
-        self.update_child_state()
-
         run_time += cpu.switch_module(self.module)
 
         current_time = cpu.status.current_time
@@ -130,14 +127,11 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
 
         return run_time
 
-    def update_child_state(self):
-        """Update start_time.
-
-        This has to be called after the child's threads change
-        to reflect their new requirements.
-        """
-        self.start_time = self._thread.start_time
-        self.remaining = self._thread.remaining
+    def __getattribute__(self, key):
+        """start_time and remaining should be taken from the SchedulerThread."""
+        if key in ['start_time', 'remaining']:
+            return self._thread.__getattribute__(key)
+        return object.__getattribute__(self, key)
 
 class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
     """A thread needing periodic bursts of CPU."""

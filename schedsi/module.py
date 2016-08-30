@@ -43,5 +43,3 @@ class Module:
     def add_threads(self, new_threads):
         """Add threads."""
         self._scheduler_thread.add_threads(new_threads)
-        for vcpu in self._vcpus:
-            vcpu.update_child_state()
