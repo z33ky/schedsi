@@ -9,5 +9,8 @@ setuptools.setup(
     author="Alexander 'z33ky' Hirsch",
     author_email="1zeeky@gmail.com",
     license="CC0",
-    packages=["schedsi"]
+    packages=["schedsi"],
+    entry_points={
+        'console_scripts': [ 'schedsi-replay = replay:main' ]
+    }
 )

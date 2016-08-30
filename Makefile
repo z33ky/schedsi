@@ -6,6 +6,6 @@ test: .PHONY
 	PYTHONPATH=. tests/simple.py
 
 pylint: .PHONY
-	pylint schedsi example tests
+	pylint schedsi example tests replay.py
 
 .PHONY:
