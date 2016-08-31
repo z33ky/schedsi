@@ -8,7 +8,9 @@ from schedsi import textlog, world
 from tests import common, simple_hierarchy
 
 class TestExample(unittest.TestCase):
-    """Test that the simple hierarchy executes as expected."""
+    """Test that the simple hierarchy executes as expected.
+
+    Comparison is done via the text log, so that divergences can easily be checked."""
 
     def test_example(self):
         """Test that the simple hierarchy executes as expected."""

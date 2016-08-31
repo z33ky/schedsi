@@ -10,6 +10,7 @@ graph: .PHONY
 test: .PHONY
 	PYTHONPATH=. tests/example.py
 	PYTHONPATH=. tests/simple.py
+	PYTHONPATH=. tests/graph.py
 
 html: .PHONY
 	$(MAKE) -C docs html
