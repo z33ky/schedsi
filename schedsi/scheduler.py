@@ -27,8 +27,7 @@ class Scheduler:
     def next_ready_time(self):
         """Find the earliest :attr:`Thread.ready_time` of the
         contained :class:`Threads <schedsi.threads.Thread>`."""
-        active_ready_times = list(filter(lambda t: t >= 0,
-                                         map(lambda t: t.ready_time, self._threads)))
+        active_ready_times = list(t for t in (t.ready_time for t in self._threads) if t >= 0)
         if not active_ready_times:
             return -1
         return min(active_ready_times)
