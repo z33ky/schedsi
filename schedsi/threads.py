@@ -7,18 +7,18 @@ class Thread: # pylint: disable=too-few-public-methods
     A thread has
         * an associated module
         * a locally unique thread id
-        * a start_time (when the thread can execute something) (-1 if finished)
+        * ready time (-1 if finished)
         * remaining workload (-1 if infinite)
         * last deschedule time (-1 if never)
         * total runtime
         * total waittime
     """
 
-    def __init__(self, module, tid, start_time, units):
-        """Create a thread."""
+    def __init__(self, module, tid, ready_time, units):
+        """Create a :class:`Thread`."""
         self.module = module
         self.tid = tid
-        self.start_time = start_time
+        self.ready_time = ready_time
         self.remaining = units
         self.last_deschedule = -1
         self.total_run_time = 0
@@ -29,9 +29,10 @@ class Thread: # pylint: disable=too-few-public-methods
 
         The thread will run for as long as it can.
 
-        The remaining timeslice is returned.
+        The time spent executing is returned.
         """
-        assert self.start_time != -1 and self.start_time <= cpu.status.current_time
+
+        assert self.ready_time != -1 and self.ready_time <= cpu.status.current_time
         assert self.remaining == -1 or self.remaining > 0
 
         if not run_time is None:
@@ -55,10 +56,10 @@ class Thread: # pylint: disable=too-few-public-methods
         if self.remaining == 0:
             #the job was completed within the slice
             #never start again
-            self.start_time = -1
+            self.ready_time = -1
         else:
             #not enough time to complete the job
-            self.start_time = current_time
+            self.ready_time = current_time
 
         return run_time
 
@@ -71,44 +72,44 @@ class Thread: # pylint: disable=too-few-public-methods
 class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
     """A thread representing a VCPU for a child.
 
-    When this thread should execute,
-    the scheduler for the child will be called.
-
-    self.last_deschedule and self.total_wait_time is not meaningful.
+    Execution is forwarded to the scheduler of the child :class:`Module`.
     """
+
     def __init__(self, tid, scheduler):
-        """Create a scheduler thread."""
-        super().__init__(scheduler.module, tid, scheduler.next_start_time(), -1)
+        """Create a :class:`SchedulerThread`."""
+        super().__init__(scheduler.module, tid, scheduler.next_ready_time(), -1)
         self.scheduler = scheduler
 
     def execute(self, cpu): # pylint: disable=arguments-differ
         """Simulate execution.
 
         Simply forward to the scheduler.
+
+        See :meth:`Thread.execute`.
         """
         run_time = self.scheduler.schedule(cpu) # pylint: disable=not-callable
-        self.start_time = self.scheduler.next_start_time()
+        self.ready_time = self.scheduler.next_ready_time()
         self.total_run_time += run_time
         return run_time
 
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
         self.scheduler.threads += new_threads
-        self.start_time = self.scheduler.next_start_time()
+        self.ready_time = self.scheduler.next_ready_time()
 
 class VCPUThread(Thread): # pylint: disable=too-few-public-methods
     """A thread representing a VCPU from the perspective of a parent.
 
-    When this thread should execute,
-    a SchedulerThread for a child will be called.
+    Execution is forwarded to the :class:`SchedulerThread` of the child.
     """
+
     def __init__(self, module, tid, child):
-        """Create a VCPUThread."""
+        """Create a :class:`VCPUThread`."""
         if child.parent != module:
             print(module.name, "is adding a VCPUThread for", child,
                   "although it is not a direct descendant.")
         child_thread = child.register_vcpu(self)
-        super().__init__(module, tid, child_thread.start_time, child_thread.remaining)
+        super().__init__(module, tid, child_thread.ready_time, child_thread.remaining)
         self._thread = child_thread
         if not isinstance(self._thread, SchedulerThread):
             print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".")
@@ -117,6 +118,8 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         """Simulate execution.
 
         Switch context and forward to child thread.
+
+        See :meth:`Thread.execute`.
         """
         run_time = cpu.switch_module(self._thread.module)
         run_time += self._thread.execute(cpu)
@@ -128,27 +131,31 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         return run_time
 
     def __getattribute__(self, key):
-        """start_time and remaining should be taken from the SchedulerThread."""
-        if key in ['start_time', 'remaining']:
+        """ready_time and remaining should be taken from the SchedulerThread."""
+        if key in ['ready_time', 'remaining']:
             return self._thread.__getattribute__(key)
         return object.__getattribute__(self, key)
 
 class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
     """A thread needing periodic bursts of CPU."""
-    def __init__(self, module, tid, start_time, units, period, burst):
-        """Create a periodic work thread."""
+
+    def __init__(self, module, tid, ready_time, units, period, burst):
+        """Create a :class:`PeriodicWorkThread`."""
         if period < burst:
             raise RuntimeError('Holy shit')
-        super().__init__(module, tid, start_time, units)
-        self.original_start_time = self.start_time
+        super().__init__(module, tid, ready_time, units)
+        self.original_ready_time = self.ready_time
         self.period = period
         self.burst = burst
 
     #will run as long as the summed up bursts require
     def execute(self, cpu): # pylint: disable=arguments-differ
-        """Simulate execution."""
+        """Simulate execution.
+
+        See :meth:`Thread.execute`.
+        """
         #how often we wanted to be executed (including this one)
-        activations = int((cpu.status.current_time - self.original_start_time) / self.period) + 1
+        activations = int((cpu.status.current_time - self.original_ready_time) / self.period) + 1
         quota = activations * self.burst
 
         if quota < 0:
@@ -162,7 +169,7 @@ class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
         assert run_time <= quota_left
         if self.remaining > 0 or self.remaining == -1:
             if quota_left == run_time:
-                #set start_time to next burst arrival
-                self.start_time = self.original_start_time + activations * self.period
+                #set ready_time to next burst arrival
+                self.ready_time = self.original_ready_time + activations * self.period
 
         return run_time

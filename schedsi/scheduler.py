@@ -4,30 +4,30 @@
 class Scheduler:
     """Scheduler.
 
-    Has a list of threads.
+    Has a :obj:`list` of :class:`Threads <schedsi.threads.Thread>`.
     """
 
     def __init__(self, module):
-        """Create a scheduler."""
+        """Create a :class:`Scheduler`."""
         self.threads = []
         self.module = module
 
-    def next_start_time(self):
-        """Find the nearest start_time of the contained threads."""
-        active_thread_start_times = list(filter(lambda t: t >= 0,
-                                                map(lambda t: t.start_time, self.threads)))
-        if not active_thread_start_times:
+    def next_ready_time(self):
+        """Find the earliest :attr:`Thread.ready_time` of the contained :class:`Threads <schedsi.threads.Thread>`."""
+        active_ready_times = list(filter(lambda t: t >= 0,
+                                         map(lambda t: t.ready_time, self.threads)))
+        if not active_ready_times:
             return -1
-        return min(active_thread_start_times)
+        return min(active_ready_times)
 
     def schedule(self, cpu):
-        """Schedule the next thread.
+        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
-        This scheduler is a base class.
-        This function will only deal with a single thread.
-        If more are present, a RuntimeError is raised.
+        This :class:`Scheduler` is a base class.
+        This function will only deal with a single :class:`Thread <schedsi.threads.Thread>`.
+        If more are present, a :exc:`RuntimeError` is raised.
 
-        The remaining timeslice is returned.
+        The time spent executing is returned.
         """
         num_threads = len(self.threads)
         if num_threads == 0:
@@ -37,7 +37,7 @@ class Scheduler:
         raise RuntimeError('Scheduler cannot make scheduling decision.')
 
     def _run_thread(self, thread, cpu):
-        """Run a thread.
+        """Run a :class:`Thread <schedsi.threads.Thread>`.
 
         The time spent executing is returned.
         """

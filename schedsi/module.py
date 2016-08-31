@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Defines Module."""
+"""Defines :class:`Module`."""
 
 from schedsi import threads
 
 class Module:
-    """Module.
+    """A module is more or less a process.
 
     A module has
         * a unique name
@@ -14,7 +14,7 @@ class Module:
     """
 
     def __init__(self, name, parent, scheduler):
-        """Create a Module."""
+        """Create a :class:`Module`."""
         self.name = name
         self.parent = parent
         self._scheduler_thread = threads.SchedulerThread(0, scheduler(self))
@@ -23,14 +23,14 @@ class Module:
     def schedule(self, cpu):
         """Run the scheduler.
 
-        Returns the remaining timeslice is returned.
+        The time spent executing is returned.
         """
         return self._scheduler_thread.execute(cpu)
 
     def register_vcpu(self, vcpu):
         """Register a VCPU.
 
-        This is called when a parent adds a VCPUThread
+        This is called when a parent adds a :class:`VCPUThread <schedsi.threads.VCPUThread>`
         to schedule this module.
 
         Returns the scheduler thread.
@@ -41,5 +41,8 @@ class Module:
         return self._scheduler_thread
 
     def add_threads(self, new_threads):
-        """Add threads."""
+        """Add threads.
+
+        See :meth:`SchedulerThread.add_threads() <schedsi.threads.SchedulerThread.add_threads>`.
+        """
         self._scheduler_thread.add_threads(new_threads)

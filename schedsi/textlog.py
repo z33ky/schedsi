@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Defines the TextLog."""
+"""Defines the :class:`TextLog`."""
 
 import collections
 
@@ -22,13 +22,14 @@ class TextLog:
 
     Outputs the events in a text file.
     """
+
     def __init__(self, stream, align=TextLogAlign(0, 0, 0, 0)):
-        """Create a TextLog."""
+        """Create a :class:`TextLog`."""
         self.stream = stream
         self.align = align
 
     def _ct(self, cpu):
-        """Stringifies a CPU and time.
+        """Stringifies CPU and time.
 
         This should be the start of pretty much every message.
         """
@@ -37,7 +38,7 @@ class TextLog:
                                                                  time_align=self.align.time)
 
     def _ctt(self, cpu):
-        """Stringifies a CPU, time and a thread."""
+        """Stringifies CPU, time and the current thread."""
         module = cpu.status.context.module
         thread = cpu.status.context.thread
         align = self.align.thread + self.align.module - len(module.name)
@@ -45,7 +46,7 @@ class TextLog:
                                                                       thread_align=align)
 
     def _ctm(self, cpu):
-        """Stringifies a CPU, time and a module."""
+        """Stringifies CPU, time and the current module."""
         #we add alignment to align with _ctt output
         module = cpu.status.context.module
         module = module.name if module is not None else "!"

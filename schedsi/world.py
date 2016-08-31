@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Defines the World."""
+"""Defines the :class:`World`."""
 
 import io
 from schedsi import binarylog, cpu
 
 class World: # pylint: disable=too-few-public-methods
-    """The World."""
+    """The world keeps data to enable execution."""
 
     def __init__(self, cores, timer_quantum, kernel, log=binarylog.BinaryLog(io.BytesIO())):
-        """Creates a world."""
+        """Creates a :class:`World`."""
         if cores > 1:
             #supporting this will be difficult
             #one approach might be using coroutines
@@ -18,7 +18,7 @@ class World: # pylint: disable=too-few-public-methods
         self.log = log
 
     def step(self):
-        """Executes one timer quantum for each CPU in the world."""
+        """Executes one timer quantum for each :class:`Core <schedsi.cpu.Core>` in the :class:`World`."""
         assert len(self.cores) == 1
         core = self.cores[0]
         self.kernel.schedule(core)

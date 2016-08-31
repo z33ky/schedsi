@@ -26,6 +26,7 @@ class _Background: #pylint: disable=too-few-public-methods
 
     Simply accumulates the time spent waiting while children are executing.
     """
+
     def __init__(self, name, time):
         """Create a :class:`_Background`."""
         self.name = name
@@ -34,10 +35,11 @@ class _Background: #pylint: disable=too-few-public-methods
 class _ThreadName: #pylint: disable=too-few-public-methods
     """Lazy thread-name extraction.
 
-    This is done lazily because a CPU might not have a current context,
+    This is done lazily because a :class:`Core <schedsi.cpu.Core>` might not have a current context,
     but we might still pass it to other functions which will conditionally
     require a thread-name.
     """
+
     def __init__(self, cpu):
         """Create a :class:`_ThreadName`."""
         context = cpu.status.context
@@ -63,6 +65,7 @@ class GraphLog:
     Finally we have a list of active background tasks,
     so that we can draw a single contiguous block when the children finish.
     """
+
     def __init__(self):
         """Create a :class:`GraphLog`."""
         self.canvas = pyx.canvas.canvas()
@@ -107,7 +110,7 @@ class GraphLog:
     def _draw_line(self, color, dx, dy, canvas=None):
         """Draw a line.
 
-        If canvas is None, self.canvas is used.
+        If `canvas` is :obj:`None`, :attr:`self.canvas` is used.
         """
         if canvas is None:
             canvas = self.canvas
@@ -120,9 +123,9 @@ class GraphLog:
     def _draw_block(self, color, text, length, height=LEVEL, canvas=None):
         """Draw a solid block.
 
-        Usually we want to draw a process, so height defaults to LEVEL.
-        If canvas is None, self.canvas is used.
-        text is always draw on the top layer.
+        Usually we want to draw a process, so `height` defaults to :const:`LEVEL`.
+        If `canvas` is :obj:`None`, :attr:`self.canvas` is used.
+        `text` is always drawn on the top layer.
         """
         if canvas is None:
             canvas = self.canvas
@@ -150,7 +153,7 @@ class GraphLog:
 
         This represents a context switch.
 
-        If canvas is None, self.canvas is used.
+        If `canvas` is :obj:`None`, :attr:`self.canvas` is used.
         """
         if dx == 0:
             assert dy == 0
@@ -180,9 +183,9 @@ class GraphLog:
     def _draw_recent(self, idx=None, canvas=None):
         """Draw the most recent background task.
 
-        If idx is None, the background task is popped from the stack.
-        Otherwise idx is used for indexing and the stack is not modified.
-        canvas is passed along to the drawing functions.
+        If `idx` is :obj:`None`, the background task is popped from the stack.
+        Otherwise `idx` is used for indexing and the stack is not modified.
+        `canvas` is passed along to the drawing functions.
         """
         if idx:
             task = self.background_tasks[idx]

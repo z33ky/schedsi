@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Defines the BinaryLog."""
+"""Defines the :class:`BinaryLog` and the :func:`replay` function."""
 
 import collections
 import enum
@@ -30,7 +30,7 @@ def _get_from_dict(thing, keys):
     return {k: thing[k] for k in keys}
 
 def _encode(thing):
-    """Encode emulation types and :class:`_GenericEvent` to a dict."""
+    """Encode schedsi types and :class:`_GenericEvent` to a :obj:`dict`."""
     from schedsi import cpu, module, threads
 
     if isinstance(thing, cpu._Context): # pylint: disable=protected-access
@@ -51,7 +51,7 @@ def _encode(thing):
 def _encode_event(cpu, event, args=None):
     """Create a :class:`_GenericEvent`.
 
-    args can contain additional parameters to put in the dict.
+    `args` can contain additional parameters to put in the :obj:`dict`.
     """
     encoded = _encode(_GenericEvent(cpu, event))
     if args:
@@ -59,7 +59,7 @@ def _encode_event(cpu, event, args=None):
     return encoded
 
 def _encode_ctxsw(cpu, module_to, time, required):
-    """Encode a context switching event to a dict."""
+    """Encode a context switching event to a :obj:`dict`."""
     module_from = cpu.status.context.module
     if module_from is None:
         assert module_to.parent is None
@@ -80,7 +80,7 @@ def _encode_ctxsw(cpu, module_to, time, required):
 class BinaryLog:
     """Binary logger using MessagePack."""
     def __init__(self, stream):
-        """Create a BinaryLog."""
+        """Create a :class:`BinaryLog`."""
         self.stream = stream
         self.packer = msgpack.Packer(default=_encode)
 
@@ -91,7 +91,7 @@ class BinaryLog:
     def _encode(self, cpu, event, args=None):
         """Encode an event and write data to the MessagePack file.
 
-        See :func:`encode_event`."""
+        See :func:`_encode_event`."""
         self._write(_encode_event(cpu, event.name, args))
 
     def schedule_thread(self, cpu):
@@ -126,52 +126,52 @@ _Thread = collections.namedtuple('_Thread', 'tid module')
 
 #this is not a namedtuple because we want parent to be mutable when decoding
 class _Module: # pylint: disable=too-few-public-methods
-    """A :class:`module.Module` emulation class."""
+    """A :class:`module.Module <schedsi.module.Module>` emulation class."""
     def __init__(self, name):
         """Create a :class:`_Module`."""
         self.name = name
         self.parent = None
 
 def _decode_generic_event(entry):
-    """Convert a dict-entry to a :class:`_GenericEvent`.
+    """Convert a :obj:`dict-entry` to a :class:`_GenericEvent`.
 
-    Returns None on failure.
+    Returns :obj:`None` on failure.
     """
     if entry['type'] == _EntryType.event.name:
         return _GenericEvent(_decode_core(entry), entry['event'])
     return None
 
 def _decode_core(entry):
-    """Extract a :class:`_Core` from a dict-entry."""
+    """Extract a :class:`_Core` from a :obj:`dict`-entry."""
     core = entry['cpu']
     return _Core(core['uid'], _decode_status(core['status']))
 
 def _decode_status(entry):
-    """Extract :class:`_CPUStatus` from a dict-entry."""
+    """Extract :class:`_CPUStatus` from a :obj:`dict`-entry."""
     return _CPUStatus(entry['current_time'], _decode_context(entry['context']))
 
 def _decode_context(entry):
-    """Extract :class:`_CPUContext` from a dict-entry."""
+    """Extract :class:`_CPUContext` from a :obj:`dict`-entry."""
     return _CPUContext(_decode_module(entry['module']), _decode_thread(entry['thread']))
 
 def _decode_thread(entry):
-    """Extract a :class:`_Thread` from a dict-entry.
+    """Extract a :class:`_Thread` from a :obj:`dict`-entry.
 
-    Returns None if entry is None."""
+    Returns :obj:`None` if `entry` is :obj:`None`."""
     if not entry:
         return None
     return _Thread(entry['tid'], _decode_module(entry['module']))
 
 def _decode_module(entry):
-    """Extract a :class:`_Module` from a dict-entry.
+    """Extract a :class:`_Module` from a :obj:`dict`-entry.
 
-    Returns None if entry is None."""
+    Returns :obj:`None` if `entry` is :obj:`None`."""
     if not entry:
         return None
     return _Module(entry['name'])
 
 def _decode_ctxsw(cpu, entry):
-    """Extract context switch arguments from a dict-entry."""
+    """Extract context switch arguments from a :obj:`dict`-entry."""
     module_to = _decode_module(entry['module_to'])
     direction = entry['direction']
     if direction == 'parent':

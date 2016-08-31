@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Defines a Core."""
+"""Defines a :class:`Core`."""
 
 CTXSW_COST = 1
 
 class _ContextSwitchStats: # pylint: disable=too-few-public-methods
     """Context switching statistics."""
+
     def __init__(self):
         """Create a :class:`_ContextSwitchStats`."""
         self.thread_time = 0
@@ -36,7 +37,7 @@ class _Context:
         self.ctxsw_stats = _ContextSwitchStats()
 
     def switch_module(self, module):
-        """See :func:`_Status.switch_module`."""
+        """See :meth:`_Status.switch_module`."""
         log = self.cpu.log
         status = self.cpu.status
         if module == self.module:
@@ -76,7 +77,7 @@ class _Context:
         self.thread = None
 
     def yield_module(self, module):
-        """See :func:`_Status.yield_module`."""
+        """See :meth:`_Status.yield_module`."""
         if self.module_int:
             raise RuntimeError('Module trying to yield during interrupt')
         if self.yield_to:
@@ -87,7 +88,7 @@ class _Context:
             self.yield_to = module.parent
 
     def switch_thread(self, thread):
-        """See :func:`_Status.switch_thread`."""
+        """See :meth:`_Status.switch_thread`."""
         if thread == self.thread:
             print("Thread switch to already active thread; Ignoring")
             return 0
@@ -108,7 +109,7 @@ class _TimeStats: # pylint: disable=too-few-public-methods
         self.idle_time = 0
 
 class _Status:
-    """Status or a CPU Core.
+    """Status of a CPU Core.
 
     The Status consists of:
         * a reference to the :class:`Core` that owns it
@@ -121,8 +122,9 @@ class _Status:
     An interrupt will be pending when the time slice is used up while
     there are still threads wanting CPU time.
     While an interrupt is pending, no other computation can happen.
-    Operation can be resumed after calling :func:`finish_step`.
+    Operation can be resumed after calling :meth:`finish_step`.
     """
+
     def __init__(self, cpu, context):
         """Create a :class:`_Status`."""
         self.cpu = cpu
@@ -154,7 +156,7 @@ class _Status:
     def update_time(self, interrupt, time):
         """Update the time and check if interrupt happens.
 
-        The arguments should come from :func:`calc_time`,
+        The arguments should come from :meth:`calc_time`,
         they indicate whether an interrupt should be triggered and
         how much time should pass.
 
@@ -253,6 +255,7 @@ class Core:
     Apart from the statistics the values are not expected to change much
     during operation.
     """
+
     def __init__(self, uid, timer_quantum, kernel, log):
         """Create a :class:`Core`."""
         self.uid = uid
@@ -263,21 +266,21 @@ class Core:
         self.status = _Status(self, _Context(self, kernel))
 
     def switch_module(self, module):
-        """See :func:`CoreStatus.switch_module`."""
+        """See :meth:`_Status.switch_module`."""
         return self.status.switch_module(module)
 
     def yield_module(self, module):
-        """See :func:`CoreStatus.yield_module`."""
+        """See :meth:`_Status.yield_module`."""
         self.status.yield_module(module)
 
     def switch_thread(self, thread):
-        """See :func:`CoreStatus.switch_thread`."""
+        """See :meth:`_Status.switch_thread`."""
         return self.status.switch_thread(thread)
 
     def crunch(self, thread, time):
-        """See :func:`CoreStatus.crunch`."""
+        """See :meth:`_Status.crunch`."""
         return self.status.crunch(thread, time)
 
     def finish_step(self, kernel):
-        """See :func:`CoreStatus.finish_step`."""
+        """See :meth:`_Status.finish_step`."""
         self.status.finish_step(kernel)
