@@ -78,7 +78,7 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
     def __init__(self, tid, scheduler):
         """Create a :class:`SchedulerThread`."""
         super().__init__(scheduler.module, tid, scheduler.next_ready_time(), -1)
-        self.scheduler = scheduler
+        self._scheduler = scheduler
 
     def execute(self, cpu): # pylint: disable=arguments-differ
         """Simulate execution.
@@ -87,15 +87,15 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
 
         See :meth:`Thread.execute`.
         """
-        run_time = self.scheduler.schedule(cpu) # pylint: disable=not-callable
-        self.ready_time = self.scheduler.next_ready_time()
+        run_time = self._scheduler.schedule(cpu) # pylint: disable=not-callable
+        self.ready_time = self._scheduler.next_ready_time()
         self.total_run_time += run_time
         return run_time
 
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
-        self.scheduler.add_threads(new_threads)
-        self.ready_time = self.scheduler.next_ready_time()
+        self._scheduler.add_threads(new_threads)
+        self.ready_time = self._scheduler.next_ready_time()
 
 class VCPUThread(Thread): # pylint: disable=too-few-public-methods
     """A thread representing a VCPU from the perspective of a parent.
