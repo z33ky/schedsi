@@ -16,7 +16,7 @@ class RoundRobin(scheduler.Scheduler):
 
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler.schedule>`.
         """
-        num_threads = len(self.threads)
+        num_threads = len(self._threads)
 
         if num_threads == 0:
             return self._run_thread(None, cpu)
@@ -25,7 +25,7 @@ class RoundRobin(scheduler.Scheduler):
         idx = self._next_idx
         last_idx = idx - 1 if idx != 0 else num_threads - 1
         while True:
-            thread = self.threads[idx]
+            thread = self._threads[idx]
             if thread.ready_time >= 0 and thread.ready_time <= cpu.status.current_time:
                 break
             if idx == last_idx:

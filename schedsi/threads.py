@@ -94,7 +94,7 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
 
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
-        self.scheduler.threads += new_threads
+        self.scheduler.add_threads(new_threads)
         self.ready_time = self.scheduler.next_ready_time()
 
 class VCPUThread(Thread): # pylint: disable=too-few-public-methods

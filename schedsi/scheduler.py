@@ -9,14 +9,18 @@ class Scheduler:
 
     def __init__(self, module):
         """Create a :class:`Scheduler`."""
-        self.threads = []
+        self._threads = []
         self.module = module
+
+    def add_threads(self, new_threads):
+        """Add threads to schedule."""
+        self._threads += new_threads
 
     def next_ready_time(self):
         """Find the earliest :attr:`Thread.ready_time` of the
         contained :class:`Threads <schedsi.threads.Thread>`."""
         active_ready_times = list(filter(lambda t: t >= 0,
-                                         map(lambda t: t.ready_time, self.threads)))
+                                         map(lambda t: t.ready_time, self._threads)))
         if not active_ready_times:
             return -1
         return min(active_ready_times)
@@ -30,11 +34,11 @@ class Scheduler:
 
         The time spent executing is returned.
         """
-        num_threads = len(self.threads)
+        num_threads = len(self._threads)
         if num_threads == 0:
             return self._run_thread(None, cpu)
         if num_threads == 1:
-            return self._run_thread(self.threads[0], cpu)
+            return self._run_thread(self._threads[0], cpu)
         raise RuntimeError('Scheduler cannot make scheduling decision.')
 
     def _run_thread(self, thread, cpu):
