@@ -13,7 +13,8 @@ class Scheduler:
         self.module = module
 
     def next_ready_time(self):
-        """Find the earliest :attr:`Thread.ready_time` of the contained :class:`Threads <schedsi.threads.Thread>`."""
+        """Find the earliest :attr:`Thread.ready_time` of the
+        contained :class:`Threads <schedsi.threads.Thread>`."""
         active_ready_times = list(filter(lambda t: t >= 0,
                                          map(lambda t: t.ready_time, self.threads)))
         if not active_ready_times:

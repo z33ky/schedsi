@@ -18,7 +18,8 @@ class World: # pylint: disable=too-few-public-methods
         self.log = log
 
     def step(self):
-        """Executes one timer quantum for each :class:`Core <schedsi.cpu.Core>` in the :class:`World`."""
+        """Executes one timer quantum for each :class:`Core <schedsi.cpu.Core>` in the
+        :class:`World`."""
         assert len(self.cores) == 1
         core = self.cores[0]
         self.kernel.schedule(core)
