@@ -7,15 +7,15 @@ one with periodic bursts.
 """
 
 import sys
-from schedsi import binarylog, module, round_robin, threads, world
+from schedsi import binarylog, module, schedulers, threads, world
 
 #Create a hierarchy of a kernel module and a child module.
 #this is the same as tests/simple_hierarchy.py
 #pylint: disable=duplicate-code
-KERNEL = module.Module("0", None, round_robin.RoundRobin)
-TOP_MODULE = module.Module("0.0", KERNEL, round_robin.RoundRobin)
-BOTTOM_MODULE_A = module.Module("0.0.0", TOP_MODULE, round_robin.RoundRobin)
-BOTTOM_MODULE_B = module.Module("0.0.1", TOP_MODULE, round_robin.RoundRobin)
+KERNEL = module.Module("0", None, schedulers.RoundRobin)
+TOP_MODULE = module.Module("0.0", KERNEL, schedulers.RoundRobin)
+BOTTOM_MODULE_A = module.Module("0.0.0", TOP_MODULE, schedulers.RoundRobin)
+BOTTOM_MODULE_B = module.Module("0.0.1", TOP_MODULE, schedulers.SJF)
 
 #Add two work threads to the KERNEL and one scheduler thread to run the child.
 KERNEL.add_threads([

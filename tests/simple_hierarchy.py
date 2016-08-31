@@ -6,15 +6,15 @@ It consists of
     * a child-module with one thread (plus two VCPU threads)
     * two grandchildren with a total of five threads
 
-Scheduling is done via RoundRobin on both modules.
+Scheduling is done via :class:`RoundRobin` and :class:`SJF`.
 """
 
-from schedsi import module, round_robin, threads
+from schedsi import module, schedulers, threads
 
-KERNEL = module.Module("0", None, round_robin.RoundRobin)
-TOP_MODULE = module.Module("0.0", KERNEL, round_robin.RoundRobin)
-BOTTOM_MODULE_A = module.Module("0.0.0", TOP_MODULE, round_robin.RoundRobin)
-BOTTOM_MODULE_B = module.Module("0.0.1", TOP_MODULE, round_robin.RoundRobin)
+KERNEL = module.Module("0", None, schedulers.RoundRobin)
+TOP_MODULE = module.Module("0.0", KERNEL, schedulers.RoundRobin)
+BOTTOM_MODULE_A = module.Module("0.0.0", TOP_MODULE, schedulers.RoundRobin)
+BOTTOM_MODULE_B = module.Module("0.0.1", TOP_MODULE, schedulers.SJF)
 
 #Add two work threads to the KERNEL and one scheduler thread to run the child.
 KERNEL.add_threads([
