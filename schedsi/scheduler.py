@@ -18,6 +18,12 @@ class Scheduler:
         self._threads += (t for t in new_threads if t.remaining != 0)
         self._finished_threads += (t for t in new_threads if t.remaining == 0)
 
+    def _get_ready_threads(self, cpu):
+        """Return a list of (thread, index) tuples that are ready for execution."""
+        assert not False in (t.remaining != 0 for t in self._threads)
+        return ((t, i) for i, t in enumerate(self._threads)
+                if t.ready_time <= cpu.status.current_time)
+
     def next_ready_time(self):
         """Find the earliest :attr:`Thread.ready_time` of the
         contained :class:`Threads <schedsi.threads.Thread>`."""
@@ -37,10 +43,8 @@ class Scheduler:
         The time spent executing is returned.
         """
         num_threads = len(self._threads)
-        if num_threads == 0:
-            return self._run_thread(None, cpu)
-        if num_threads == 1:
-            return self._run_thread(self._threads[0], cpu)
+        if num_threads <= 1:
+            return self._run_thread(next(self._get_ready_threads(cpu), [None])[0], cpu)[0]
         raise RuntimeError('Scheduler cannot make scheduling decision.')
 
     def _run_thread(self, thread, cpu):
