@@ -1,3 +1,6 @@
+PREFIX=/usr
+DESTDIR=/
+
 example: .PHONY
 	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py -
 
@@ -17,5 +20,11 @@ html: .PHONY
 
 pylint: .PHONY
 	pylint schedsi example tests replay.py
+
+build: .PHONY
+	./setup.py build
+
+install: .PHONY
+	./setup.py install --prefix '$(PREFIX)' --root '$(DESTDIR)'
 
 .PHONY:

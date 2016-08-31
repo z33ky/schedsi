@@ -13,3 +13,4 @@ Context switches are also modeled to take time (though it can be set to 0) and a
 
 A simple example is in `examples/kernel.py`. You can also read `HACKING` for an overview of the inner workings.
 The example script produces a binary log file (MessagePack). To view the log you can use `./replay.py` to convert it to either a text log or a SVG graph.
+The `replay` tool can be installed as `schedsi-replay` using the provided `./setup.py` file (or the `install` make target).
