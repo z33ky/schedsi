@@ -10,11 +10,13 @@ class Scheduler:
     def __init__(self, module):
         """Create a :class:`Scheduler`."""
         self._threads = []
+        self._finished_threads = []
         self.module = module
 
     def add_threads(self, new_threads):
         """Add threads to schedule."""
-        self._threads += new_threads
+        self._threads += (t for t in new_threads if t.remaining != 0)
+        self._finished_threads += (t for t in new_threads if t.remaining == 0)
 
     def next_ready_time(self):
         """Find the earliest :attr:`Thread.ready_time` of the
@@ -44,9 +46,20 @@ class Scheduler:
     def _run_thread(self, thread, cpu):
         """Run a :class:`Thread <schedsi.threads.Thread>`.
 
-        The time spent executing is returned.
+        The time spent executing and a bool indicating the thread has finished is returned.
+        Note that finished threads are moved from :attr:`_threads` to :attr:`_finished_threads`.
         """
         if thread is None:
             cpu.yield_module(self.module)
-            return 0
-        return cpu.switch_thread(thread) + thread.execute(cpu)
+            return 0, False
+        assert thread.ready_time != -1 and thread.ready_time <= cpu.status.current_time
+        assert thread in self._threads
+
+        run_time = cpu.switch_thread(thread) + thread.execute(cpu)
+
+        remove = thread.remaining == 0
+        if remove:
+            self._finished_threads.append(thread)
+            self._threads.remove(thread)
+
+        return run_time, remove
