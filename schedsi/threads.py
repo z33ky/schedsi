@@ -88,14 +88,18 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
         See :meth:`Thread.execute`.
         """
         run_time = self._scheduler.schedule(cpu) # pylint: disable=not-callable
-        self.ready_time = self._scheduler.next_ready_time()
         self.total_run_time += run_time
         return run_time
 
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
         self._scheduler.add_threads(new_threads)
-        self.ready_time = self._scheduler.next_ready_time()
+
+    def __getattribute__(self, key):
+        """ready_time should be taken from the :class:`Scheduler`."""
+        if key == 'ready_time':
+            return self._scheduler.next_ready_time()
+        return object.__getattribute__(self, key)
 
 class VCPUThread(Thread): # pylint: disable=too-few-public-methods
     """A thread representing a VCPU from the perspective of a parent.
@@ -131,7 +135,7 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         return run_time
 
     def __getattribute__(self, key):
-        """ready_time and remaining should be taken from the SchedulerThread."""
+        """ready_time and remaining should be taken from the :class:`SchedulerThread`."""
         if key in ['ready_time', 'remaining']:
             return self._thread.__getattribute__(key)
         return object.__getattribute__(self, key)
