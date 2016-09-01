@@ -49,7 +49,7 @@ class SJF(scheduler.Scheduler):
         #resort
         #this is required if we have unready threads in front of the queue
         if not removed and thread:
-            for prev_idx, prev_threads in enumerate(self._threads[:idx]):
+            for prev_idx, prev_thread in enumerate(self._threads[:idx]):
                 if prev_thread.remaining > thread.remaining:
                     self._threads.insert(prev_idx, self._threads.pop(idx))
                     break
