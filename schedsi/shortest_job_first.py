@@ -11,53 +11,53 @@ class SJF(scheduler.Scheduler):
         """Create a :class:`SJF` scheduler."""
         super().__init__(module)
 
-    def add_threads(self, new_threads):
-        """Add threads to schedule.
+    def _update_ready_threads(self, time, rcu_data):
+        """See :meth:`Scheduler._update_ready_threads`.
 
         To make the scheduling decision easier,
-        the threads will be sorted by remaining time."""
+        the threads will be sorted by remaining time.
+        """
+        ready_threads = rcu_data.ready_threads
+        finished_threads = rcu_data.finished_threads
+        new_idx = len(ready_threads)
+        super()._update_ready_threads(time, rcu_data)
+
+        new_threads = ready_threads[new_idx:]
+        del ready_threads[new_idx:]
+
         #we sort the list to make insertion easier
         new_threads = sorted(new_threads, key=lambda t: t.remaining)
 
         #remaining_list should contain the remaining times of all non-infinitly threads
         #so for inf_idx we could the number of -1 from the back
-        inf_idx = next((i for i, t in enumerate(reversed(self._threads)) if t.remaining != -1),
-                       len(self._threads))
-        remaining_list = list(t.remaining for t in self._threads[0:-inf_idx])
+        inf_idx = next((i for i, t in enumerate(reversed(ready_threads)) if t.remaining != -1),
+                       len(ready_threads))
+        remaining_list = list(t.remaining for t in ready_threads[0:-inf_idx])
 
         #filter out the infinitly executing ones from new_threads
         inf_idx = next((i for i, t in enumerate(new_threads) if t.remaining != -1),
                        len(new_threads))
-        self._threads += new_threads[0:inf_idx]
+        ready_threads += new_threads[0:inf_idx]
         new_threads = new_threads[inf_idx:]
 
         idx = 0
         count = 0
         for thread in new_threads:
             if thread.remaining == 0:
-                self._finished_threads.append(thread)
+                finished_threads.append(thread)
                 continue
             idx = bisect.bisect(remaining_list, thread.remaining, idx)
-            self._threads.insert(idx + count, thread)
+            ready_threads.insert(idx + count, thread)
             count += 1
 
-    def schedule(self, cpu):
-        """Run the next :class:`Thread <schedsi.threads.Thread>`.
+    def schedule(self):
+        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler.schedule>`.
         """
-        thread, idx = next(self._get_ready_threads(cpu), (None, None))
-        run_time, removed = self._run_thread(thread, cpu)
-
-        #resort
-        #this is required if we have unready threads in front of the queue
-        if not removed and thread:
-            for prev_idx, prev_thread in enumerate(self._threads[:idx]):
-                if prev_thread.remaining > thread.remaining:
-                    self._threads.insert(prev_idx, self._threads.pop(idx))
-                    break
-
-        if cpu.status.pending_interrupt or run_time == 0:
-            return 0
-
-        return run_time + self.schedule(cpu)
+        while True:
+            rcu_copy, _ = yield from self._start_schedule()
+            if not rcu_copy.data.ready_threads:
+                yield 0
+                return
+            yield from self._schedule(0, rcu_copy)

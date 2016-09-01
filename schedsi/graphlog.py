@@ -32,23 +32,10 @@ class _Background: #pylint: disable=too-few-public-methods
         self.name = name
         self.time = time
 
-class _ThreadName:
-    """Lazy thread-name extraction.
-
-    This is done lazily because a :class:`Core <schedsi.cpu.Core>` might not have a current context,
-    but we might still pass it to other functions which will conditionally
-    require a thread-name.
-    """
-
-    def __init__(self, cpu):
-        """Create a :class:`_ThreadName`."""
-        context = cpu.status.context
-        self.module = context.module
-        self.thread = context.thread
-
-    def get(self):
-        """Generate a thread-name."""
-        return self.module.name + ("-" + str(self.thread.tid) if self.thread else "")
+def name_current_thread(cpu):
+    """Return a string identifying the current thread."""
+    thread = cpu.status.contexts[-1].thread
+    return thread.module.name + "-" + str(thread.tid)
 
 class GraphLog:
     """Graphical logger.
@@ -73,6 +60,7 @@ class GraphLog:
         self.cursor = [0, 0]
         self.level = 0
         self.background_tasks = []
+        self.task_executed = False
 
     def write(self, stream):
         """Generate SVG output of the current graph."""
@@ -82,10 +70,10 @@ class GraphLog:
         canvas.insert(self.canvas)
 
         #draw the yet undrawn background tasks
+        #TODO: we should leverage _draw_background_tasks
         for idx in reversed(range(0, len(self.background_tasks))):
-            #TODO: we should leverage _draw_background_tasks
-            self._draw_recent(idx, canvas)
             self._move(0, -LEVEL)
+            self._draw_recent(idx, canvas)
         self._move(0, LEVEL * len(self.background_tasks))
 
         #insert the top layer
@@ -208,10 +196,14 @@ class GraphLog:
         self._move(time, -LEVEL)
         self._draw_recent()
 
-    def _ctx_down(self, _name, time, level_step):
+    def _ctx_down(self, name, time, level_step):
         """Step down a level."""
         #we can't be at the bottom and step down
         assert self.level > 0
+
+        if not self.task_executed:
+            self._draw_block(EXEC_COLORS, name, 0)
+            self.task_executed = True
 
         self._draw_slope(CTXSW_COLORS, time, -level_step)
 
@@ -264,9 +256,11 @@ class GraphLog:
             level_step += missing_level
             #_draw_slope already moved partially, so just move up the missing part
             self._move(0, missing_level)
+        else:
+            self.task_executed = False
 
         self._update_background_tasks(time)
-        self.background_tasks.append(_Background(name.get(), time))
+        self.background_tasks.append(_Background(name, time))
 
         return level_step
 
@@ -274,56 +268,63 @@ class GraphLog:
         """Context switch with zero time."""
         self._move(0, LEVEL - 0.5)
         self._draw_line(CTXSW_ZERO_COLOR, 0, 1, self.top)
-        self.top.text(*self.cursor, name.get(), TEXT_ATTR)
+        self.top.text(*self.cursor, name, TEXT_ATTR)
         self._move(0, -LEVEL - 0.5)
 
-    def schedule_thread(self, _cpu):
+    def init_core(self, _cpu):
+        """Register a :class:`Core`."""
+        pass
+
+    def schedule_thread(self, _cpu, _thread):
         """Log an successful scheduling event."""
         pass
 
-    def context_switch(self, cpu, module_to, time, required):
+    def context_switch(self, cpu, thread_to, time, required):
         """Log an context switch event."""
         assert required >= time
+        if thread_to.module == cpu.status.contexts[-1].thread.module:
+            return
 
-        name = _ThreadName(cpu)
+        current_thread_name = name_current_thread(cpu)
 
         if required == 0:
             assert time == 0
             ratio = 1
         elif time == 0:
-            self._ctx_zero(name)
+            self._ctx_zero(current_thread_name)
             return
         else:
             ratio = time / required
+
+        module_to = thread_to.module
 
         #find out direction of context switch (up or down)
         if module_to.parent is None:
             #switch to kernel
             if self.level == 0:
                 #we just had an unsuccessful switch from the kernel
-                if cpu.status.context.module:
-                    print(cpu.status.current_time, module_to.name, cpu.status.context.module.name)
-                assert cpu.status.context.module is None
-                #pretend to be on first level for the graph
-                self.level = LEVEL
-                self._move(0, LEVEL)
+                #pretend to be on the previous level for the graph
+                self.level = LEVEL * (len(set(c.thread.module for c in cpu.status.contexts)) - 1)
+                self._move(0, self.level)
             else:
                 #go down all the way
                 ratio *= self.level / LEVEL
             ctx_func = self._ctx_down
-        elif cpu.status.context.module.parent == module_to:
+        elif cpu.status.contexts[-1].thread.module.parent == module_to:
             #switch to parent
             ctx_func = self._ctx_down
         else:
             #switch to child
             ctx_func = self._ctx_up
 
-        self.level += ctx_func(name, time, ratio * LEVEL)
+        self.level += ctx_func(current_thread_name, time, ratio * LEVEL)
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
         self._update_background_tasks(runtime)
-        self._draw_block(EXEC_COLORS, _ThreadName(cpu).get(), runtime)
+        current_thread_name = name_current_thread(cpu)
+        self._draw_block(EXEC_COLORS, current_thread_name, runtime)
+        self.task_executed = True
 
     def thread_yield(self, _cpu):
         """Log an thread yielded event."""

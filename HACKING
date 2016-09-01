@@ -1,42 +1,51 @@
 The simulation is kicked off in `World.step()` (´schedsi/world.py´).
-From there, the scheduler of the main `Module` (kernel) is invoked.
+From there, `execute()` of each `Core` is invoked, which will proceed one timer slice.
 
-The execution and scheduling functions all return the time they ran.
+The `Core` has a stack of contexts, where the first element of the stack in the kernel scheduler
+and each successive element is either a thread from the same module or the scheduler thread of a child module.
+It is imaginable that child threads run directly on the parent, but this is currently not used.
 
-The `Core` (`schedsi/cpu.py`) is the root for the timing information.
-A `Thread` can request to run a certain time by passing the requested time to the `crunch()` function.
-The `Core` will then look how much of the current time slice remains and lets time pass accordingly.
-If the requested time exceeds the time slice a flag will be set indicating that an interrupt must be delivered.
-The `Core` will deny any execution until the `finish_step` function is called, indicating that the kernel is handling the timer interrupt.
+The scheduler is a coroutine that can yield a number > 0 to indicate that it's using some processor time. -1 is also valid and stands for execution as long as possible (the remaining time slice).
+Yielding a value of 0 means that the scheduler currently has no `Thread`s to schedule, meaning that the `Core` will return execution to the parent,
+or if the kernel scheduler yield, the `Core` will idle the remaining time slice.
+The scheduler may also yield a `Thread`, which the `Core` interprets as a request to switch context to that `Thread`, so it's context is pushed on the stack.
 
-The `Core` is split into three parts:
+A `Thread` may also yield the same values as a scheduler. In fact, schedulers are represented as `Thread`s via the `SchedulerThread` class.
+
+Whenever the `Core` receives the request to spend time executing the `Thread` it will check how long it can run and call the `run()` function of the thread and pass the current time and the time it runs for.
+This allows the `Thread` to gather how long it has actually run.
+When the `Core` pops `Thread`s off the stack, it will call their `finish()` function, passing in the current time.
+
+The `Core` is split into two parts:
 	* `Core`, which itself contains mostly invariant information, like the `uid`
 	* `_CoreStatus`, which contains variable information, such as the current `time_slice` and `current_time`
-	* `_CoreContext`, which keeps track of the current context
-The `_CoreContext` would correspond to the loaded registers and page tables.
-Within the simulator this is represented by storing a reference to the currently active `Module` (process) and `Thread`.
+There's also the `_CoreContext` class, which contains an operation context.
+On a real machine it would contain a register dump, in the simulator this is represented by storing a reference to the `Thread`.
 Switching context has a cost and this is also simulated, although currently only for switching between `Module`s.
 
 The `Core` and the `Thread` record various statistics (mostly on timing), which are currently not pulled out and evaluated.
 
-If the call-chain returns to the `World` without the time slice being used up, the CPU will idle for the remaining slice.
+When a time slice is used up, and the next one begins, the `Core` will pop all threads from the context stack (calling `finish() on them`) with exception of the first, the kernel scheduler, where execution will resume next.
 
-All events are logged in a logger class.
-These logger classes are not loggers in the sense that they expect a string and store it somewhere, instead there is a function for each relevant event and the log will aggregate the relevant information for that event.
-I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `class BinaryLog`), since it has a `replay()` function.
+All actions of the `Core` are logged in a logger class.
+These logger classes are not loggers in the sense that they expect a string and store it somewhere, instead there is a function for each relevant event and the log will aggregate the relevant information for that event to store or present it how it sees fit.
+I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `class BinaryLog`), since it has a `replay()` function to replay a binary log file to another logger (see `replay.py').
 Replaying is a bit of a hack and relies on Pythons duck-typing to work via "emulation classes" that pretend to be the real deal.
 If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy in the log file.
 The other loggers are the `TextLog` (`schedsi/textlog.py`) and the `GraphLog` (`schedsi/graphlog.py`). Both work fine with `BinaryLog.replay()`.
 The `TextLog` is the easiest to understand, since it simply pulls out some information from the `Core` it received the event from and formats it to a string.
 The `BinaryLog` is less straight-forward; It aggregates 'relevant' information in a dictionary of primitive types and writes that to a MessagePack stream.
-The `GraphLog` also needs to keep track of some state for drawing, for instance what the current hierarchy depth is.
+The `GraphLog` also needs to keep track of some state for drawing, for instance what the current hierarchy depth is. Since switching the way `Core`s execute this could also be pulled from the context stack, but before that change this was not possible otherwise.
 
-The only schedulers implemented at the moment is a preemptive round robin scheduler (`schedsi/round_robin.py`) and a single-thread scheduler serving as a base class (`schedsi/scheduler.py`).
+The schedulers implemented at the moment is a preemptive round robin scheduler (`schedsi/round_robin.py`), a shorted job first scheduler (`schedsi/shortest_job_first.py`) and a single-thread scheduler serving as a base class (`schedsi/scheduler.py`).
+The SJF scheduler peeks directly into the `Thread`s to find their remaining time, which on a real system is not likely to be available information.
 
 Process hierarchies are built by creating the root of the hierarchy (the kernel) and adding further modules onto it.
 The `tests/simple_example.py` should give you a good idea on how it works.
 
 Each `Module` (`schedsi/module.py`) has some threads. It has at least one, the `SchedulerThread` (`schedsi/threads.py`), which forwards execution to the scheduler.
-For the kernel, the `schedule()` function is invoked from `World.step()`. For each child `Module`, the kernel should provide a `VCPUThread`, which is used to `execute()` the children's `SchedulerThread`.
-There are two threads to simulate load, the bare `Thread`, which will just continuously execute until its workload is finisheed (`Thread.remaining`) and `PeriodicWorkThread`, which describes its workload in regular appearing bursts.
+For each child `Module`, the parent should provide a `VCPUThread`, which is used to `execute()` the children's `SchedulerThread`. If `Module`s decide to not employ their own scheduler for some threads, they can be added directly to the parent module.
+There are two thread classes to simulate load:
+	* the bare `Thread`, which will just continuously execute until its workload is finisheed (`Thread.remaining`)
+	* the `PeriodicWorkThread`, which describes its workload in regular appearing bursts
 Furthermore, each thread can have a `start_time` at which it will begin execution.

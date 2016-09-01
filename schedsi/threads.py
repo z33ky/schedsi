@@ -2,6 +2,7 @@
 """Thread classes."""
 
 import sys
+import threading
 
 class Thread:
     """The basic thread class.
@@ -11,9 +12,10 @@ class Thread:
         * a locally unique thread id
         * ready time (-1 if finished)
         * remaining workload (-1 if infinite)
-        * last deschedule time (-1 if never)
+        * finished time (-1 if never)
         * total runtime
         * total waittime
+        * a lock indicating whether this thread is currently active
     """
 
     def __init__(self, module, tid, ready_time, units):
@@ -22,60 +24,88 @@ class Thread:
         self.tid = tid
         self.ready_time = ready_time
         self.remaining = units
-        self.last_deschedule = -1
+        self.finished_time = -1
         self.total_run_time = 0
         self.total_wait_time = 0
+        self.is_running = threading.Lock()
 
-    def execute(self, cpu):
+    def execute(self):
         """Simulate execution.
 
         The thread will run for as long as it can.
 
-        The time spent executing is returned.
+        Yields the amount of time it wants to execute,
+        -1 for infinite and 0 to indicate the desire to yield,
+        or a thread to switch to. None for no-op.
+        Consumes the current time.
         """
-        return self._execute(cpu, -1)
+        locked = self.is_running.acquire(False)
+        assert locked
 
-    def _execute(self, cpu, run_time):
+        current_time = yield
+        while True:
+            current_time = yield from self._execute(current_time, -1)
+
+    def _execute(self, current_time, run_time):
         """Simulate execution.
 
-        The thread will run for as long as it can.
+        Update some state.
+        Yields `run_time` respecting :attr:`remaining`, so it won't
+        yield more than that.
 
-        The time spent executing is returned.
+        Returns the next current time or None if :attr:`remaining` is 0.
         """
-        assert self.ready_time != -1 and self.ready_time <= cpu.status.current_time
-        assert self.remaining != 0
+        assert self.ready_time != -1 and self.ready_time <= current_time
+        assert self.remaining != 0 and self.finished_time == -1
+        assert not self.is_running.acquire(False)
+        self.total_wait_time += current_time - self.ready_time
 
-        if run_time == -1 or (run_time > self.remaining and self.remaining != -1):
+        if run_time == -1:
             run_time = self.remaining
-        assert run_time <= self.remaining or self.remaining == -1
+        else:
+            assert run_time <= self.remaining or self.remaining == -1
 
-        run_time = cpu.crunch(self, run_time)
-        if run_time == 0:
-            return 0
+        current_time = yield run_time
 
-        current_time = cpu.status.current_time
+        if self.remaining == 0:
+            yield 0
+            return
 
-        self._update_timing_stats(current_time - run_time, run_time, current_time)
+        return current_time
+
+    def run(self, _current_time, run_time):
+        """Update runtime state.
+
+        This should be called while the thread is active.
+        """
+        assert not self.is_running.acquire(False)
+        self.total_run_time += run_time
 
         if self.remaining != -1:
+            assert self.remaining >= run_time
             self.remaining -= run_time
-            assert self.remaining >= 0
+
+    def finish(self, current_time):
+        """Become inactive.
+
+        This should be called when the thread becomes inactive.
+        """
+        assert not self.is_running.acquire(False)
+        self._finish(current_time)
+
+        self.is_running.release()
+
+    def _finish(self, current_time):
+        assert not self.is_running.acquire(False)
 
         if self.remaining == 0:
             #the job was completed within the slice
             #never start again
             self.ready_time = -1
-        else:
+            self.finished_time = current_time
+        elif self.remaining != -1:
             #not enough time to complete the job
             self.ready_time = current_time
-
-        return run_time
-
-    def _update_timing_stats(self, start_time, run_time, current_time):
-        """Update total_wait_time, total_run_time, last_deschedule."""
-        self.total_wait_time += start_time - max(self.last_deschedule, self.ready_time)
-        self.total_run_time += run_time
-        self.last_deschedule = current_time
 
 class SchedulerThread(Thread):
     """A thread representing a VCPU for a child.
@@ -88,17 +118,23 @@ class SchedulerThread(Thread):
         super().__init__(scheduler.module, tid, 0, -1)
         self._scheduler = scheduler
 
-    def execute(self, cpu):
+    def execute(self):
         """Simulate execution.
 
         Simply forward to the scheduler.
 
         See :meth:`Thread.execute`.
         """
-        run_time = self._scheduler.schedule(cpu) # pylint: disable=not-callable
-        current_time = cpu.status.current_time
-        self._update_timing_stats(current_time - run_time, run_time, current_time)
-        return run_time
+        locked = self.is_running.acquire(False)
+        assert locked
+
+        scheduler = self._scheduler.schedule()
+        thing = next(scheduler)
+        assert thing is None
+        current_time = yield
+        while True:
+            next(super()._execute(current_time, -1))
+            current_time = yield scheduler.send(current_time)
 
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
@@ -113,30 +149,28 @@ class VCPUThread(Thread):
     def __init__(self, module, tid, child):
         """Create a :class:`VCPUThread`."""
         if child.parent != module:
-            print(module.name, "is adding a VCPUThread for", child,
-                  "although it is not a direct descendant.", file=sys.stderr)
-        child_thread = child.register_vcpu(self)
-        super().__init__(module, tid, child_thread.ready_time, child_thread.remaining)
-        self._thread = child_thread
+            print(module.name, "is adding a VCPUThread for", child.name,
+                  "although it is not a direct descendant.")
+        super().__init__(module, tid, None, None)
+        self._thread = child.register_vcpu(self)
         if not isinstance(self._thread, SchedulerThread):
             print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".",
                   file=sys.stderr)
 
-    def execute(self, cpu):
+    def execute(self):
         """Simulate execution.
 
         Switch context and forward to child thread.
 
         See :meth:`Thread.execute`.
         """
-        run_time = cpu.switch_module(self._thread.module)
-        run_time += self._thread.execute(cpu)
-        run_time += cpu.switch_module(self.module)
+        locked = self.is_running.acquire(False)
+        assert locked
 
-        current_time = cpu.status.current_time
-        self._update_timing_stats(current_time - run_time, run_time, current_time)
-
-        return run_time
+        current_time = yield
+        while True:
+            next(super()._execute(current_time, -1))
+            current_time = yield self._thread
 
     def __getattribute__(self, key):
         """ready_time and remaining should be taken from the :class:`SchedulerThread`."""
@@ -155,29 +189,59 @@ class PeriodicWorkThread(Thread):
         self.original_ready_time = self.ready_time
         self.period = period
         self.burst = burst
+        self.current_burst_left = None
+        self.burst_started = None
+
+    def _get_quota(self, current_time):
+        """Calculate the quote at `current_time`.
+
+        Won't return more than :attr:`remaining`.
+        """
+        activations = int((current_time - self.original_ready_time) / self.period) + 1
+        quota = activations * self.burst
+        if self.remaining != -1:
+            quota = min(self.remaining + self.total_run_time, quota)
+        return quota
 
     #will run as long as the summed up bursts require
-    def execute(self, cpu):
+    def execute(self):
         """Simulate execution.
 
         See :meth:`Thread.execute`.
         """
-        #how often we wanted to be executed (including this one)
-        activations = int((cpu.status.current_time - self.original_ready_time) / self.period) + 1
-        quota = activations * self.burst
+        locked = self.is_running.acquire(False)
+        assert locked
 
-        if quota < 0:
-            raise RuntimeError('Scheduled too eagerly')
-        quota_left = quota - self.total_run_time
-        if quota_left < 0:
-            raise RuntimeError('Executed too much')
+        current_time = yield
+        while True:
+            quota = self._get_quota(current_time)
+            if quota < 0:
+                raise RuntimeError('Scheduled too eagerly')
+            quota_left = quota - self.total_run_time
+            if quota_left < 0:
+                raise RuntimeError('Executed too much')
+            quota_plus = self._get_quota(current_time + quota_left) - self.total_run_time
+            self.burst_started = current_time - self.original_ready_time
+            #TODO: be smarter
+            while quota_plus > quota_left:
+                quota_left = quota_plus
+                quota_after = self._get_quota(current_time + quota_left) - self.total_run_time
+                self.burst_started += self.period
+            self.current_burst_left = quota_left
 
-        run_time = super()._execute(cpu, quota_left)
+            current_time = yield from super()._execute(current_time, quota_left)
 
-        assert run_time <= quota_left
-        if self.remaining > 0 or self.remaining == -1:
-            if quota_left == run_time:
-                #set ready_time to next burst arrival
-                self.ready_time = self.original_ready_time + activations * self.period
+    def run(self, current_time, run_time):
+        """See :meth:`Thread.run`."""
+        super().run(current_time, run_time)
+        assert self.current_burst_left >= run_time
+        self.current_burst_left -= run_time
 
-        return run_time
+    def _finish(self, current_time):
+        super()._finish(current_time)
+        #set ready_time to next burst arrival, if required
+        if (self.remaining > 0 or self.remaining == -1) \
+           and self.current_burst_left == 0:
+            self.ready_time = self.burst_started + self.period
+            self.burst_started = None
+        self.current_burst_left = None

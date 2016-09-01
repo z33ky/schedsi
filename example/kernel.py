@@ -51,7 +51,7 @@ def main():
 
         #Create and run the world.
         the_world = world.World(1, 10, KERNEL, binary_log)
-        while the_world.step() < 400:
+        while the_world.step() <= 400:
             pass
 
 if __name__ == '__main__':

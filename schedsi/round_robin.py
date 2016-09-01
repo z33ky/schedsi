@@ -3,44 +3,43 @@
 
 from schedsi import scheduler
 
+class RoundRobinData(scheduler.SchedulerData): # pylint: disable=too-few-public-methods
+    """Mutable data for the :class:`RoundRobin` scheduler."""
+    def __init__(self):
+        """Create a :class:`RoundRobinData`."""
+        super().__init__()
+        self.rr_idx = -1
+
 class RoundRobin(scheduler.Scheduler):
     """RoundRobin scheduler."""
 
     def __init__(self, module):
         """Create a :class:`RoundRobin` scheduler."""
-        super().__init__(module)
-        self._next_idx = 0
+        super().__init__(module, RoundRobinData())
 
-    def schedule(self, cpu):
-        """Run the next :class:`Thread <schedsi.threads.Thread>`.
+    def schedule(self):
+        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler.schedule>`.
         """
-        num_threads = len(self._threads)
-
-        if num_threads == 0:
-            return self._run_thread(None, cpu)[0]
-
-        thread = None
-        idx = self._next_idx
-        last_idx = idx - 1 if idx != 0 else num_threads - 1
         while True:
-            thread = self._threads[idx]
-            if thread.ready_time >= 0 and thread.ready_time <= cpu.status.current_time:
-                break
-            if idx == last_idx:
-                #tried all threads, but no thread ready
-                cpu.yield_module(self.module)
-                return 0
+            rcu_copy, removed = yield from self._start_schedule()
+            rcu_data = rcu_copy.data
+            num_threads = len(rcu_data.ready_threads)
+            if num_threads == 0:
+                rcu_data.rr_idx = -1
+                if not self._rcu.update(rcu_copy):
+                    #yield 1
+                    continue
+                yield 0
+                return
 
-            idx = idx + 1 if idx != num_threads - 1 else 0
+            idx = rcu_data.rr_idx
+            if not removed:
+                idx = (idx + 1) % num_threads
+            elif idx == num_threads:
+                idx = 0
 
-        self._next_idx = idx + 1 if idx != num_threads - 1 else 0
+            rcu_data.rr_idx = idx
 
-        run_time, removed = self._run_thread(thread, cpu)
-        if removed and self._next_idx != 0:
-            self._next_idx -= 1
-        if cpu.status.pending_interrupt or run_time == 0:
-            return 0
-
-        return run_time + self.schedule(cpu)
+            yield from self._schedule(idx, rcu_copy)

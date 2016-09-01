@@ -19,7 +19,7 @@ class TestExample(unittest.TestCase):
                                    textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1))
 
         the_world = world.World(1, 10, simple_hierarchy.KERNEL, text_log)
-        while the_world.step() < 400:
+        while the_world.step() <= 400:
             pass
 
         expected = open("tests/simple_hierarchy.log", 'r')

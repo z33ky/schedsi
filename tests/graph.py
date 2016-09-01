@@ -19,7 +19,7 @@ class TestExample(unittest.TestCase):
         graph_log = graphlog.GraphLog()
 
         the_world = world.World(1, 10, simple_hierarchy.KERNEL, graph_log)
-        while the_world.step() < 400:
+        while the_world.step() <= 400:
             pass
 
         svg_buf = io.BytesIO()

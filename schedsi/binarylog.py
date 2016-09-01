@@ -7,6 +7,7 @@ import msgpack
 
 _EntryType = enum.Enum('EntryType', 'event')
 _Event = enum.Enum('Event', [
+    'init_core',
     'schedule_thread',
     'context_switch',
     'thread_execute',
@@ -34,9 +35,9 @@ def _encode(thing):
     from schedsi import cpu, module, threads
 
     if isinstance(thing, cpu._Context): # pylint: disable=protected-access
-        thing = _get_from_class(thing, ['thread', 'module'])
+        thing = _get_from_class(thing, ['thread'])
     elif isinstance(thing, cpu._Status): # pylint: disable=protected-access
-        thing = _get_from_class(thing, ['current_time', 'context'])
+        thing = _get_from_class(thing, ['current_time'])
     elif isinstance(thing, cpu.Core):
         thing = _get_from_class(thing, ['uid', 'status'])
     elif isinstance(thing, module.Module):
@@ -58,24 +59,30 @@ def _encode_event(cpu, event, args=None):
         encoded.update(args)
     return encoded
 
-def _encode_ctxsw(cpu, module_to, time, required):
+def _encode_ctxsw(cpu, thread_to, time, required):
     """Encode a context switching event to a :obj:`dict`."""
-    module_from = cpu.status.context.module
-    if module_from is None:
-        assert module_to.parent is None
-        direction = 'kernel'
-    #parent direction weights more than kernel
-    elif module_from.parent == module_to:
-        direction = 'parent'
+    module_to = thread_to.module
+    module_from = cpu.status.contexts[-1].thread.module
+    if module_to == module_from:
+        direction = 'own child'
+        if len(cpu.status.contexts) >= 2:
+            if cpu.status.contexts[-2].thread == thread_to:
+                direction = 'own parent'
     elif module_to.parent is None:
         direction = 'kernel'
+    elif module_from.parent == module_to:
+        direction = 'parent'
     elif module_to.parent == module_from:
         direction = 'child'
     else:
-        direction = 'unrelated'
+        raise RuntimeError('Unable to determine context switch direction')
     return _encode_event(cpu, _Event.context_switch.name,
-                         {'direction': direction, 'module_to': module_to,
+                         {'direction': direction, 'thread_to': thread_to,
                           'time': time, 'required': required})
+
+def _encode_coreinit(cpu):
+    """Encode a init_core event to a :obj:`dict`."""
+    return _encode_event(cpu, _Event.init_core.name, {'context': cpu.status.contexts})
 
 class BinaryLog:
     """Binary logger using MessagePack."""
@@ -94,13 +101,17 @@ class BinaryLog:
         See :func:`_encode_event`."""
         self._write(_encode_event(cpu, event.name, args))
 
-    def schedule_thread(self, cpu):
-        """Log an successful scheduling event."""
-        self._encode(cpu, _Event.schedule_thread)
+    def init_core(self, cpu):
+        """Register a :class:`Core`."""
+        self._write(_encode_coreinit(cpu))
 
-    def context_switch(self, cpu, module_to, time, required):
+    def schedule_thread(self, cpu, thread):
+        """Log an successful scheduling event."""
+        self._encode(cpu, _Event.schedule_thread, {'thread': thread})
+
+    def context_switch(self, cpu, thread_to, time, required):
         """Log an context switch event."""
-        self._write(_encode_ctxsw(cpu, module_to, time, required))
+        self._write(_encode_ctxsw(cpu, thread_to, time, required))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
@@ -119,18 +130,35 @@ class BinaryLog:
         self._encode(cpu, _Event.timer_interrupt)
 
 #types emulating schedsi classes for other logs
-_CPUContext = collections.namedtuple('_CPUContext', 'module thread')
-_CPUStatus = collections.namedtuple('_CPUStatus', 'current_time context')
+_CPUContext = collections.namedtuple('_CPUContext', 'thread')
 _Core = collections.namedtuple('_Core', 'uid status')
-_Thread = collections.namedtuple('_Thread', 'tid module')
 
-#this is not a namedtuple because we want parent to be mutable when decoding
+#namedtuples are immutable, but the following classes require mutable fields
+
 class _Module: # pylint: disable=too-few-public-methods
     """A :class:`module.Module <schedsi.module.Module>` emulation class."""
     def __init__(self, name):
         """Create a :class:`_Module`."""
         self.name = name
         self.parent = None
+
+class _CPUStatus: # pylint: disable=too-few-public-methods
+    """A :class:`cpu._Status <schedsi.cpu._Status>` emulation class."""
+    def __init__(self, current_time):
+        """Create a :class:`_CPUStatus`."""
+        self.current_time = current_time
+        self.contexts = None
+
+class _Thread: # pylint: disable=too-few-public-methods
+    """A :class:`threads.Thread <schedsi.threads.Thread>` emulation class."""
+    def __init__(self, tid, module):
+        """Create a :class:`_Thread`."""
+        self.tid = tid
+        self.module = module
+
+def _decode_contexts(entries):
+    """Extract :class:`_CPUContexts <_CPUContext>` from a :obj:`dict`-entry."""
+    return [_CPUContext(_decode_thread(entry['thread'])) for entry in entries]
 
 def _decode_generic_event(entry):
     """Convert a :obj:`dict-entry` to a :class:`_GenericEvent`.
@@ -148,16 +176,13 @@ def _decode_core(entry):
 
 def _decode_status(entry):
     """Extract :class:`_CPUStatus` from a :obj:`dict`-entry."""
-    return _CPUStatus(entry['current_time'], _decode_context(entry['context']))
-
-def _decode_context(entry):
-    """Extract :class:`_CPUContext` from a :obj:`dict`-entry."""
-    return _CPUContext(_decode_module(entry['module']), _decode_thread(entry['thread']))
+    return _CPUStatus(entry['current_time'])
 
 def _decode_thread(entry):
     """Extract a :class:`_Thread` from a :obj:`dict`-entry.
 
-    Returns :obj:`None` if `entry` is :obj:`None`."""
+    Returns :obj:`None` if `entry` is :obj:`None`.
+    """
     if not entry:
         return None
     return _Thread(entry['tid'], _decode_module(entry['module']))
@@ -165,35 +190,65 @@ def _decode_thread(entry):
 def _decode_module(entry):
     """Extract a :class:`_Module` from a :obj:`dict`-entry.
 
-    Returns :obj:`None` if `entry` is :obj:`None`."""
+    Returns :obj:`None` if `entry` is :obj:`None`.
+    """
     if not entry:
         return None
     return _Module(entry['name'])
 
 def _decode_ctxsw(cpu, entry):
-    """Extract context switch arguments from a :obj:`dict`-entry."""
-    module_to = _decode_module(entry['module_to'])
+    """Extract context switch arguments from a :obj:`dict`-entry.
+
+    Returns a tuple (tuple for arguments, direction),
+    where direction is a string specifying the kind of switch:
+        parent, child, kernel
+    """
+    thread_to = _decode_thread(entry['thread_to'])
     direction = entry['direction']
-    if direction == 'parent':
-        cpu.status.context.module.parent = module_to
-        module_to.parent = _Module(None)
-    elif direction == 'child':
-        module_to.parent = cpu.status.context.module
-    elif direction == 'unrelated':
-        module_to.parent = _Module(None)
-    else:
-        assert direction == 'kernel'
-    return (cpu, module_to, entry['time'], entry['required'])
+    module_from = cpu.status.contexts[-1].thread.module
+
+    if direction == 'child':
+        thread_to.module.parent = module_from
+    elif direction == 'parent':
+        thread_to = cpu.status.contexts[-2].thread
+    elif direction.startswith('own '):
+        if thread_to.module.name != module_from.name:
+            raise RuntimeError('Context switch to ' + direction + ' failed verification')
+        thread_to.module = module_from
+        #remove own prefix
+        direction = direction[4:]
+
+    return (cpu, thread_to, entry['time'], entry['required']), direction
 
 def replay(binary, log):
     """Play a MessagePack file to another log."""
+    contexts = {}
     for entry in msgpack.Unpacker(binary, encoding='utf-8'):
         event = _decode_generic_event(entry)
         if not event is None:
-            if event.event == _Event.schedule_thread.name:
-                log.schedule_thread(event.cpu)
+            if event.event == _Event.init_core.name:
+                if event.cpu.uid in contexts:
+                    raise RuntimeError('init_core found twice for same core')
+                contexts[event.cpu.uid] = _decode_contexts(entry['context'])
+
+            event.cpu.status.contexts = contexts[event.cpu.uid]
+
+            if event.event == _Event.init_core.name:
+                log.init_core(event.cpu)
+            elif event.event == _Event.schedule_thread.name:
+                log.schedule_thread(event.cpu, _decode_thread(entry['thread']))
             elif event.event == _Event.context_switch.name:
-                log.context_switch(*_decode_ctxsw(event.cpu, entry))
+                event_args, direction = _decode_ctxsw(event.cpu, entry)
+                log.context_switch(*event_args)
+                core_contexts = event.cpu.status.contexts
+                if direction == 'parent':
+                    core_contexts.pop()
+                elif direction == 'child':
+                    core_contexts.append(_CPUContext(event_args[1]))
+                elif direction == 'kernel':
+                    del core_contexts[1:]
+                else:
+                    raise RuntimeError('Invalid context switch direction ' + direction)
             elif event.event == _Event.thread_execute.name:
                 log.thread_execute(event.cpu, entry['runtime'])
             elif event.event == _Event.thread_yield.name:

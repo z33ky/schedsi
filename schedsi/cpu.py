@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
 """Defines a :class:`Core`."""
 
-import sys
+from schedsi import threads
 
 CTXSW_COST = 1
+
+class _Context: # pylint: disable=too-few-public-methods
+    """An operation context for a CPU Core.
+
+    The context has
+        * the current :class:`Thread`
+        * the execution coroutine of the :class:`Thread`
+    """
+
+    def __init__(self, thread):
+        """Create a :class:`_Context`"""
+        self.thread = thread
+        self.execution = thread.execute()
+        startup = next(self.execution)
+        assert startup is None
 
 class _ContextSwitchStats: # pylint: disable=too-few-public-methods
     """Context switching statistics."""
@@ -17,97 +32,6 @@ class _ContextSwitchStats: # pylint: disable=too-few-public-methods
         self.module_succ = 0
         self.module_fail = 0
 
-class _Context:
-    """An operation context for a CPU Core.
-
-    The context has
-        * a reference to the :class:`_Status` that owns it
-        * the current :class:`Thread`
-        * the current :class:`Module`
-        * the :class:`Module` that was active when the timer interrupt came
-        * the :class:`Module` that will be switched to
-        * context switch statistics
-    """
-
-    def __init__(self, cpu, kernel):
-        """Create a :class:`_Context`"""
-        self.cpu = cpu
-        self.thread = None
-        self.module = kernel
-        self.module_int = None
-        self.yield_to = None
-        self.ctxsw_stats = _ContextSwitchStats()
-
-    def switch_module(self, module):
-        """See :meth:`_Status.switch_module`."""
-        log = self.cpu.log
-        status = self.cpu.status
-        if module == self.module:
-            print("Context switch to already active module; Ignoring", file=sys.stderr)
-            return 0
-
-        if self.module_int:
-            if self.cpu.status.pending_interrupt:
-                raise RuntimeError('context switch while interrupt pending')
-            self.module = self.module_int
-            self.module_int = None
-            self.thread = None
-            if module == self.module:
-                return 0
-
-        interrupted, time = status.calc_time(CTXSW_COST)
-
-        if self.yield_to:
-            if self.yield_to != module:
-                raise RuntimeError('yield_to is not yielded to')
-            self.yield_to = None
-        log.context_switch(self.cpu, module, time, CTXSW_COST)
-        self.thread = None
-
-        status.update_time(interrupted, time)
-        self.ctxsw_stats.module_time += time
-        if not interrupted:
-            self.ctxsw_stats.module_succ += 1
-            self.module = module
-        else:
-            assert self.cpu.status.pending_interrupt is True
-            self.ctxsw_stats.module_fail += 1
-            self.module_int = None
-        return time
-
-    def interrupt(self):
-        """Prepare for context switch after timer interrupt."""
-        #interrupt should be pending afterwards, but not right now
-        assert not self.cpu.status.pending_interrupt
-        self.module_int = self.module
-        self.module = None
-        self.thread = None
-
-    def yield_module(self, module):
-        """See :meth:`_Status.yield_module`."""
-        if self.module_int:
-            raise RuntimeError('Module trying to yield during interrupt')
-        if self.yield_to:
-            raise RuntimeError('Two yields without context switch')
-        if module != self.module:
-            raise RuntimeError('Module != current context')
-        if module.parent:
-            self.yield_to = module.parent
-
-    def switch_thread(self, thread):
-        """See :meth:`_Status.switch_thread`."""
-        if thread == self.thread:
-            print("Thread switch to already active thread; Ignoring", file=sys.stderr)
-            return 0
-        #TODO: thread switch cost
-        if thread.module != self.module:
-            raise RuntimeError('Thread not in current context')
-        self.ctxsw_stats.thread_succ += 1
-        self.thread = thread
-        self.cpu.log.schedule_thread(self.cpu)
-
-        return 0
-
 class _TimeStats: # pylint: disable=too-few-public-methods
     """CPU Time statistics."""
     def __init__(self):
@@ -120,135 +44,165 @@ class _Status:
 
     The Status consists of:
         * a reference to the :class:`Core` that owns it
-        * an operation :class:`_Context`
+        * a stack of operation :class:`_Contexts <_Context>`
         * the current time slice (or what's left of it)
         * the current time
-        * a flag indicating a pending interrupt
-        * time statistics
-
-    An interrupt will be pending when the time slice is used up while
-    there are still threads wanting CPU time.
-    While an interrupt is pending, no other computation can happen.
-    Operation can be resumed after calling :meth:`finish_step`.
+        * :class:`_TimeStats`
+        * :class:`_ContextSwitchStats`
     """
 
     def __init__(self, cpu, context):
         """Create a :class:`_Status`."""
         self.cpu = cpu
-        self.context = context
+        self.contexts = [context]
         self.time_slice = cpu.timer_quantum
         self.current_time = 0
-        self.pending_interrupt = False
         self.stats = _TimeStats()
+        self.ctxsw_stats = _ContextSwitchStats()
 
-    def calc_time(self, time):
+    def _calc_runtime(self, time):
         """Calculate the execution time available.
 
-        If the time slice is shorter, then the operation would be interrupted.
-        This function evaluates this.
+        If the :attr:`time_slice` is shorter, then the operation
+        would be interrupted. This function evaluates this.
 
         -1 is considered "as long as possible".
 
-        Returns a tuple (flag indicating if full time can be used,
-                         how much current time slice allows execution).
-        """
-        assert not self.pending_interrupt
+        Also see :meth:`_update_time`.
 
+        Returns a tuple (flag indicating if full time was not used,
+                         how much current :attr:`time_slice` allows execution).
+        """
         if time > self.time_slice or time == -1:
             time = self.time_slice
-            return True, time
+            return False, time
 
-        return False, time
+        assert time > 0
+        return True, time
 
-    def update_time(self, interrupt, time):
+    def _update_time(self, time):
         """Update the time and check if interrupt happens.
 
-        The arguments should come from :meth:`calc_time`,
+        The arguments should come from :meth:`_calc_runtime`,
         they indicate whether an interrupt should be triggered and
         how much time should pass.
 
         The functions are separated for logging reasons.
         """
-        assert not self.pending_interrupt
-        if interrupt:
-            self.context.interrupt()
-            self.pending_interrupt = True
+        assert time <= self.time_slice and time > 0
+
         self.current_time += time
         self.time_slice -= time
 
-    def switch_module(self, module):
-        """Switch context to another :class:`Module`.
+    def _run_all(self, time, end=None):
+        """Call :meth:`Thread.run` on each :class:`Thread` in the
+        :class:`_Context` stack.
 
-        Returns the time taken for the switch.
+        Optionally takes a third parameter indicating the last index
+        into the stack.
         """
-        if self.pending_interrupt:
-            return 0
-        return self.context.switch_module(module)
+        for ctx in self.contexts[0:end]:
+            ctx.thread.run(self.current_time, time)
 
-    def yield_module(self, module):
-        """Prepare for context switch to the parent :class:`Module`."""
-        if not self.pending_interrupt:
-            self.context.yield_module(module)
+    def _timer_interrupt(self):
+        """Call when the :attr:`time_slice` runs out.
 
-    def switch_thread(self, thread):
-        """Switch context to another :class:`Thread`.
-
-        Returns the time taken for the switch.
+        Sets up a new :attr:`time_slice` and jumps back to the kernel.
         """
-        if self.pending_interrupt:
-            return 0
-        return self.context.switch_thread(thread)
-
-    def crunch(self, thread, time):
-        """Simulate being busy for time.
-
-        Being busy will be interrupted if the time slice runs out.
-
-        Returns the time taken executed.
-        """
-        if self.pending_interrupt:
-            return 0
-        if self.context.thread != thread:
-            raise RuntimeError('forgot to switch_thread')
-
-        interrupted, time = self.calc_time(time)
-
-        self.cpu.log.thread_execute(self.cpu, time)
-
-        self.update_time(interrupted, time)
-        self.stats.crunch_time += time
-
-        if not interrupted:
-            self.cpu.log.thread_yield(self.cpu)
-            if self.time_slice == 0:
-                self.pending_interrupt = True
-        self.context.thread = None
-
-        return time
-
-    #TODO: crunch_module for schedulers
-
-    def finish_step(self, kernel):
-        """Finish the time slice.
-
-        Will idle if necessary.
-        """
-        if not self.pending_interrupt:
-            self.cpu.log.cpu_idle(self.cpu, self.time_slice)
-        self.pending_interrupt = False
-        self.stats.idle_time += self.time_slice
-        self.update_time(False, self.time_slice)
-
-        module = self.context.module
-        if not module:
-            self.context.module = self.context.module_int
+        assert self.time_slice == 0
         self.cpu.log.timer_interrupt(self.cpu)
-        self.context.module = module
-
         self.time_slice = self.cpu.timer_quantum
+        succeed, time = self._context_switch(self.contexts[0].thread)
+        self.contexts[0].thread.run(self.current_time, time)
+        if succeed:
+            for ctx in self.contexts[1:]:
+                ctx.thread.finish(self.current_time)
+            del self.contexts[1:]
 
-        if self.context.module != kernel:
-            self.switch_module(kernel)
+    def _context_switch(self, thread):
+        """Perform a context switch."""
+        if thread.module == self.contexts[-1].thread.module:
+            self.cpu.log.context_switch(self.cpu, thread, 0, 0)
+            self.ctxsw_stats.thread_succ += 1
+            return True, 0
+
+        proceed, time = self._calc_runtime(CTXSW_COST)
+        assert proceed and time == CTXSW_COST or not proceed and time < CTXSW_COST
+
+        self.cpu.log.context_switch(self.cpu, thread, time, CTXSW_COST)
+        self._update_time(time)
+        self.ctxsw_stats.module_time += time
+        if proceed:
+            self.ctxsw_stats.module_succ += 1
+        else:
+            self.ctxsw_stats.module_fail += 1
+
+        return proceed, time
+
+    def _switch_to_parent(self):
+        """Return execution to the parent :class:`Thread`."""
+        if len(self.contexts) == 1:
+            #kernel yields
+            self.cpu.log.cpu_idle(self.cpu, self.time_slice)
+            self._update_time(self.time_slice)
+            self.stats.idle_time += self.time_slice
+        else:
+            proceed, time = self._context_switch(self.contexts[-2].thread)
+            self._run_all(time, -2)
+            if proceed:
+                self.contexts[-1].thread.finish(self.current_time)
+                self.contexts.pop()
+
+    def _switch_thread(self, thread):
+        """Continue execution of another :class:`Thread`.
+
+        The thread must be of either the same :class:`Module` or a child :class:`Module`.
+        """
+        current_thread = self.contexts[-1].thread
+        if not current_thread.module in [thread.module, thread.module.parent]:
+            raise RuntimeError('Switching thread to unrelated module')
+        proceed, time = self._context_switch(thread)
+        current_thread.run(self.current_time, time)
+        if proceed:
+            self.contexts.append(_Context(thread))
+
+    def execute(self):
+        """Execute one step.
+
+        One step is anything that takes time or switching context.
+        """
+        #For multi-core emulation this should become a coroutine.
+        #It should yield whenever current_time is updated.
+
+        if self.time_slice == 0:
+            self._timer_interrupt()
+            return
+
+        while True:
+            next_step = self.contexts[-1].execution.send(self.current_time)
+            if isinstance(next_step, (int, float)):
+                if next_step == 0:
+                    #0 -> yield (to parent)
+                    self.cpu.log.thread_yield(self.cpu)
+                    self._switch_to_parent()
+                    break
+                #number -> pass time
+                _, time = self._calc_runtime(next_step)
+                assert time > 0, time <= next_step
+                self.cpu.log.thread_execute(self.cpu, time)
+                self._update_time(time)
+                self.stats.crunch_time += time
+                self._run_all(time)
+            elif isinstance(next_step, threads.Thread):
+                #thread -> switch to it
+                self.cpu.log.schedule_thread(self.cpu, next_step)
+                self._switch_thread(next_step)
+            elif next_step is None:
+                #no-op
+                continue
+            else:
+                assert False
+            break
 
 class Core:
     """A CPU Core.
@@ -256,38 +210,26 @@ class Core:
     The Core has:
         * a unique ID
         * the timer quantum
-        * the :class:`_Status`
         * a log to report its actions to
+        * the :class:`_Status`
 
-    Apart from the statistics the values are not expected to change much
-    during operation.
+    The values are not expected to change much during operation.
     """
 
-    def __init__(self, uid, timer_quantum, kernel, log):
+    def __init__(self, uid, timer_quantum, init_thread, log):
         """Create a :class:`Core`."""
         self.uid = uid
         self.timer_quantum = timer_quantum
 
         self.log = log
 
-        self.status = _Status(self, _Context(self, kernel))
+        self.status = _Status(self, _Context(init_thread))
 
-    def switch_module(self, module):
-        """See :meth:`_Status.switch_module`."""
-        return self.status.switch_module(module)
+        log.init_core(self)
 
-    def yield_module(self, module):
-        """See :meth:`_Status.yield_module`."""
-        self.status.yield_module(module)
+    def execute(self):
+        """Execute one step.
 
-    def switch_thread(self, thread):
-        """See :meth:`_Status.switch_thread`."""
-        return self.status.switch_thread(thread)
-
-    def crunch(self, thread, time):
-        """See :meth:`_Status.crunch`."""
-        return self.status.crunch(thread, time)
-
-    def finish_step(self, kernel):
-        """See :meth:`_Status.finish_step`."""
-        self.status.finish_step(kernel)
+        See :meth:`_Context.execute`.
+        """
+        self.status.execute()

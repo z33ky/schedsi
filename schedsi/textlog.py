@@ -39,8 +39,8 @@ class TextLog:
 
     def _ctt(self, cpu):
         """Stringifies CPU, time and the current thread."""
-        module = cpu.status.context.module
-        thread = cpu.status.context.thread
+        module = cpu.status.contexts[-1].thread.module
+        thread = cpu.status.contexts[-1].thread
         align = self.align.thread + self.align.module - len(module.name)
         return self._ct(cpu) + "thread {}-{:<{thread_align}} ".format(module.name, thread.tid,
                                                                       thread_align=align)
@@ -48,19 +48,26 @@ class TextLog:
     def _ctm(self, cpu):
         """Stringifies CPU, time and the current module."""
         #we add alignment to align with _ctt output
-        module = cpu.status.context.module
-        module = module.name if module is not None else "!"
+        module = cpu.status.contexts[-1].thread.module.name
         align = self.align.module + self.align.thread + 1
         return self._ct(cpu) + "module {:<{module_align}} ".format(module, module_align=align)
 
-    def schedule_thread(self, cpu):
+    def init_core(self, cpu):
+        """Register a :class:`Core`."""
+        pass
+
+    def schedule_thread(self, cpu, thread):
         """Log an successful scheduling event."""
-        thread = cpu.status.context.thread
+        #ignore scheduler threads
+        if thread.tid == 0:
+            return
         self.stream.write(self._ctm(cpu) + "selects {}.\n".format(thread.tid))
 
-    def context_switch(self, cpu, module_to, time, required):
+    def context_switch(self, cpu, thread_to, time, required):
         """Log an context switch event."""
-        self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(module_to, time, required)))
+        if thread_to.module != cpu.status.contexts[-1].thread.module:
+            self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(thread_to.module, time,
+                                                                     required)))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""

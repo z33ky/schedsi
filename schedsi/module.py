@@ -11,7 +11,7 @@ class Module:
         * a unique name
         * a parent (or None if kernel)
         * a scheduler thread
-        * an array of VCPUs
+        * an array of (VCPU, scheduler thread)
     """
 
     def __init__(self, name, parent, scheduler):
