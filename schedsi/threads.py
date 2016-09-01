@@ -83,7 +83,7 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
 
     def __init__(self, tid, scheduler):
         """Create a :class:`SchedulerThread`."""
-        super().__init__(scheduler.module, tid, scheduler.next_ready_time(), -1)
+        super().__init__(scheduler.module, tid, 0, -1)
         self._scheduler = scheduler
 
     def execute(self, cpu):
@@ -101,12 +101,6 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
         self._scheduler.add_threads(new_threads)
-
-    def __getattribute__(self, key):
-        """ready_time should be taken from the :class:`Scheduler`."""
-        if key == 'ready_time':
-            return self._scheduler.next_ready_time()
-        return object.__getattribute__(self, key)
 
 class VCPUThread(Thread): # pylint: disable=too-few-public-methods
     """A thread representing a VCPU from the perspective of a parent.

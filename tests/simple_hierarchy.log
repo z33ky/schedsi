@@ -209,149 +209,192 @@ cpu 0 @ 250: timer interrupt.
 cpu 0 @ 250: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 251: module 0         selects 3.
 cpu 0 @ 251: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 252: module 0.0       selects 3.
-cpu 0 @ 252: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 253: module 0.0.1     selects 2.
-cpu 0 @ 253: thread 0.0.1-2   runs for 7 units.
+cpu 0 @ 252: module 0.0       selects 2.
+cpu 0 @ 252: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 253: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 254: module 0.0       selects 3.
+cpu 0 @ 254: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 255: module 0.0.1     selects 2.
+cpu 0 @ 255: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 260: timer interrupt.
 cpu 0 @ 260: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 261: module 0         selects 3.
 cpu 0 @ 261: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 262: module 0.0       selects 3.
-cpu 0 @ 262: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 263: module 0.0.1     selects 2.
-cpu 0 @ 263: thread 0.0.1-2   runs for 7 units.
+cpu 0 @ 262: module 0.0       selects 2.
+cpu 0 @ 262: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 263: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 264: module 0.0       selects 3.
+cpu 0 @ 264: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 265: module 0.0.1     selects 2.
+cpu 0 @ 265: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 270: timer interrupt.
 cpu 0 @ 270: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 271: module 0         selects 3.
 cpu 0 @ 271: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 272: module 0.0       selects 3.
-cpu 0 @ 272: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 273: module 0.0.1     selects 2.
-cpu 0 @ 273: thread 0.0.1-2   runs for 7 units.
+cpu 0 @ 272: module 0.0       selects 2.
+cpu 0 @ 272: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 273: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 274: module 0.0       selects 3.
+cpu 0 @ 274: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 275: module 0.0.1     selects 2.
+cpu 0 @ 275: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 280: timer interrupt.
 cpu 0 @ 280: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 281: module 0         selects 3.
 cpu 0 @ 281: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 282: module 0.0       selects 3.
-cpu 0 @ 282: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 283: module 0.0.1     selects 2.
-cpu 0 @ 283: thread 0.0.1-2   runs for 7 units.
+cpu 0 @ 282: module 0.0       selects 2.
+cpu 0 @ 282: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 283: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 284: module 0.0       selects 3.
+cpu 0 @ 284: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 285: module 0.0.1     selects 2.
+cpu 0 @ 285: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 290: timer interrupt.
 cpu 0 @ 290: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 291: module 0         selects 3.
 cpu 0 @ 291: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 292: module 0.0       selects 3.
-cpu 0 @ 292: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 293: module 0.0.1     selects 2.
-cpu 0 @ 293: thread 0.0.1-2   runs for 7 units.
+cpu 0 @ 292: module 0.0       selects 2.
+cpu 0 @ 292: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 293: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 294: module 0.0       selects 3.
+cpu 0 @ 294: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 295: module 0.0.1     selects 2.
+cpu 0 @ 295: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 300: timer interrupt.
 cpu 0 @ 300: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 301: module 0         selects 3.
 cpu 0 @ 301: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 302: module 0.0       selects 3.
-cpu 0 @ 302: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 303: module 0.0.1     selects 2.
-cpu 0 @ 303: thread 0.0.1-2   runs for 7 units.
+cpu 0 @ 302: module 0.0       selects 2.
+cpu 0 @ 302: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 303: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 304: module 0.0       selects 3.
+cpu 0 @ 304: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 305: module 0.0.1     selects 2.
+cpu 0 @ 305: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 310: timer interrupt.
 cpu 0 @ 310: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 311: module 0         selects 3.
 cpu 0 @ 311: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 312: module 0.0       selects 3.
-cpu 0 @ 312: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 313: module 0.0.1     selects 2.
-cpu 0 @ 313: thread 0.0.1-2   runs for 6 units.
-cpu 0 @ 319: thread 0.0.1-2   yields.
-cpu 0 @ 319: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 320: module 0.0       selects 3.
-cpu 0 @ 320: module 0.0       spends 0/1 unit trying to switch to 0.0.1.
+cpu 0 @ 312: module 0.0       selects 2.
+cpu 0 @ 312: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 313: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 314: module 0.0       selects 3.
+cpu 0 @ 314: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 315: module 0.0.1     selects 2.
+cpu 0 @ 315: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 320: timer interrupt.
-cpu 0 @ 320: module !         spends 1 unit to switch to 0.
+cpu 0 @ 320: module 0.0.1     spends 1 unit to switch to 0.
 cpu 0 @ 321: module 0         selects 3.
 cpu 0 @ 321: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 322: module 0.0       selects 3.
-cpu 0 @ 322: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 323: module 0.0.1     selects 2.
-cpu 0 @ 323: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 325: thread 0.0.1-2   yields.
-cpu 0 @ 325: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 326: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 327: idle for 3 units.
+cpu 0 @ 322: module 0.0       selects 2.
+cpu 0 @ 322: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 323: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 324: module 0.0       selects 3.
+cpu 0 @ 324: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 325: module 0.0.1     selects 2.
+cpu 0 @ 325: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 330: timer interrupt.
-cpu 0 @ 330: module 0         selects 3.
-cpu 0 @ 330: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 331: module 0.0       selects 3.
-cpu 0 @ 331: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 332: module 0.0.1     selects 2.
-cpu 0 @ 332: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 334: thread 0.0.1-2   yields.
-cpu 0 @ 334: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 335: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 336: idle for 4 units.
+cpu 0 @ 330: module 0.0.1     spends 1 unit to switch to 0.
+cpu 0 @ 331: module 0         selects 3.
+cpu 0 @ 331: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 332: module 0.0       selects 2.
+cpu 0 @ 332: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 333: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 334: module 0.0       selects 3.
+cpu 0 @ 334: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 335: module 0.0.1     selects 2.
+cpu 0 @ 335: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 340: timer interrupt.
-cpu 0 @ 340: module 0         selects 3.
-cpu 0 @ 340: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 341: module 0.0       selects 3.
-cpu 0 @ 341: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 342: module 0.0.1     selects 2.
-cpu 0 @ 342: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 344: thread 0.0.1-2   yields.
-cpu 0 @ 344: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 345: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 346: idle for 4 units.
+cpu 0 @ 340: module 0.0.1     spends 1 unit to switch to 0.
+cpu 0 @ 341: module 0         selects 3.
+cpu 0 @ 341: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 342: module 0.0       selects 2.
+cpu 0 @ 342: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 343: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 344: module 0.0       selects 3.
+cpu 0 @ 344: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 345: module 0.0.1     selects 2.
+cpu 0 @ 345: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 350: timer interrupt.
-cpu 0 @ 350: module 0         selects 3.
-cpu 0 @ 350: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 351: module 0.0       selects 3.
-cpu 0 @ 351: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 352: module 0.0.1     selects 2.
-cpu 0 @ 352: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 354: thread 0.0.1-2   yields.
-cpu 0 @ 354: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 355: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 356: idle for 4 units.
+cpu 0 @ 350: module 0.0.1     spends 1 unit to switch to 0.
+cpu 0 @ 351: module 0         selects 3.
+cpu 0 @ 351: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 352: module 0.0       selects 2.
+cpu 0 @ 352: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 353: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 354: module 0.0       selects 3.
+cpu 0 @ 354: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 355: module 0.0.1     selects 2.
+cpu 0 @ 355: thread 0.0.1-2   runs for 5 units.
 cpu 0 @ 360: timer interrupt.
-cpu 0 @ 360: module 0         selects 3.
-cpu 0 @ 360: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 361: module 0.0       selects 3.
-cpu 0 @ 361: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 362: module 0.0.1     selects 2.
-cpu 0 @ 362: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 364: thread 0.0.1-2   yields.
-cpu 0 @ 364: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 365: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 366: idle for 4 units.
+cpu 0 @ 360: module 0.0.1     spends 1 unit to switch to 0.
+cpu 0 @ 361: module 0         selects 3.
+cpu 0 @ 361: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 362: module 0.0       selects 2.
+cpu 0 @ 362: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 363: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 364: module 0.0       selects 3.
+cpu 0 @ 364: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 365: module 0.0.1     selects 2.
+cpu 0 @ 365: thread 0.0.1-2   runs for 3 units.
+cpu 0 @ 368: thread 0.0.1-2   yields.
+cpu 0 @ 368: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 369: module 0.0       selects 2.
+cpu 0 @ 369: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 370: module 0.0.0     spends 0/1 unit trying to switch to 0.0.
 cpu 0 @ 370: timer interrupt.
-cpu 0 @ 370: module 0         selects 3.
-cpu 0 @ 370: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 371: module 0.0       selects 3.
-cpu 0 @ 371: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 372: module 0.0.1     selects 2.
-cpu 0 @ 372: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 374: thread 0.0.1-2   yields.
-cpu 0 @ 374: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 375: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 376: idle for 4 units.
+cpu 0 @ 370: module !         spends 1 unit to switch to 0.
+cpu 0 @ 371: module 0         selects 3.
+cpu 0 @ 371: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 372: module 0.0       selects 3.
+cpu 0 @ 372: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 373: module 0.0.1     selects 2.
+cpu 0 @ 373: thread 0.0.1-2   runs for 2 units.
+cpu 0 @ 375: thread 0.0.1-2   yields.
+cpu 0 @ 375: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 376: module 0.0       selects 2.
+cpu 0 @ 376: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 377: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 378: module 0.0       selects 3.
+cpu 0 @ 378: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 379: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 380: module 0.0       selects 2.
+cpu 0 @ 380: module 0.0       spends 0/1 unit trying to switch to 0.0.0.
 cpu 0 @ 380: timer interrupt.
-cpu 0 @ 380: module 0         selects 3.
-cpu 0 @ 380: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 381: module 0.0       selects 3.
-cpu 0 @ 381: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 382: module 0.0.1     selects 2.
-cpu 0 @ 382: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 384: thread 0.0.1-2   yields.
-cpu 0 @ 384: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 385: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 386: idle for 4 units.
+cpu 0 @ 380: module !         spends 1 unit to switch to 0.
+cpu 0 @ 381: module 0         selects 3.
+cpu 0 @ 381: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 382: module 0.0       selects 3.
+cpu 0 @ 382: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 383: module 0.0.1     selects 2.
+cpu 0 @ 383: thread 0.0.1-2   runs for 2 units.
+cpu 0 @ 385: thread 0.0.1-2   yields.
+cpu 0 @ 385: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 386: module 0.0       selects 2.
+cpu 0 @ 386: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 387: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 388: module 0.0       selects 3.
+cpu 0 @ 388: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 389: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 390: module 0.0       selects 2.
+cpu 0 @ 390: module 0.0       spends 0/1 unit trying to switch to 0.0.0.
 cpu 0 @ 390: timer interrupt.
-cpu 0 @ 390: module 0         selects 3.
-cpu 0 @ 390: module 0         spends 1 unit to switch to 0.0.
-cpu 0 @ 391: module 0.0       selects 3.
-cpu 0 @ 391: module 0.0       spends 1 unit to switch to 0.0.1.
-cpu 0 @ 392: module 0.0.1     selects 2.
-cpu 0 @ 392: thread 0.0.1-2   runs for 2 units.
-cpu 0 @ 394: thread 0.0.1-2   yields.
-cpu 0 @ 394: module 0.0.1     spends 1 unit to switch to 0.0.
-cpu 0 @ 395: module 0.0       spends 1 unit to switch to 0.
-cpu 0 @ 396: idle for 4 units.
+cpu 0 @ 390: module !         spends 1 unit to switch to 0.
+cpu 0 @ 391: module 0         selects 3.
+cpu 0 @ 391: module 0         spends 1 unit to switch to 0.0.
+cpu 0 @ 392: module 0.0       selects 3.
+cpu 0 @ 392: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 393: module 0.0.1     selects 2.
+cpu 0 @ 393: thread 0.0.1-2   runs for 2 units.
+cpu 0 @ 395: thread 0.0.1-2   yields.
+cpu 0 @ 395: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 396: module 0.0       selects 2.
+cpu 0 @ 396: module 0.0       spends 1 unit to switch to 0.0.0.
+cpu 0 @ 397: module 0.0.0     spends 1 unit to switch to 0.0.
+cpu 0 @ 398: module 0.0       selects 3.
+cpu 0 @ 398: module 0.0       spends 1 unit to switch to 0.0.1.
+cpu 0 @ 399: module 0.0.1     spends 1 unit to switch to 0.0.
+cpu 0 @ 400: module 0.0       selects 2.
+cpu 0 @ 400: module 0.0       spends 0/1 unit trying to switch to 0.0.0.
 cpu 0 @ 400: timer interrupt.
+cpu 0 @ 400: module !         spends 1 unit to switch to 0.

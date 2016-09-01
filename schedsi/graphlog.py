@@ -48,7 +48,7 @@ class _ThreadName: #pylint: disable=too-few-public-methods
 
     def get(self):
         """Generate a thread-name."""
-        return self.module.name + "-" + str(self.thread.tid)
+        return self.module.name + ("-" + str(self.thread.tid) if self.thread else "")
 
 class GraphLog:
     """Graphical logger.

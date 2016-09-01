@@ -179,7 +179,8 @@ class _Status:
 
     def yield_module(self, module):
         """Prepare for context switch to the parent :class:`Module`."""
-        self.context.yield_module(module)
+        if not self.pending_interrupt:
+            self.context.yield_module(module)
 
     def switch_thread(self, thread):
         """Switch context to another :class:`Thread`.
