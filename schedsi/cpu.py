@@ -45,35 +45,37 @@ class _Context:
         if module == self.module:
             print("Context switch to already active module; Ignoring", file=sys.stderr)
             return 0
+
+        if self.module_int:
+            assert self.cpu.status.pending_interrupt is False
+            self.module = self.module_int
+            self.module_int = None
+            if module == self.module:
+                return 0
+
+        interrupted, time = status.calc_time(CTXSW_COST)
+
+        if self.yield_to:
+            if self.yield_to != module:
+                raise RuntimeError('yield_to is not yielded to')
+            self.yield_to = None
+        log.context_switch(self.cpu, module, time, CTXSW_COST)
+
+        status.update_time(interrupted, time)
+        self.ctxsw_stats.module_time += time
+        if not interrupted:
+            self.ctxsw_stats.module_succ += 1
+            self.module = module
         else:
-            if self.module_int:
-                assert self.cpu.status.pending_interrupt is False
-                self.module = self.module_int
-                self.module_int = None
-                if module == self.module:
-                    return 0
-
-            interrupted, time = status.calc_time(CTXSW_COST)
-
-            if self.yield_to:
-                if self.yield_to != module:
-                    raise RuntimeError('yield_to is not yielded to')
-                self.yield_to = None
-            log.context_switch(self.cpu, module, time, CTXSW_COST)
-
-            status.update_time(interrupted, time)
-            self.ctxsw_stats.module_time += time
-            if not interrupted:
-                self.ctxsw_stats.module_succ += 1
-                self.module = module
-            else:
-                self.ctxsw_stats.module_fail += 1
-                self.interrupt()
-                self.module_int = None
-            return time
+            assert self.cpu.status.pending_interrupt is True
+            self.ctxsw_stats.module_fail += 1
+            self.module_int = None
+        return time
 
     def interrupt(self):
         """Prepare for context switch after timer interrupt."""
+        #interrupt should be pending afterwards, but not right now
+        assert not self.cpu.status.pending_interrupt
         self.module_int = self.module
         self.module = None
         self.thread = None
@@ -166,6 +168,7 @@ class _Status:
         """
         assert not self.pending_interrupt
         if interrupt:
+            self.context.interrupt()
             self.pending_interrupt = True
         self.current_time += time
         self.time_slice -= time
@@ -212,9 +215,7 @@ class _Status:
         self.update_time(interrupted, time)
         self.stats.crunch_time += time
 
-        if interrupted:
-            self.context.interrupt()
-        else:
+        if not interrupted:
             self.cpu.log.thread_yield(self.cpu)
             if self.time_slice == 0:
                 self.pending_interrupt = True
