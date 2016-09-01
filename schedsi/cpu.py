@@ -47,7 +47,8 @@ class _Context:
             return 0
 
         if self.module_int:
-            assert self.cpu.status.pending_interrupt is False
+            if self.cpu.status.pending_interrupt:
+                raise RuntimeError('context switch while interrupt pending')
             self.module = self.module_int
             self.module_int = None
             self.thread = None
