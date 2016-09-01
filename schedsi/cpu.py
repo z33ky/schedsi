@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Defines a :class:`Core`."""
 
+import sys
+
 CTXSW_COST = 1
 
 class _ContextSwitchStats: # pylint: disable=too-few-public-methods
@@ -41,7 +43,7 @@ class _Context:
         log = self.cpu.log
         status = self.cpu.status
         if module == self.module:
-            print("Context switch to already active module; Ignoring")
+            print("Context switch to already active module; Ignoring", file=sys.stderr)
             return 0
         else:
             if self.module_int:
@@ -90,7 +92,7 @@ class _Context:
     def switch_thread(self, thread):
         """See :meth:`_Status.switch_thread`."""
         if thread == self.thread:
-            print("Thread switch to already active thread; Ignoring")
+            print("Thread switch to already active thread; Ignoring", file=sys.stderr)
             return 0
         #TODO: thread switch cost
         if thread.module != self.module:

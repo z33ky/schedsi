@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Thread classes."""
 
+import sys
+
 class Thread: # pylint: disable=too-few-public-methods
     """The basic thread class.
 
@@ -112,12 +114,13 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
         """Create a :class:`VCPUThread`."""
         if child.parent != module:
             print(module.name, "is adding a VCPUThread for", child,
-                  "although it is not a direct descendant.")
+                  "although it is not a direct descendant.", file=sys.stderr)
         child_thread = child.register_vcpu(self)
         super().__init__(module, tid, child_thread.ready_time, child_thread.remaining)
         self._thread = child_thread
         if not isinstance(self._thread, SchedulerThread):
-            print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".")
+            print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".",
+                  file=sys.stderr)
 
     def execute(self, cpu):
         """Simulate execution.

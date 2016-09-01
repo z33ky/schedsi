@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Defines :class:`Module`."""
 
+import sys
 from schedsi import threads
 
 class Module:
@@ -36,7 +37,7 @@ class Module:
         Returns the scheduler thread.
         """
         if not isinstance(vcpu, threads.VCPUThread):
-            print(self.name, "expected a VCPU, got", type(vcpu).__name__, ".")
+            print(self.name, "expected a VCPU, got", type(vcpu).__name__, ".", file=sys.stderr)
         self._vcpus.append(vcpu)
         return self._scheduler_thread
 
