@@ -236,8 +236,8 @@ class _Status:
         if not self.pending_interrupt:
             self.cpu.log.cpu_idle(self.cpu, self.time_slice)
         self.pending_interrupt = False
-        self.update_time(False, self.time_slice)
         self.stats.idle_time += self.time_slice
+        self.update_time(False, self.time_slice)
 
         module = self.context.module
         if not module:
