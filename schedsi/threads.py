@@ -31,9 +31,8 @@ class Thread: # pylint: disable=too-few-public-methods
 
         The time spent executing is returned.
         """
-
         assert self.ready_time != -1 and self.ready_time <= cpu.status.current_time
-        assert self.remaining == -1 or self.remaining > 0
+        assert self.remaining != 0
 
         if not run_time is None:
             #only a sub-class is allowed to pass run_time
@@ -63,9 +62,9 @@ class Thread: # pylint: disable=too-few-public-methods
 
         return run_time
 
-    def _update_timing_stats(self, wait_time, run_time, current_time):
+    def _update_timing_stats(self, start_time, run_time, current_time):
         """Update total_wait_time, total_run_time, last_deschedule."""
-        self.total_wait_time += wait_time
+        self.total_wait_time += start_time - max(self.last_deschedule, self.ready_time)
         self.total_run_time += run_time
         self.last_deschedule = current_time
 
@@ -88,7 +87,8 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
         See :meth:`Thread.execute`.
         """
         run_time = self._scheduler.schedule(cpu) # pylint: disable=not-callable
-        self.total_run_time += run_time
+        current_time = cpu.status.current_time
+        self._update_timing_stats(current_time - run_time, run_time, current_time)
         return run_time
 
     def add_threads(self, new_threads):
