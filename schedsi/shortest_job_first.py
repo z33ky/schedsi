@@ -34,6 +34,9 @@ class SJF(scheduler.Scheduler):
         idx = 0
         count = 0
         for thread in new_threads:
+            if thread.remaining == 0:
+                self._finished_threads.append(thread)
+                continue
             idx = bisect.bisect(remaining_list, thread.remaining, idx)
             self._threads.insert(idx + count, thread)
             count += 1
