@@ -50,6 +50,7 @@ class _Context:
             assert self.cpu.status.pending_interrupt is False
             self.module = self.module_int
             self.module_int = None
+            self.thread = None
             if module == self.module:
                 return 0
 
@@ -60,6 +61,7 @@ class _Context:
                 raise RuntimeError('yield_to is not yielded to')
             self.yield_to = None
         log.context_switch(self.cpu, module, time, CTXSW_COST)
+        self.thread = None
 
         status.update_time(interrupted, time)
         self.ctxsw_stats.module_time += time
