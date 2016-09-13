@@ -187,7 +187,7 @@ class GraphLog:
         Otherwise `idx` is used for indexing and the stack is not modified.
         `canvas` is passed along to the drawing functions.
         """
-        if idx:
+        if not idx is None:
             task = self.background_tasks[idx]
         else:
             task = self.background_tasks.pop()

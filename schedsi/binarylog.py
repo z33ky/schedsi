@@ -54,7 +54,7 @@ def _encode_event(cpu, event, args=None):
     `args` can contain additional parameters to put in the :obj:`dict`.
     """
     encoded = _encode(_GenericEvent(cpu, event))
-    if args:
+    if not args is None:
         encoded.update(args)
     return encoded
 
@@ -189,7 +189,7 @@ def replay(binary, log):
     """Play a MessagePack file to another log."""
     for entry in msgpack.Unpacker(binary, encoding='utf-8'):
         event = _decode_generic_event(entry)
-        if event:
+        if not event is None:
             if event.event == _Event.schedule_thread.name:
                 log.schedule_thread(event.cpu)
             elif event.event == _Event.context_switch.name:
