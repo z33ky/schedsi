@@ -4,6 +4,15 @@
 import sys
 import threading
 
+class _ThreadStats: # pylint: disable=too-few-public-methods
+    """Thread statistics."""
+
+    def __init__(self):
+        """Create a :class:`_ThreadStats`."""
+        self.finished_time = -1
+        self.total_run_time = 0
+        self.total_wait_time = 0
+
 class Thread:
     """The basic thread class.
 
@@ -12,10 +21,8 @@ class Thread:
         * a locally unique thread id
         * ready time (-1 if finished)
         * remaining workload (-1 if infinite)
-        * finished time (-1 if never)
-        * total runtime
-        * total waittime
         * a lock indicating whether this thread is currently active
+        * :class:`_ThreadStats`
     """
 
     def __init__(self, module, tid, ready_time, units):
@@ -24,10 +31,8 @@ class Thread:
         self.tid = tid
         self.ready_time = ready_time
         self.remaining = units
-        self.finished_time = -1
-        self.total_run_time = 0
-        self.total_wait_time = 0
         self.is_running = threading.Lock()
+        self.stats = _ThreadStats()
 
     def execute(self):
         """Simulate execution.
@@ -56,9 +61,9 @@ class Thread:
         Returns the next current time or None if :attr:`remaining` is 0.
         """
         assert self.ready_time != -1 and self.ready_time <= current_time
-        assert self.remaining != 0 and self.finished_time == -1
+        assert self.remaining != 0
         assert not self.is_running.acquire(False)
-        self.total_wait_time += current_time - self.ready_time
+        self.stats.total_wait_time += current_time - self.ready_time
 
         if run_time == -1:
             run_time = self.remaining
@@ -79,7 +84,7 @@ class Thread:
         This should be called while the thread is active.
         """
         assert not self.is_running.acquire(False)
-        self.total_run_time += run_time
+        self.stats.total_run_time += run_time
 
         if self.remaining != -1:
             assert self.remaining >= run_time
@@ -102,7 +107,7 @@ class Thread:
             #the job was completed within the slice
             #never start again
             self.ready_time = -1
-            self.finished_time = current_time
+            self.stats.finished_time = current_time
         elif self.remaining != -1:
             #not enough time to complete the job
             self.ready_time = current_time
@@ -200,7 +205,7 @@ class PeriodicWorkThread(Thread):
         activations = int((current_time - self.original_ready_time) / self.period) + 1
         quota = activations * self.burst
         if self.remaining != -1:
-            quota = min(self.remaining + self.total_run_time, quota)
+            quota = min(self.remaining + self.stats.total_run_time, quota)
         return quota
 
     #will run as long as the summed up bursts require
@@ -217,15 +222,15 @@ class PeriodicWorkThread(Thread):
             quota = self._get_quota(current_time)
             if quota < 0:
                 raise RuntimeError('Scheduled too eagerly')
-            quota_left = quota - self.total_run_time
+            quota_left = quota - self.stats.total_run_time
             if quota_left < 0:
                 raise RuntimeError('Executed too much')
-            quota_plus = self._get_quota(current_time + quota_left) - self.total_run_time
+            quota_plus = self._get_quota(current_time + quota_left) - self.stats.total_run_time
             self.burst_started = current_time - self.original_ready_time
             #TODO: be smarter
             while quota_plus > quota_left:
                 quota_left = quota_plus
-                quota_after = self._get_quota(current_time + quota_left) - self.total_run_time
+                quota_plus = self._get_quota(current_time + quota_left) - self.stats.total_run_time
                 self.burst_started += self.period
             self.current_burst_left = quota_left
 
