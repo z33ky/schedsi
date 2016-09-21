@@ -4,7 +4,7 @@ import setuptools
 
 setuptools.setup(
     name="schedsi",
-    version="0.2.0",
+    version="0.3.0dev",
     description="Primitive scheduling simulator",
     author="Alexander 'z33ky' Hirsch",
     author_email="1zeeky@gmail.com",
