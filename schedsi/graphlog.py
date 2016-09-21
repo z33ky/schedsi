@@ -275,10 +275,6 @@ class GraphLog:
         """Register a :class:`Core`."""
         pass
 
-    def schedule_thread(self, _cpu, _thread):
-        """Log an successful scheduling event."""
-        pass
-
     def context_switch(self, cpu, thread_to, time, required):
         """Log an context switch event."""
         assert required >= time

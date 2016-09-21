@@ -56,16 +56,13 @@ class TextLog:
         """Register a :class:`Core`."""
         pass
 
-    def schedule_thread(self, cpu, thread):
-        """Log an successful scheduling event."""
-        #ignore scheduler threads
-        if thread.tid == 0:
-            return
-        self.stream.write(self._ctm(cpu) + "selects {}.\n".format(thread.tid))
-
     def context_switch(self, cpu, thread_to, time, required):
         """Log an context switch event."""
-        if thread_to.module != cpu.status.contexts[-1].thread.module:
+        if thread_to.module == cpu.status.contexts[-1].thread.module:
+            if thread_to.tid == 0:
+                return
+            self.stream.write(self._ctm(cpu) + "selects {}.\n".format(thread_to.tid))
+        else:
             self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(thread_to.module, time,
                                                                      required)))
 

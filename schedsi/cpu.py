@@ -195,7 +195,6 @@ class _Status:
                 self._run_all(time)
             elif isinstance(next_step, threads.Thread):
                 #thread -> switch to it
-                self.cpu.log.schedule_thread(self.cpu, next_step)
                 self._switch_thread(next_step)
             elif next_step is None:
                 #no-op

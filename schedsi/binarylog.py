@@ -8,7 +8,6 @@ import msgpack
 _EntryType = enum.Enum('EntryType', 'event')
 _Event = enum.Enum('Event', [
     'init_core',
-    'schedule_thread',
     'context_switch',
     'thread_execute',
     'thread_yield',
@@ -104,10 +103,6 @@ class BinaryLog:
     def init_core(self, cpu):
         """Register a :class:`Core`."""
         self._write(_encode_coreinit(cpu))
-
-    def schedule_thread(self, cpu, thread):
-        """Log an successful scheduling event."""
-        self._encode(cpu, _Event.schedule_thread, {'thread': thread})
 
     def context_switch(self, cpu, thread_to, time, required):
         """Log an context switch event."""
@@ -235,8 +230,6 @@ def replay(binary, log):
 
             if event.event == _Event.init_core.name:
                 log.init_core(event.cpu)
-            elif event.event == _Event.schedule_thread.name:
-                log.schedule_thread(event.cpu, _decode_thread(entry['thread']))
             elif event.event == _Event.context_switch.name:
                 event_args, direction = _decode_ctxsw(event.cpu, entry)
                 log.context_switch(*event_args)
