@@ -1,0 +1,16 @@
+* weighted round robin (deficit round robin?)
+	* seems to be the basis of the most popular general purpose OS schedulers
+* dynamic hierarchy
+	* there should be no assumptions at the moment that the module hierarchy or thread queues are fixed, so all that's missing is a nice interface or helper functions/classes
+	* perhaps names for modules and tids for threads should be optional and auto-generated if not supplied, just following the convention used in the kernel.py example
+* multi-core
+	* thanks to the recent re-architecturing this should be implementable fairly easily
+* external interrupts
+	* also thanks to the recent re-architecturing this should be implementable fairly easily
+	* basically we just want to jump back to the kernel to "handle" some interrupts
+* simulate message-passing
+	* synchronous message-passing should be the most interesting thing here, since it puts threads to sleep until the message round-tripped back and wakes it again
+* aggregate statistics
+	* various statistics are being recorded (we may want to think about what else we can record, too)
+	* these should be logged and presented at least for the binary log and text log
+	* the graph log could plot some fancy distributions
