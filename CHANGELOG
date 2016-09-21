@@ -1,0 +1,13 @@
+0.2.0:
+	* thread/scheduling fixes
+	* Shortest Job First scheduling
+		* no heuristics, just peeks into the thread's internals
+	* CPU redesign
+		* read about new design in HACKING
+		* allows adding multi-core support and interrupt handling simulation
+0.1.0:
+	* initial release
+	* Round Robin scheduling
+	* MessagePack, Plaintext and SVG logging
+	* replay.py to convert from MessagePack to Plaintext or SVG
+	* module hierarchy and hierarchical scheduling support
