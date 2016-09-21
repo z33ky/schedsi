@@ -37,7 +37,7 @@ BOTTOM_MODULE_A.add_threads([
 BOTTOM_MODULE_B.add_threads([
     threads.PeriodicWorkThread(BOTTOM_MODULE_B, 1, units=10, period=10, burst=2),
     threads.PeriodicWorkThread(BOTTOM_MODULE_B, 2, period=10, burst=2),
-    threads.Thread(BOTTOM_MODULE_B, 3, ready_time=10, units=10)
+    threads.SpawnerThread.periodic(BOTTOM_MODULE_B, 3, period=40, template=[threads.Thread(BOTTOM_MODULE_B, -1, ready_time=None, units=2)])
 ])
 
 def main():
@@ -51,7 +51,7 @@ def main():
 
         #Create and run the world.
         the_world = world.World(1, 10, KERNEL, binary_log)
-        while the_world.step() <= 400:
+        while the_world.step() <= 600:
             pass
 
 if __name__ == '__main__':

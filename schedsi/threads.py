@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Thread classes."""
 
+import copy
 import sys
 import threading
-from schedsi import cpu
+from schedsi import cpu, module
 
 class _ThreadStats: # pylint: disable=too-few-public-methods
     """Thread statistics."""
@@ -366,3 +367,63 @@ class PeriodicWorkThread(Thread):
         self._update_ready_time(current_time)
         self.current_burst_left = None
         super().finish(current_time)
+
+class SpawnerThread(Thread):
+    """A thread that spawns new `Threads <schedsi.threads.Thread>` and `Modules <schedsi.module.Module>`."""
+
+    def __init__(self, module, *args, generator, **kwargs):
+        super().__init__(module, *args, **kwargs, units=-1)
+        self.generator = generator
+
+    def periodic(module, *args, period, template, limit=-1, **kwargs):
+        #TODO: limit
+        ready_time = kwargs.get('ready_time',  0)
+        def generator():
+            n = 0
+            current_time = yield
+            ready_rest = ready_time % period
+            while True:
+                activations = int((current_time - ready_time) / period)
+                wait_time = period - current_time % period
+                if wait_time == 0:
+                    wait_time = period
+                #wait_time += ready_rest
+                threads = [copy.copy(t) for t in template * (activations - n)]
+                for (t, a) in zip(threads, range(n, activations)):
+                    assert t.ready_time is None
+                    t.ready_time = ready_time + a * period
+                    assert t.tid == -1
+                    t.tid = module.num_threads() + a - n
+                n = activations
+                current_time = yield threads, wait_time
+        generator = generator()
+        nothing = next(generator)
+        assert nothing is None
+        return SpawnerThread(module, *args, **kwargs, generator=generator)
+
+    def execute(self):
+        locked = self.is_running.acquire(False)
+        assert locked
+
+        current_time = yield
+        def get_gen():
+            yield self.generator.send(current_time)
+        for thing, wait_time in get_gen():
+            null = next(super()._execute(current_time, 0))
+            assert null == 0
+            if all(isinstance(e, Thread) for e in thing):
+                self.module.add_threads(thing)
+            elif all(isinstance(e, schedsi.Module) for e in thing):
+                assert all(m.parent == self.module for m in thing)
+                self.module.add_threads((VCPUThread(m) for m in thing))
+            else:
+                assert False
+
+            if wait_time > 0:
+                self.ready_time = current_time + wait_time
+                yield 0
+                return
+
+        self.ready_time = -1
+        self.remaining = 0
+        yield from super()._execute(current_time, 0)
