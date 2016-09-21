@@ -32,7 +32,7 @@ class _Background: #pylint: disable=too-few-public-methods
         self.name = name
         self.time = time
 
-class _ThreadName: #pylint: disable=too-few-public-methods
+class _ThreadName:
     """Lazy thread-name extraction.
 
     This is done lazily because a :class:`Core <schedsi.cpu.Core>` might not have a current context,

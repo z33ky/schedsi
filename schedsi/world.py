@@ -4,7 +4,7 @@
 import io
 from schedsi import binarylog, cpu
 
-class World: # pylint: disable=too-few-public-methods
+class World:
     """The world keeps data to enable execution."""
 
     def __init__(self, cores, timer_quantum, kernel, log=binarylog.BinaryLog(io.BytesIO())):

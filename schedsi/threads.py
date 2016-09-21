@@ -3,7 +3,7 @@
 
 import sys
 
-class Thread: # pylint: disable=too-few-public-methods
+class Thread:
     """The basic thread class.
 
     A thread has
@@ -77,7 +77,7 @@ class Thread: # pylint: disable=too-few-public-methods
         self.total_run_time += run_time
         self.last_deschedule = current_time
 
-class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
+class SchedulerThread(Thread):
     """A thread representing a VCPU for a child.
 
     Execution is forwarded to the scheduler of the child :class:`Module`.
@@ -104,7 +104,7 @@ class SchedulerThread(Thread): # pylint: disable=too-few-public-methods
         """Add threads to scheduler."""
         self._scheduler.add_threads(new_threads)
 
-class VCPUThread(Thread): # pylint: disable=too-few-public-methods
+class VCPUThread(Thread):
     """A thread representing a VCPU from the perspective of a parent.
 
     Execution is forwarded to the :class:`SchedulerThread` of the child.
@@ -144,7 +144,7 @@ class VCPUThread(Thread): # pylint: disable=too-few-public-methods
             return self._thread.__getattribute__(key)
         return object.__getattribute__(self, key)
 
-class PeriodicWorkThread(Thread): # pylint: disable=too-few-public-methods
+class PeriodicWorkThread(Thread):
     """A thread needing periodic bursts of CPU."""
 
     def __init__(self, module, tid, ready_time, units, period, burst):
