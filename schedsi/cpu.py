@@ -145,6 +145,9 @@ class _Status:
         if len(self.contexts) == 1:
             #kernel yields
             self.cpu.log.cpu_idle(self.cpu, self.time_slice)
+            thread = self.contexts.pop().thread
+            thread.finish(self.current_time)
+            self.contexts.append(_Context(thread))
             self.stats.idle_time += self.time_slice
             self._update_time(self.time_slice)
         else:
