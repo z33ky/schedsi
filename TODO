@@ -14,3 +14,6 @@
 	* various statistics are being recorded (we may want to think about what else we can record, too)
 	* these should be logged and presented at least for the binary log and text log
 	* the graph log could plot some fancy distributions
+* static hierarchy builder
+	* the current approach is a bit inconvenient
+	* we want automatic name generation and VCPU additions

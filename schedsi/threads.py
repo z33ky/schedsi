@@ -25,9 +25,11 @@ class Thread:
         * :class:`_ThreadStats`
     """
 
-    def __init__(self, module, tid, *, ready_time=0, units=-1):
+    def __init__(self, module, tid=None, *, ready_time=0, units=-1):
         """Create a :class:`Thread`."""
         self.module = module
+        if tid is None:
+            tid = module.num_threads()
         self.tid = tid
         self.ready_time = ready_time
         self.remaining = units
