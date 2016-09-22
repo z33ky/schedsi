@@ -55,7 +55,8 @@ def _encode_ctxsw(cpu, thread_to, time, required):
         if len(cpu.status.contexts) >= 2:
             if cpu.status.contexts[-2].thread == thread_to:
                 direction = 'own parent'
-    elif module_to.parent is None:
+    elif cpu.status.contexts[0].thread == thread_to:
+        assert module_to.parent is None
         direction = 'kernel'
     elif module_from.parent == module_to:
         direction = 'parent'

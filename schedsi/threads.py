@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Thread classes."""
 
+import numbers
 import sys
 import threading
-from schedsi import cpu
+from schedsi import cpu, scheduler
 
 class _ThreadStats: # pylint: disable=too-few-public-methods
     """Thread statistics."""
@@ -117,7 +118,7 @@ class Thread:
 
         self.stats.run_times.append(run_time)
 
-        assert self.ready_time + run_time == current_time
+        #assert self.ready_time + run_time == current_time
         self.ready_time = current_time
 
         if self.remaining != -1:
@@ -162,6 +163,7 @@ class SchedulerThread(_BGStatThread):
         super().__init__(scheduler.module, *args, **kwargs)
         self._scheduler = scheduler
         self.last_run_time = 0
+        self.next_ready_time = None
 
     def execute(self):
         """Simulate execution.
@@ -173,43 +175,79 @@ class SchedulerThread(_BGStatThread):
         self.is_running.acquire(False)
         assert self.is_running.locked
 
-        scheduler = self._scheduler.schedule(self.last_run_time)
-        thing = next(scheduler)
+        execution = self._scheduler.schedule(self.last_run_time)
+        thing = next(execution)
         current_time = yield cpu.Request.current_time()
+
         while True:
+            assert self.next_ready_time is None
+
             null = next(super()._execute(current_time, 0))
             assert null is None
-            current_time = yield thing
+            current_time = yield cpu.Request.current_time()
             self.last_run_time = 0
-            thing = scheduler.send(current_time)
+            request = execution.send(current_time)
+            if request.rtype == scheduler._RequestType.scheduler:
+                if request.thing == 0:
+                    #scheduler has no more threads
+                    self.next_ready_time = -1
+                else:
+                    #scheduler only has waiting threads
+                    self.next_ready_time = request.thing
+                    thing = 0
+                request = cpu.Request.idle()
+            else:
+                request = request.thing
 
-    def run_ctxsw(self, _current_time, run_time):
+            current_time = yield request
+
+    def run_ctxsw(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_ctxsw`.
         """
         self.last_run_time += run_time
+        super().run_ctxsw(current_time, run_time)
 
-    def run_background(self, _current_time, run_time):
+    def run_background(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_background`.
         """
         self.last_run_time += run_time
+        super().run_background(current_time, run_time)
 
-    def run_crunch(self, _current_time, run_time):
+    def run_crunch(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_crunch`.
         """
+        if self.next_ready_time == -1:
+            #only the kernel scheduler should be invoked while idle
+            assert self.module.parent is None
+            self.next_ready_time = current_time - run_time
         self.last_run_time += run_time
+        super().run_crunch(current_time, run_time)
 
-    def finish(self, _current_time):
+    def finish(self, current_time):
         """Become inactive.
 
         See :meth:`Thread.finish`.
         """
         self.last_run_time = 0
+        if not self.next_ready_time is None:
+            #scheduler yielded, we'll want to wait a bit
+            self.ready_time = self.next_ready_time
+
+            if self.ready_time == -1:
+                self.remaining = 0
+            else:
+                assert self.remaining != 0
+                assert self.ready_time >= current_time
+
+            self.next_ready_time = None
+
+        super().finish(current_time)
 
     def num_threads(self):
         return self._scheduler.num_threads()
@@ -251,6 +289,16 @@ class VCPUThread(_BGStatThread):
         current_time = yield cpu.Request.current_time()
         while True:
             self._update_active = True
+            if self._thread.ready_time > self.ready_time:
+                self.ready_time = self._thread.ready_time
+            if self.ready_time > current_time:
+                self._update_active = False
+                yield cpu.Request.idle()
+            if self._thread.remaining == 0:
+                assert self._thread.ready_time == -1
+                self.ready_time = -1
+                self._update_active = False
+                yield cpu.Request.idle()
             null = next(super()._execute(current_time, 0))
             assert null is None
             self._update_active = False

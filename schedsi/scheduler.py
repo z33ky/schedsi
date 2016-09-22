@@ -1,7 +1,37 @@
 #!/usr/bin/env python3
 """Defines the base class for schedulers."""
 
+import enum
 from schedsi import cpu, rcu
+
+_RequestType = enum.Enum('RequestType', ['cpu', 'scheduler'])
+
+class Request:
+    """A request to the SchedulerThread."""
+
+    def __init__(self, rtype, thing):
+        """Create a :class:`Request`."""
+        if rtype == _RequestType.cpu:
+            assert isinstance(thing, cpu.Request)
+        elif rtype == _RequestType.scheduler:
+            assert thing >= 0
+        else:
+            assert False
+        self.rtype = rtype
+        self.thing = thing
+
+    @classmethod
+    def cpu(cls, cpu_request):
+        """Create a :class:`Request` to pass a :class:`Request <schedsi.cpu.Request`."""
+        return cls(_RequestType.cpu, cpu_request)
+
+    @classmethod
+    def scheduler(cls, time):
+        """Create a :class:`Request` informing about the next ready time.
+
+        The time may be 0 to indicate no threads in the queue.
+        """
+        return cls(_RequestType.scheduler, time)
 
 class SchedulerData: # pylint: disable=too-few-public-methods
     """Mutable data for the :class:`Scheduler`.
@@ -49,6 +79,10 @@ class Scheduler:
                     data.waiting_threads.append(thread)
         self._rcu.apply(appliance)
 
+    def get_next_waiting(self):
+        return self._rcu.look(lambda d: min(d.waiting_threads, key=lambda t: t.ready_time,
+                                            default=None))
+
     def _update_ready_threads(self, time, rcu_data):
         """Moves threads becoming ready to the ready threads list."""
         for i in range(-len(rcu_data.waiting_threads), 0):
@@ -77,7 +111,7 @@ class Scheduler:
         Yields an idle or execute :class:`Request <schedsi.cpu.Request>`.
         Consumes the current time.
         """
-        current_time = yield cpu.Request.current_time()
+        current_time = yield Request.cpu(cpu.Request.current_time())
         while True:
             rcu_copy = self._rcu.copy()
             rcu_data = rcu_copy.data
@@ -102,7 +136,7 @@ class Scheduler:
                 else:
                     dest.append(rcu_data.ready_threads.pop(last_idx))
                     #if not self._rcu.update(rcu_copy):
-                    #    #current_time = yield cpu.Request.execute(1)
+                    #    #current_time = yield Request.cpu(cpu.Request.execute(1))
                     #    continue
 
                 rcu_data.last_idx = -1
@@ -130,10 +164,13 @@ class Scheduler:
             return
 
         if idx == -1:
-            yield cpu.Request.idle()
+            next_thread = self.get_next_waiting()
+            #try busy waiting for next thread
+            ready_time = next_thread.ready_time if next_thread else 0
+            yield Request.scheduler(ready_time)
             return
 
-        yield cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx])
+        yield Request.cpu(cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx]))
 
     def schedule(self, prev_run_time):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
@@ -148,11 +185,11 @@ class Scheduler:
             rcu_copy, *rest = yield from self._start_schedule(prev_run_time)
             idx = yield from self._sched_loop(rcu_copy, *rest)
 
-            current_time = (yield cpu.Request.current_time())
+            current_time = (yield Request.cpu(cpu.Request.current_time()))
 
             yield from self._schedule(idx, rcu_copy)
 
-            prev_run_time = (yield cpu.Request.current_time()) - current_time
+            prev_run_time = (yield Request.cpu(cpu.Request.current_time())) - current_time
 
     @staticmethod
     def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):

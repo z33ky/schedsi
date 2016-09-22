@@ -1,5 +1,6 @@
 0.3.0dev:
 	* thread statistics fixes
+	* scheduler and VCPU threads wait until schedulers have ready threads
 0.2.0:
 	* thread/scheduling fixes
 	* Shortest Job First scheduling
