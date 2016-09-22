@@ -155,7 +155,7 @@ class VCPUThread(Thread):
         """Create a :class:`VCPUThread`."""
         if child.parent != module:
             print(module.name, "is adding a VCPUThread for", child.name,
-                  "although it is not a direct descendant.")
+                  "although it is not a direct descendant.", file=sys.stderr)
         super().__init__(module, *args, **kwargs, ready_time=None, units=None)
         self._thread = child.register_vcpu(self)
         if not isinstance(self._thread, SchedulerThread):
