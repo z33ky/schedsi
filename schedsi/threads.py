@@ -65,7 +65,9 @@ class Thread:
         assert self.ready_time != -1 and self.ready_time <= current_time
         assert self.remaining != 0
         assert not self.is_running.acquire(False)
+
         self.stats.total_wait_time += current_time - self.ready_time
+        self.ready_time = current_time
 
         if run_time == -1:
             run_time = self.remaining
@@ -80,17 +82,27 @@ class Thread:
 
         return current_time
 
-    def run(self, _current_time, run_time):
+    def run(self, current_time, run_time):
         """Update runtime state.
 
         This should be called while the thread is active.
+        `current_time` refers to the time just after this thread has run.
         """
         assert not self.is_running.acquire(False)
         self.stats.total_run_time += run_time
 
+        assert self.ready_time + run_time == current_time
+        self.ready_time = current_time
+
         if self.remaining != -1:
             assert self.remaining >= run_time
             self.remaining -= run_time
+
+            if self.remaining == 0:
+                #the job was completed within the slice
+                self.stats.finished_time = self.ready_time
+                #never start again
+                self.ready_time = -1
 
     def finish(self, current_time):
         """Become inactive.
@@ -98,21 +110,7 @@ class Thread:
         This should be called when the thread becomes inactive.
         """
         assert not self.is_running.acquire(False)
-        self._finish(current_time)
-
         self.is_running.release()
-
-    def _finish(self, current_time):
-        assert not self.is_running.acquire(False)
-
-        if self.remaining == 0:
-            #the job was completed within the slice
-            #never start again
-            self.ready_time = -1
-            self.stats.finished_time = current_time
-        elif self.remaining != -1:
-            #not enough time to complete the job
-            self.ready_time = current_time
 
 class SchedulerThread(Thread):
     """A thread representing a VCPU for a child.
@@ -140,7 +138,8 @@ class SchedulerThread(Thread):
         assert thing is None
         current_time = yield
         while True:
-            next(super()._execute(current_time, -1))
+            null = next(super()._execute(current_time, 0))
+            assert null == 0
             current_time = yield scheduler.send(current_time)
 
     def num_threads(self):
@@ -161,11 +160,14 @@ class VCPUThread(Thread):
         if child.parent != module:
             print(module.name, "is adding a VCPUThread for", child.name,
                   "although it is not a direct descendant.", file=sys.stderr)
-        super().__init__(module, *args, **kwargs, ready_time=None, units=None)
         self._thread = child.register_vcpu(self)
         if not isinstance(self._thread, SchedulerThread):
             print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".",
                   file=sys.stderr)
+
+        super().__init__(module, *args, **kwargs, ready_time=self._thread.ready_time, units=None)
+
+        self._update_active = False
 
     def execute(self):
         """Simulate execution.
@@ -179,12 +181,28 @@ class VCPUThread(Thread):
 
         current_time = yield
         while True:
-            next(super()._execute(current_time, -1))
+            self._update_active = True
+            null = next(super()._execute(current_time, 0))
+            assert null == 0
+            self._update_active = False
             current_time = yield self._thread
 
+    def run(self, current_time, run_time):
+        """Update runtime state.
+
+        See :meth:`Thread.run`.
+        """
+        self._update_active = True
+        super().run(current_time, run_time)
+        self._update_active = False
+
     def __getattribute__(self, key):
-        """ready_time and remaining should be taken from the :class:`SchedulerThread`."""
-        if key in ['ready_time', 'remaining']:
+        """:attr:`ready_time` and :attr:`remaining` should be taken from the :class:`SchedulerThread`.
+
+        Except for ready_time when we're calculating this thread's statistics,
+        for which `_update_active` should be set so the key is passed through.
+        """
+        if key == 'remaining' or (key == 'ready_time' and not self._update_active):
             return self._thread.__getattribute__(key)
         return object.__getattribute__(self, key)
 
@@ -244,16 +262,23 @@ class PeriodicWorkThread(Thread):
             current_time = yield from super()._execute(current_time, quota_left)
 
     def run(self, current_time, run_time):
-        """See :meth:`Thread.run`."""
+        """Update runtime state.
+
+        See :meth:`Thread.run`.
+        """
         super().run(current_time, run_time)
         assert self.current_burst_left >= run_time
         self.current_burst_left -= run_time
 
-    def _finish(self, current_time):
-        super()._finish(current_time)
+    def finish(self, current_time):
+        """Become inactive.
+
+        See :meth:`Thread.finish`.
+        """
         #set ready_time to next burst arrival, if required
         if (self.remaining > 0 or self.remaining == -1) \
            and self.current_burst_left == 0:
             self.ready_time = self.burst_started + self.period
             self.burst_started = None
         self.current_burst_left = None
+        super().finish(current_time)

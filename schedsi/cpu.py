@@ -162,7 +162,7 @@ class _Status:
         if not current_thread.module in [thread.module, thread.module.parent]:
             raise RuntimeError('Switching thread to unrelated module')
         proceed, time = self._context_switch(thread)
-        current_thread.run(self.current_time, time)
+        self._run_all(time)
         if proceed:
             self.contexts.append(_Context(thread))
 
