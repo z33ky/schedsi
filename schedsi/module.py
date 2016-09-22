@@ -21,13 +21,6 @@ class Module:
         self._scheduler_thread = threads.SchedulerThread(0, scheduler=scheduler(self))
         self._vcpus = []
 
-    def schedule(self, cpu):
-        """Run the scheduler.
-
-        The time spent executing is returned.
-        """
-        return self._scheduler_thread.execute(cpu)
-
     def register_vcpu(self, vcpu):
         """Register a VCPU.
 
