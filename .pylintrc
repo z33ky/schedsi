@@ -65,8 +65,8 @@ confidence=
 # --enable=similarities". If you want to run only the classes checker, but have
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
-#disable=standarderror-builtin,setslice-method,dict-iter-method,suppressed-message,execfile-builtin,old-division,getslice-method,delslice-method,old-octal-literal,import-star-module-level,nonzero-method,map-builtin-not-iterating,coerce-method,hex-method,old-ne-operator,apply-builtin,useless-suppression,unichr-builtin,next-method-called,file-builtin,long-builtin,round-builtin,buffer-builtin,cmp-builtin,backtick,reduce-builtin,dict-view-method,filter-builtin-not-iterating,metaclass-assignment,coerce-builtin,oct-method,parameter-unpacking,unicode-builtin,print-statement,range-builtin-not-iterating,raising-string,intern-builtin,old-raise-syntax,raw_input-builtin,zip-builtin-not-iterating,basestring-builtin,reload-builtin,long-suffix,using-cmp-argument,input-builtin,xrange-builtin,indexing-exception,cmp-method,no-absolute-import,unpacking-in-except
-
+#disable=standarderror-builtin,no-absolute-import,filter-builtin-not-iterating,unichr-builtin,reload-builtin,next-method-called,intern-builtin,old-raise-syntax,parameter-unpacking,apply-builtin,setslice-method,long-suffix,coerce-method,getslice-method,range-builtin-not-iterating,raw_input-builtin,long-builtin,cmp-method,backtick,metaclass-assignment,unicode-builtin,suppressed-message,xrange-builtin,old-ne-operator,nonzero-method,using-cmp-argument,file-builtin,useless-suppression,indexing-exception,raising-string,dict-iter-method,dict-view-method,map-builtin-not-iterating,print-statement,buffer-builtin,oct-method,old-division,hex-method,delslice-method,old-octal-literal,unpacking-in-except,coerce-builtin,import-star-module-level,round-builtin,execfile-builtin,basestring-builtin,zip-builtin-not-iterating,input-builtin,cmp-builtin,reduce-builtin
+disable=
 
 
 [REPORTS]
@@ -97,50 +97,32 @@ evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / stateme
 #msg-template=
 
 
-[SPELLING]
+[TYPECHECK]
 
-# Spelling dictionary name. Available dictionaries: none. To make it working
-# install python-enchant package.
-spelling-dict=
+# Tells whether missing members accessed in mixin class should be ignored. A
+# mixin class is detected if its name ends with "mixin" (case insensitive).
+ignore-mixin-members=yes
 
-# List of comma separated words that should not be checked.
-spelling-ignore-words=
+# List of module names for which member attributes should not be checked
+# (useful for modules/projects where namespaces are manipulated during runtime
+# and thus existing member attributes cannot be deduced by static analysis. It
+# supports qualified module names, as well as Unix pattern matching.
+ignored-modules=
 
-# A path to a file that contains private dictionary; one word per line.
-spelling-private-dict-file=
+# List of class names for which member attributes should not be checked (useful
+# for classes with dynamically set attributes). This supports the use of
+# qualified names.
+ignored-classes=optparse.Values,thread._local,_thread._local
 
-# Tells whether to store unknown words to indicated private dictionary in
-# --spelling-private-dict-file option instead of raising a message.
-spelling-store-unknown-words=no
+# List of members which are set dynamically and missed by pylint inference
+# system, and so shouldn't trigger E1101 when accessed. Python regular
+# expressions are accepted.
+generated-members=schedsi.binarylog.EntryType.event,schedsi.binarylog.Entry.schedule_thread|context_switch|thread_execute|thread_yield|cpu_idle|timer_interrupt
 
-
-[MISCELLANEOUS]
-
-# List of note tags to take in consideration, separated by a comma.
-#notes=FIXME,XXX,TODO
-notes=FIXME,TODO,HACK
-
-
-[LOGGING]
-
-# Logging modules to check that the string format arguments are in logging
-# function parameter format
-logging-modules=logging
-
-
-[SIMILARITIES]
-
-# Minimum lines number of a similarity.
-min-similarity-lines=4
-
-# Ignore comments when computing similarities.
-ignore-comments=yes
-
-# Ignore docstrings when computing similarities.
-ignore-docstrings=yes
-
-# Ignore imports when computing similarities.
-ignore-imports=no
+# List of decorators that produce context managers, such as
+# contextlib.contextmanager. Add to this list to register other decorators that
+# produce valid context managers.
+contextmanager-decorators=contextlib.contextmanager
 
 
 [FORMAT]
@@ -172,7 +154,6 @@ indent-string='    '
 indent-after-paren=4
 
 # Expected format of line ending, e.g. empty (any line ending), LF or CRLF.
-#expected-line-ending-format=
 expected-line-ending-format=LF
 
 
@@ -195,6 +176,36 @@ include-naming-hint=no
 # to this list to register other decorators that produce valid properties.
 property-classes=abc.abstractproperty
 
+# Regular expression matching correct method names
+method-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Naming hint for method names
+method-name-hint=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression matching correct module names
+module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# Naming hint for module names
+module-name-hint=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+# Regular expression matching correct variable names
+variable-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Naming hint for variable names
+variable-name-hint=[a-z_][a-z0-9_]{2,30}$
+
+# Regular expression matching correct constant names
+const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Naming hint for constant names
+const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
+
+# Regular expression matching correct function names
+function-rgx=[a-z_][a-z0-9_]{2,30}$
+
+# Naming hint for function names
+function-name-hint=[a-z_][a-z0-9_]{2,30}$
+
 # Regular expression matching correct inline iteration names
 inlinevar-rgx=[A-Za-z_][A-Za-z0-9_]*$
 
@@ -213,12 +224,6 @@ attr-rgx=[a-z_][a-z0-9_]{2,30}$
 # Naming hint for attribute names
 attr-name-hint=[a-z_][a-z0-9_]{2,30}$
 
-# Regular expression matching correct module names
-module-rgx=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
-
-# Naming hint for module names
-module-name-hint=(([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
-
 # Regular expression matching correct argument names
 argument-rgx=[a-z_][a-z0-9_]{2,30}$
 
@@ -231,33 +236,10 @@ class-rgx=[A-Z_][a-zA-Z0-9]+$
 # Naming hint for class names
 class-name-hint=[A-Z_][a-zA-Z0-9]+$
 
-# Regular expression matching correct variable names
-variable-rgx=[a-z_][a-z0-9_]{2,30}$
-
-# Naming hint for variable names
-variable-name-hint=[a-z_][a-z0-9_]{2,30}$
-
-# Regular expression matching correct function names
-function-rgx=[a-z_][a-z0-9_]{2,30}$
-
-# Naming hint for function names
-function-name-hint=[a-z_][a-z0-9_]{2,30}$
-
-# Regular expression matching correct method names
-method-rgx=[a-z_][a-z0-9_]{2,30}$
-
-# Naming hint for method names
-method-name-hint=[a-z_][a-z0-9_]{2,30}$
-
-# Regular expression matching correct constant names
-const-rgx=(([A-Z_][A-Z0-9_]*)|(__.*__))$
-
-# Naming hint for constant names
-const-name-hint=(([A-Z_][A-Z0-9_]*)|(__.*__))$
-
 # Regular expression which should only match function or class names that do
 # not require a docstring.
 #no-docstring-rgx=^_
+no-docstring-rgx=
 
 # Minimum line length for functions/classes that require docstrings, shorter
 # ones are exempt.
@@ -270,33 +252,34 @@ docstring-min-length=-1
 max-nested-blocks=5
 
 
-[TYPECHECK]
+[SPELLING]
 
-# Tells whether missing members accessed in mixin class should be ignored. A
-# mixin class is detected if its name ends with "mixin" (case insensitive).
-ignore-mixin-members=yes
+# Spelling dictionary name. Available dictionaries: none. To make it working
+# install python-enchant package.
+spelling-dict=
 
-# List of module names for which member attributes should not be checked
-# (useful for modules/projects where namespaces are manipulated during runtime
-# and thus existing member attributes cannot be deduced by static analysis. It
-# supports qualified module names, as well as Unix pattern matching.
-ignored-modules=
+# List of comma separated words that should not be checked.
+spelling-ignore-words=
 
-# List of class names for which member attributes should not be checked (useful
-# for classes with dynamically set attributes). This supports the use of
-# qualified names.
-ignored-classes=optparse.Values,thread._local,_thread._local
+# A path to a file that contains private dictionary; one word per line.
+spelling-private-dict-file=
 
-# List of members which are set dynamically and missed by pylint inference
-# system, and so shouldn't trigger E1101 when accessed. Python regular
-# expressions are accepted.
-generated-members=schedsi.binarylog.EntryType.event,schedsi.binarylog.Entry.schedule_thread|context_switch|thread_execute|thread_yield|cpu_idle|timer_interrupt
+# Tells whether to store unknown words to indicated private dictionary in
+# --spelling-private-dict-file option instead of raising a message.
+spelling-store-unknown-words=no
 
 
-# List of decorators that produce context managers, such as
-# contextlib.contextmanager. Add to this list to register other decorators that
-# produce valid context managers.
-contextmanager-decorators=contextlib.contextmanager
+[LOGGING]
+
+# Logging modules to check that the string format arguments are in logging
+# function parameter format
+logging-modules=logging
+
+
+[MISCELLANEOUS]
+
+# List of note tags to take in consideration, separated by a comma.
+notes=FIXME,TODO,HACK
 
 
 [VARIABLES]
@@ -306,7 +289,7 @@ init-import=no
 
 # A regular expression matching the name of dummy variables (i.e. expectedly
 # not used).
-dummy-variables-rgx=(_+[a-zA-Z0-9]*?$)|dummy
+dummy-variables-rgx=(_+[a-zA-Z0-9_]*?$)|dummy
 
 # List of additional names supposed to be defined in builtins. Remember that
 # you should avoid to define new builtins when possible.
@@ -319,6 +302,58 @@ callbacks=cb_,_cb
 # List of qualified module names which can have objects that can redefine
 # builtins.
 redefining-builtins-modules=six.moves,future.builtins
+
+
+[SIMILARITIES]
+
+# Minimum lines number of a similarity.
+min-similarity-lines=4
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=no
+
+
+[DESIGN]
+
+# Maximum number of arguments for function / method
+max-args=5
+
+# Argument names that match this expression will be ignored. Default to name
+# with leading underscore
+ignored-argument-names=_.*
+
+# Maximum number of locals for function / method body
+max-locals=15
+
+# Maximum number of return / yield for function / method body
+max-returns=6
+
+# Maximum number of branch for function / method body
+max-branches=12
+
+# Maximum number of statements in function / method body
+max-statements=50
+
+# Maximum number of parents for a class (see R0901).
+max-parents=7
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=7
+
+# Minimum number of public methods for a class (see R0903).
+min-public-methods=1
+
+# Maximum number of public methods for a class (see R0904).
+max-public-methods=20
+
+# Maximum number of boolean expressions in a if statement
+max-bool-expr=5
 
 
 [IMPORTS]
@@ -365,43 +400,6 @@ valid-metaclass-classmethod-first-arg=mcs
 # List of member names, which should be excluded from the protected access
 # warning.
 exclude-protected=_asdict,_fields,_replace,_source,_make
-
-
-[DESIGN]
-
-# Maximum number of arguments for function / method
-max-args=5
-
-# Argument names that match this expression will be ignored. Default to name
-# with leading underscore
-ignored-argument-names=_.*
-
-# Maximum number of locals for function / method body
-max-locals=15
-
-# Maximum number of return / yield for function / method body
-max-returns=6
-
-# Maximum number of branch for function / method body
-max-branches=12
-
-# Maximum number of statements in function / method body
-max-statements=50
-
-# Maximum number of parents for a class (see R0901).
-max-parents=7
-
-# Maximum number of attributes for a class (see R0902).
-max-attributes=7
-
-# Minimum number of public methods for a class (see R0903).
-min-public-methods=1
-
-# Maximum number of public methods for a class (see R0904).
-max-public-methods=20
-
-# Maximum number of boolean expressions in a if statement
-max-bool-expr=5
 
 
 [EXCEPTIONS]
