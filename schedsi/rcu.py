@@ -63,8 +63,17 @@ class RCU:
     def apply(self, updater):
         """Apply a transformation to the contained data."""
         with self._lock:
-            updater(self._data)
+            ret = updater(self._data)
             self._changed()
+        return ret
+
+    def look(self, looker):
+        """Apply a looker to the contained data.
+
+        Do not modify the data with the looker.
+        """
+        with self._lock:
+            return looker(self._data)
 
 class RCUCopy: # pylint: disable=too-few-public-methods
     """A copy of RCU data.
