@@ -226,7 +226,8 @@ def replay(binary, log):
                 log.context_switch(*event_args)
                 core_contexts = event.cpu.status.contexts
                 if direction == 'parent':
-                    core_contexts.pop()
+                    if len(core_contexts) > 1:
+                        core_contexts.pop()
                 elif direction == 'child':
                     core_contexts.append(_CPUContext(event_args[1]))
                 elif direction == 'kernel':
