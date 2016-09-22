@@ -49,6 +49,10 @@ class Scheduler:
                     data.waiting_threads.append(thread)
         self._rcu.apply(appliance)
 
+    def get_next_waiting(self):
+        return self._rcu.look(lambda d: min(d.waiting_threads, key=lambda t: t.ready_time,
+                                            default=None))
+
     def _update_ready_threads(self, time, rcu_data):
         """Moves threads becoming ready to the ready threads list."""
         for i in range(-len(rcu_data.waiting_threads), 0):
@@ -125,7 +129,8 @@ class Scheduler:
             return False
 
         if idx == -1:
-            yield 0
+            next_thread = self.get_next_waiting()
+            yield next_thread.ready_time if next_thread else 0
             return
 
         yield rcu_copy.data.ready_threads[idx]

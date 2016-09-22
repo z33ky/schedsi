@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Thread classes."""
 
+import numbers
 import sys
 import threading
 
@@ -100,7 +101,7 @@ class Thread:
 
         self.stats.run_times.append(run_time)
 
-        assert self.ready_time + run_time == current_time
+        #assert self.ready_time + run_time == current_time
         self.ready_time = current_time
 
         if self.remaining != -1:
@@ -140,6 +141,7 @@ class SchedulerThread(_BGStatThread):
         """Create a :class:`SchedulerThread`."""
         super().__init__(scheduler.module, *args, **kwargs)
         self._scheduler = scheduler
+        self.next_ready_time = None
 
     def execute(self):
         """Simulate execution.
@@ -155,10 +157,49 @@ class SchedulerThread(_BGStatThread):
         thing = next(scheduler)
         assert thing is None
         current_time = yield
+
         while True:
+            assert self.next_ready_time is None
+
             null = next(super()._execute(current_time, 0))
             assert null == 0
-            current_time = yield scheduler.send(current_time)
+            thing = scheduler.send(current_time)
+            if isinstance(thing, numbers.Integral):
+                if thing == 0:
+                    #scheduler has no more threads
+                    self.next_ready_time = -1
+                else:
+                    #scheduler only has waiting threads
+                    self.next_ready_time = thing
+                    thing = 0
+
+            current_time = yield thing
+
+    def run(self, current_time, run_time):
+        if self.next_ready_time == -1:
+            #only the kernel scheduler should be invoked while idle
+            assert self.module.parent is None
+            self.next_ready_time = current_time - run_time
+        super().run(current_time, run_time)
+
+    def finish(self, current_time):
+        """Become inactive.
+
+        See :meth:`Thread.finish`.
+        """
+        if not self.next_ready_time is None:
+            #scheduler yielded, we'll want to wait a bit
+            self.ready_time = self.next_ready_time
+
+            if self.ready_time == -1:
+                self.remaining = 0
+            else:
+                assert self.remaining != 0
+                assert self.ready_time >= current_time
+
+            self.next_ready_time = None
+
+        super().finish(current_time)
 
     def num_threads(self):
         return self._scheduler.num_threads()
@@ -200,6 +241,16 @@ class VCPUThread(_BGStatThread):
         current_time = yield
         while True:
             self._update_active = True
+            if self._thread.ready_time > self.ready_time:
+                self.ready_time = self._thread.ready_time
+            if self.ready_time > current_time:
+                self._update_active = False
+                yield 0
+            if self._thread.remaining == 0:
+                assert self._thread.ready_time == -1
+                self.ready_time = -1
+                self._update_active = False
+                yield 0
             null = next(super()._execute(current_time, 0))
             assert null == 0
             self._update_active = False
