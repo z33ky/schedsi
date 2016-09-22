@@ -29,9 +29,11 @@ class Module:
 
         Returns the scheduler thread.
         """
+        if len(self._vcpus) == 1:
+            raise RuntimeError("Does not support more than 1 vcpu yet.")
         if not isinstance(vcpu, threads.VCPUThread):
             print(self.name, "expected a VCPU, got", type(vcpu).__name__, ".", file=sys.stderr)
-        self._vcpus.append(vcpu)
+        self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread
 
     def add_threads(self, new_threads):
