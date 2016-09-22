@@ -141,6 +141,9 @@ class SchedulerThread(Thread):
             next(super()._execute(current_time, -1))
             current_time = yield scheduler.send(current_time)
 
+    def num_threads(self):
+        return self._scheduler.num_threads()
+
     def add_threads(self, new_threads):
         """Add threads to scheduler."""
         self._scheduler.add_threads(new_threads)

@@ -36,6 +36,9 @@ class Module:
         self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread
 
+    def num_threads(self):
+        return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
+
     def add_threads(self, new_threads):
         """Add threads.
 

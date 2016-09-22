@@ -33,6 +33,11 @@ class Scheduler:
         self._rcu = rcu.RCU(rcu_storage)
         self.module = module
 
+    def num_threads(self):
+        return self._rcu.look(lambda d:
+                              sum(len(x) for x in
+                                  [d.ready_threads, d.waiting_threads, d.finished_threads]))
+
     def add_threads(self, new_threads):
         """Add threads to schedule."""
         def appliance(data):
