@@ -25,7 +25,7 @@ class Thread:
         * :class:`_ThreadStats`
     """
 
-    def __init__(self, module, tid, ready_time, units):
+    def __init__(self, module, tid, *, ready_time=0, units=-1):
         """Create a :class:`Thread`."""
         self.module = module
         self.tid = tid
@@ -118,9 +118,9 @@ class SchedulerThread(Thread):
     Execution is forwarded to the scheduler of the child :class:`Module`.
     """
 
-    def __init__(self, tid, scheduler):
+    def __init__(self, *args, scheduler, **kwargs):
         """Create a :class:`SchedulerThread`."""
-        super().__init__(scheduler.module, tid, 0, -1)
+        super().__init__(scheduler.module, *args, **kwargs)
         self._scheduler = scheduler
 
     def execute(self):
@@ -151,12 +151,12 @@ class VCPUThread(Thread):
     Execution is forwarded to the :class:`SchedulerThread` of the child.
     """
 
-    def __init__(self, module, tid, child):
+    def __init__(self, module, *args, child, **kwargs):
         """Create a :class:`VCPUThread`."""
         if child.parent != module:
             print(module.name, "is adding a VCPUThread for", child.name,
                   "although it is not a direct descendant.")
-        super().__init__(module, tid, None, None)
+        super().__init__(module, *args, **kwargs, ready_time=None, units=None)
         self._thread = child.register_vcpu(self)
         if not isinstance(self._thread, SchedulerThread):
             print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".",
@@ -186,11 +186,13 @@ class VCPUThread(Thread):
 class PeriodicWorkThread(Thread):
     """A thread needing periodic bursts of CPU."""
 
-    def __init__(self, module, tid, ready_time, units, period, burst):
+    def __init__(self, module, *args, period, burst, **kwargs):
         """Create a :class:`PeriodicWorkThread`."""
         if period < burst:
-            raise RuntimeError('Holy shit')
-        super().__init__(module, tid, ready_time, units)
+            raise RuntimeError('burst must not exceed period')
+        if period <= 0:
+            raise RuntimeError('period must be > 0')
+        super().__init__(module, *args, **kwargs)
         self.original_ready_time = self.ready_time
         self.period = period
         self.burst = burst

@@ -18,7 +18,7 @@ class Module:
         """Create a :class:`Module`."""
         self.name = name
         self.parent = parent
-        self._scheduler_thread = threads.SchedulerThread(0, scheduler(self))
+        self._scheduler_thread = threads.SchedulerThread(0, scheduler=scheduler(self))
         self._vcpus = []
 
     def schedule(self, cpu):
