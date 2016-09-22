@@ -33,7 +33,7 @@ class RCU:
         """Return the contained data.
         Do not modify.
         """
-        return self._data
+        return self.copy().data
 
     def copy(self):
         """Obtain an :class:`RCUCopy` of the contained data."""
