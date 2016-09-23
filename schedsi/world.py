@@ -25,3 +25,7 @@ class World:
         core.execute()
         #FIXME: threads becoming ready while idling
         return core.status.current_time
+
+    def log_statistics(self):
+        """Log statistics."""
+        self.log.cpu_statistics(core.get_statistics() for core in self.cores)

@@ -288,3 +288,9 @@ class Core:
         See :meth:`_Context.execute`.
         """
         self.status.execute()
+
+    def get_statistics(self):
+        """Obtain statistics."""
+        stats = self.status.stats.__dict__.copy()
+        stats.update(self.status.ctxsw_stats.__dict__)
+        return stats

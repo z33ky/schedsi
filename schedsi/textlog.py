@@ -2,6 +2,7 @@
 """Defines the :class:`TextLog`."""
 
 import collections
+import itertools
 
 TextLogAlign = collections.namedtuple('TextLogAlign', 'cpu time module thread')
 
@@ -81,3 +82,10 @@ class TextLog:
     def timer_interrupt(self, cpu):
         """Log an timer interrupt event."""
         self.stream.write(self._ct(cpu) + "timer interrupt.\n")
+
+    def cpu_statistics(self, stats):
+        """Log CPU statistics."""
+        for sstats, core in zip(sorted(stat.items() for stat in stats), itertools.count()):
+            self.stream.write("Core {}\n".format(core))
+            for name, stat in sorted(sstats):
+                self.stream.write("\t{}: {}\n".format(name, stat))

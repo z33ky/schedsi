@@ -5,7 +5,7 @@ import collections
 import enum
 import msgpack
 
-_EntryType = enum.Enum('EntryType', 'event')
+_EntryType = enum.Enum('EntryType', ['event', 'cpu_statistics'])
 _Event = enum.Enum('Event', [
     'init_core',
     'context_switch',
@@ -115,6 +115,10 @@ class BinaryLog:
         """Log an timer interrupt event."""
         self._encode(cpu, _Event.timer_interrupt)
 
+    def cpu_statistics(self, stats):
+        """Log CPU statistics."""
+        self._write({'type': _EntryType.cpu_statistics.name, 'stats': list(stats)})
+
 #types emulating schedsi classes for other logs
 _CPUContext = collections.namedtuple('_CPUContext', 'thread')
 _Core = collections.namedtuple('_Core', 'uid status')
@@ -209,7 +213,7 @@ def _decode_ctxsw(cpu, entry):
 def replay(binary, log):
     """Play a MessagePack file to another log."""
     contexts = {}
-    for entry in msgpack.Unpacker(binary, read_size=16*1024, encoding='utf-8'):
+    for entry in msgpack.Unpacker(binary, read_size=16*1024, encoding='utf-8', use_list=False):
         event = _decode_generic_event(entry)
         if not event is None:
             if event.event == _Event.init_core.name:
@@ -243,5 +247,7 @@ def replay(binary, log):
                 log.timer_interrupt(event.cpu)
             else:
                 print("Unknown event:", event)
+        elif entry['type'] == _EntryType.cpu_statistics.name:
+            log.cpu_statistics(entry['stats'])
         else:
             print("Unknown entry:", entry)

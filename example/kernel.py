@@ -54,5 +54,7 @@ def main():
         while the_world.step() <= 400:
             pass
 
+        the_world.log_statistics()
+
 if __name__ == '__main__':
     main()
