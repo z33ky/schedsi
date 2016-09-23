@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Defines the base class for schedulers."""
 
+import itertools
 from schedsi import cpu, rcu
 
 class SchedulerData: # pylint: disable=too-few-public-methods
@@ -69,6 +70,14 @@ class Scheduler:
         for i in range(-len(waiting_queue), 0):
             if waiting_queue[i].ready_time <= time:
                 ready_queue.append(waiting_queue.pop(i))
+
+    def get_thread_statistics(self):
+        """Obtain statistics of all threads."""
+        rcu_data = self._rcu.read()
+        all_threads = itertools.chain(rcu_data.finished_threads, rcu_data.waiting_threads,
+                                      rcu_data.ready_threads)
+        return {tid: stats for tid, stats in
+                (((t.module.name, t.tid), t.get_statistics()) for t in all_threads)}
 
     def _start_schedule(self, _prev_run_time):
         """Prepare making a scheduling decision.

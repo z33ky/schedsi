@@ -336,6 +336,12 @@ class GraphLog:
         self._draw_line(TIMER_COLOR, 0, 1, self.top)
         self._move(0, self.level - 1)
 
+    def thread_statistics(self, stats):
+        """Log thread statistics.
+
+        A no-op for this logger."""
+        pass
+
     def cpu_statistics(self, stats):
         """Log CPU statistics.
 

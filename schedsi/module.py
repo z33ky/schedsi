@@ -58,3 +58,7 @@ class Module:
         See :meth:`SchedulerThread.add_threads() <schedsi.threads.SchedulerThread.add_threads>`.
         """
         self._scheduler_thread.add_threads(new_threads)
+
+    def get_thread_statistics(self):
+        """Obtain statistics of threads managed by this module."""
+        return {(self.name, vcpu[1].tid): vcpu[1].get_statistics() for vcpu in self._vcpus}

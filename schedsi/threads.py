@@ -5,15 +5,31 @@ import sys
 import threading
 from schedsi import cpu
 
-class _ThreadStats: # pylint: disable=too-few-public-methods
+class _ThreadStats:
     """Thread statistics."""
 
     def __init__(self):
         """Create a :class:`_ThreadStats`."""
         self.finished_time = -1
-        self.ctxsw_times = []
-        self.run_times = []
-        self.wait_times = []
+        self.ctxsw = []
+        self.run = []
+        self.wait = []
+
+    def _all_times(self):
+        """Return tuple of all time-arrays."""
+        return (self.ctxsw, self.run, self.wait)
+
+    def clear(self):
+        """Clear statistics."""
+        for times in self._all_times():
+            times.clear()
+
+    def append(self, other):
+        """Append `other`'s statistics to `self`."""
+        assert self.finished_time == -1
+        self.finished_time = other.finished_time
+        for (mine, theirs) in zip(self._all_times(), other._all_times()): #pylint: disable=protected-access
+            mine += theirs
 
 class Thread:
     """The basic thread class.
@@ -67,7 +83,7 @@ class Thread:
         assert self.ready_time != -1 and self.ready_time <= current_time
         assert self.is_running.locked()
 
-        self.stats.wait_times.append(current_time - self.ready_time)
+        self.stats.wait.append(current_time - self.ready_time)
         self.ready_time = current_time
 
         if run_time == 0:
@@ -106,7 +122,7 @@ class Thread:
         `current_time` refers to the time just after the context switch.
         """
         assert self.is_running.locked()
-        self.stats.ctxsw_times.append(run_time)
+        self.stats.ctxsw.append(run_time)
 
     def run_background(self, current_time, _run_time):
         """Update runtime state.
@@ -126,7 +142,7 @@ class Thread:
         """
         assert self.is_running.locked()
 
-        self.stats.run_times.append(run_time)
+        self.stats.run.append(run_time)
 
         self.ready_time += run_time
         assert self.ready_time == current_time
@@ -155,8 +171,17 @@ class Thread:
         assert self.is_running.locked()
         self.is_running.release()
 
+    def get_statistics(self):
+        """Obtain statistics."""
+        stats = self.completed_stats.__dict__.copy()
+        stats['remaining'] = self.remaining
+        return stats
+
 class _BGStatThread(Thread):
+    """Base class for threads recording background time."""
+
     def __init__(self, *args, **kwargs):
+        """Create a :class:`_BGStatThread`."""
         super().__init__(*args, **kwargs)
         self.bg_times = []
 
@@ -167,6 +192,15 @@ class _BGStatThread(Thread):
         """
         self.bg_times.append(run_time)
         super().run_background(current_time, run_time)
+
+    def get_statistics(self):
+        """Obtain statistics.
+
+        See :meth:`Thread.get_statistics`.
+        """
+        stats = super().get_statistics()
+        stats['bg'] = self.bg_times
+        return stats
 
 class SchedulerThread(_BGStatThread):
     """A thread representing a VCPU for a child.
@@ -231,6 +265,15 @@ class SchedulerThread(_BGStatThread):
         """Add threads to scheduler."""
         self._scheduler.add_threads(new_threads)
 
+    def get_statistics(self):
+        """Obtain statistics.
+
+        See :meth:`_BGStatThread.get_statistics`.
+        """
+        stats = super().get_statistics()
+        stats['children'] = self._scheduler.get_thread_statistics()
+        return stats
+
 class VCPUThread(_BGStatThread):
     """A thread representing a VCPU from the perspective of a parent.
 
@@ -277,6 +320,16 @@ class VCPUThread(_BGStatThread):
         self._update_active = True
         super().run_crunch(current_time, run_time)
         self._update_active = False
+
+    def get_statistics(self):
+        """Obtain statistics.
+
+        See :meth:`_BGStatThread.get_statistics`.
+        """
+        stats = super().get_statistics()
+        sched_key = (self._thread.module.name, self._thread.tid)
+        stats['scheduler'] = {sched_key: self._thread.get_statistics()}
+        return stats
 
     def __getattribute__(self, key):
         """:attr:`ready_time` and :attr:`remaining` should be taken from the

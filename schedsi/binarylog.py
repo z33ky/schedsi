@@ -5,7 +5,7 @@ import collections
 import enum
 import msgpack
 
-_EntryType = enum.Enum('EntryType', ['event', 'cpu_statistics'])
+_EntryType = enum.Enum('EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
 _Event = enum.Enum('Event', [
     'init_core',
     'context_switch',
@@ -114,6 +114,10 @@ class BinaryLog:
     def timer_interrupt(self, cpu):
         """Log an timer interrupt event."""
         self._encode(cpu, _Event.timer_interrupt)
+
+    def thread_statistics(self, stats):
+        """Log thread statistics."""
+        self._write({'type': _EntryType.thread_statistics.name, 'stats': stats})
 
     def cpu_statistics(self, stats):
         """Log CPU statistics."""
@@ -247,6 +251,8 @@ def replay(binary, log):
                 log.timer_interrupt(event.cpu)
             else:
                 print("Unknown event:", event)
+        elif entry['type'] == _EntryType.thread_statistics.name:
+            log.thread_statistics(entry['stats'])
         elif entry['type'] == _EntryType.cpu_statistics.name:
             log.cpu_statistics(entry['stats'])
         else:

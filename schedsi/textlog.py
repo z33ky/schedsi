@@ -83,8 +83,42 @@ class TextLog:
         """Log an timer interrupt event."""
         self.stream.write(self._ct(cpu) + "timer interrupt.\n")
 
+    @classmethod
+    def to_json(cls, stats, sep_indent="\n"):
+        """Convert stats to JSON.
+
+        Works recursively.
+        Does formatting differently from the json python module.
+        """
+        if isinstance(stats, dict):
+            next_sep_indent = sep_indent + "\t"
+            values = []
+
+            for key, value in sorted(stats.items()):
+                #thread keys are (module-name, thread-id) tuples
+                #convert to string
+                if isinstance(key, tuple):
+                    key = '{}-{}'.format(key[0], key[1])
+
+                values.append('"' + key + '": ' + cls.to_json(value, next_sep_indent))
+
+            return "{" + next_sep_indent + ("," + next_sep_indent).join(values) + sep_indent + "}"
+
+        if isinstance(stats, (float, int)):
+            return str(stats)
+
+        if isinstance(stats, (list, tuple)):
+            return str(list(stats))
+
+        assert False, "Cannot encode {}".format(type(stats))
+
+    def thread_statistics(self, stats):
+        """Log thread statistics."""
+        self.stream.write("Thread stats:\n" + self.to_json(stats) + "\n")
+
     def cpu_statistics(self, stats):
         """Log CPU statistics."""
+        self.stream.write("Core stats:\n")
         for sstats, core in zip(sorted(stat.items() for stat in stats), itertools.count()):
             self.stream.write("Core {}\n".format(core))
             for name, stat in sorted(sstats):
