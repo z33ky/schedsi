@@ -88,6 +88,6 @@ class RCUCopy: # pylint: disable=too-few-public-methods
     def __init__(self, rcu):
         """Create a :class:`RCUCopy.`"""
         # pylint: disable=protected-access
-        assert not rcu._lock.acquire(False)
+        assert rcu._lock.locked
         self._uid = rcu._uid
         self.data = copy.copy(rcu._data)
