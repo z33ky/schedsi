@@ -218,7 +218,7 @@ class _Status:
             raise RuntimeError('Switching thread to unrelated module')
         proceed, time = self._context_switch(thread)
         #who should get this time?
-        thread.run_ctxsw(self.current_time, time)
+        current_thread.run_ctxsw(self.current_time, time)
         self._run_background(time)
         current_thread.run_background(self.current_time, time)
         if proceed:
