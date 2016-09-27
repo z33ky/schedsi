@@ -94,15 +94,12 @@ class _Status:
         self.current_time += time
         self.time_slice -= time
 
-    def _run_all(self, time, end=None):
-        """Call :meth:`Thread.run` on each :class:`Thread` in the
-        :class:`_Context` stack.
-
-        Optionally takes a third parameter indicating the last index
-        into the stack.
+    def _run_background(self, time):
+        """Call :meth:`Thread.run_background` on each :class:`Thread` in the
+        :class:`_Context` stack except the last (most recent).
         """
-        for ctx in self.contexts[0:end]:
-            ctx.thread.run(self.current_time, time)
+        for ctx in self.contexts[0:-1]:
+            ctx.thread.run_background(self.current_time, time)
 
     def _timer_interrupt(self):
         """Call when the :attr:`time_slice` runs out.
@@ -113,14 +110,18 @@ class _Status:
         self.cpu.log.timer_interrupt(self.cpu)
         self.time_slice = self.cpu.timer_quantum
         succeed, time = self._context_switch(self.contexts[0].thread)
-        self.contexts[0].thread.run(self.current_time, time)
+        self.contexts[0].thread.run_ctxsw(self.current_time, time)
         if succeed:
             for ctx in self.contexts[1:]:
                 ctx.thread.finish(self.current_time)
             del self.contexts[1:]
 
     def _context_switch(self, thread):
-        """Perform a context switch."""
+        """Perform a context switch.
+
+        The caller is responsible for modifying the :attr:`contexts` stack
+        and call :meth:`Thread.run_ctxsw` on the appropriate :class:`Thread`.
+        """
         if thread.module == self.contexts[-1].thread.module:
             self.cpu.log.context_switch(self.cpu, thread, 0, 0)
             self.ctxsw_stats.thread_succ += 1
@@ -148,7 +149,9 @@ class _Status:
             self._update_time(self.time_slice)
         else:
             proceed, time = self._context_switch(self.contexts[-2].thread)
-            self._run_all(time, -2)
+            #who should get this time?
+            self.contexts[-1].thread.run_ctxsw(self.current_time, time)
+            self._run_background(time)
             if proceed:
                 self.contexts[-1].thread.finish(self.current_time)
                 self.contexts.pop()
@@ -162,7 +165,10 @@ class _Status:
         if not current_thread.module in [thread.module, thread.module.parent]:
             raise RuntimeError('Switching thread to unrelated module')
         proceed, time = self._context_switch(thread)
-        self._run_all(time)
+        #who should get this time?
+        thread.run_ctxsw(self.current_time, time)
+        self._run_background(time)
+        current_thread.run_background(self.current_time, time)
         if proceed:
             self.contexts.append(_Context(thread))
 
@@ -192,7 +198,8 @@ class _Status:
                 self.cpu.log.thread_execute(self.cpu, time)
                 self._update_time(time)
                 self.stats.crunch_time += time
-                self._run_all(time)
+                self._run_background(time)
+                self.contexts[-1].thread.run_crunch(self.current_time, time)
             elif isinstance(next_step, threads.Thread):
                 #thread -> switch to it
                 self._switch_thread(next_step)

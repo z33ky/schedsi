@@ -10,6 +10,7 @@ class _ThreadStats: # pylint: disable=too-few-public-methods
     def __init__(self):
         """Create a :class:`_ThreadStats`."""
         self.finished_time = -1
+        self.ctxsw_times = []
         self.run_times = []
         self.wait_times = []
 
@@ -82,13 +83,21 @@ class Thread:
 
         return current_time
 
-    def run(self, current_time, run_time):
+    def run_ctxsw(self, current_time, run_time):
+        pass
+
+    def run_background(self, current_time, run_time):
+        assert not self.is_running.acquire(False)
+        self.ready_time = current_time
+
+    def run_crunch(self, current_time, run_time):
         """Update runtime state.
 
         This should be called while the thread is active.
         `current_time` refers to the time just after this thread has run.
         """
         assert not self.is_running.acquire(False)
+
         self.stats.run_times.append(run_time)
 
         assert self.ready_time + run_time == current_time
@@ -112,7 +121,16 @@ class Thread:
         assert not self.is_running.acquire(False)
         self.is_running.release()
 
-class SchedulerThread(Thread):
+class _BGStatThread(Thread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.bg_times = []
+
+    def run_background(self, current_time, run_time):
+        self.bg_times.append(run_time)
+        super().run_background(current_time, run_time)
+
+class SchedulerThread(_BGStatThread):
     """A thread representing a VCPU for a child.
 
     Execution is forwarded to the scheduler of the child :class:`Module`.
@@ -149,7 +167,7 @@ class SchedulerThread(Thread):
         """Add threads to scheduler."""
         self._scheduler.add_threads(new_threads)
 
-class VCPUThread(Thread):
+class VCPUThread(_BGStatThread):
     """A thread representing a VCPU from the perspective of a parent.
 
     Execution is forwarded to the :class:`SchedulerThread` of the child.
@@ -187,13 +205,13 @@ class VCPUThread(Thread):
             self._update_active = False
             current_time = yield self._thread
 
-    def run(self, current_time, run_time):
+    def run_crunch(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run`.
         """
         self._update_active = True
-        super().run(current_time, run_time)
+        super().run_crunch(current_time, run_time)
         self._update_active = False
 
     def __getattribute__(self, key):
@@ -262,12 +280,12 @@ class PeriodicWorkThread(Thread):
 
             current_time = yield from super()._execute(current_time, quota_left)
 
-    def run(self, current_time, run_time):
+    def run_crunch(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run`.
         """
-        super().run(current_time, run_time)
+        super().run_crunch(current_time, run_time)
         assert self.current_burst_left >= run_time
         self.current_burst_left -= run_time
         self.total_run_time += run_time
