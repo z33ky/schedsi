@@ -10,8 +10,8 @@ class _ThreadStats: # pylint: disable=too-few-public-methods
     def __init__(self):
         """Create a :class:`_ThreadStats`."""
         self.finished_time = -1
-        self.total_run_time = 0
-        self.total_wait_time = 0
+        self.run_times = []
+        self.wait_times = []
 
 class Thread:
     """The basic thread class.
@@ -66,7 +66,7 @@ class Thread:
         assert self.remaining != 0
         assert not self.is_running.acquire(False)
 
-        self.stats.total_wait_time += current_time - self.ready_time
+        self.stats.wait_times.append(current_time - self.ready_time)
         self.ready_time = current_time
 
         if run_time == -1:
@@ -89,7 +89,7 @@ class Thread:
         `current_time` refers to the time just after this thread has run.
         """
         assert not self.is_running.acquire(False)
-        self.stats.total_run_time += run_time
+        self.stats.run_times.append(run_time)
 
         assert self.ready_time + run_time == current_time
         self.ready_time = current_time
@@ -221,6 +221,7 @@ class PeriodicWorkThread(Thread):
         self.burst = burst
         self.current_burst_left = None
         self.burst_started = None
+        self.total_run_time = 0
 
     def _get_quota(self, current_time):
         """Calculate the quote at `current_time`.
@@ -230,7 +231,7 @@ class PeriodicWorkThread(Thread):
         activations = int((current_time - self.original_ready_time) / self.period) + 1
         quota = activations * self.burst
         if self.remaining != -1:
-            quota = min(self.remaining + self.stats.total_run_time, quota)
+            quota = min(self.remaining + self.total_run_time, quota)
         return quota
 
     #will run as long as the summed up bursts require
@@ -247,15 +248,15 @@ class PeriodicWorkThread(Thread):
             quota = self._get_quota(current_time)
             if quota < 0:
                 raise RuntimeError('Scheduled too eagerly')
-            quota_left = quota - self.stats.total_run_time
+            quota_left = quota - self.total_run_time
             if quota_left < 0:
                 raise RuntimeError('Executed too much')
-            quota_plus = self._get_quota(current_time + quota_left) - self.stats.total_run_time
+            quota_plus = self._get_quota(current_time + quota_left) - self.total_run_time
             self.burst_started = current_time - self.original_ready_time
             #TODO: be smarter
             while quota_plus > quota_left:
                 quota_left = quota_plus
-                quota_plus = self._get_quota(current_time + quota_left) - self.stats.total_run_time
+                quota_plus = self._get_quota(current_time + quota_left) - self.total_run_time
                 self.burst_started += self.period
             self.current_burst_left = quota_left
 
@@ -269,6 +270,8 @@ class PeriodicWorkThread(Thread):
         super().run(current_time, run_time)
         assert self.current_burst_left >= run_time
         self.current_burst_left -= run_time
+        self.total_run_time += run_time
+        assert self.total_run_time == sum(self.stats.run_times)
 
     def finish(self, current_time):
         """Become inactive.
