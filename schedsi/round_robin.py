@@ -3,19 +3,12 @@
 
 from schedsi import scheduler
 
-class RoundRobinData(scheduler.SchedulerData): # pylint: disable=too-few-public-methods
-    """Mutable data for the :class:`RoundRobin` scheduler."""
-    def __init__(self):
-        """Create a :class:`RoundRobinData`."""
-        super().__init__()
-        self.rr_idx = -1
-
 class RoundRobin(scheduler.Scheduler):
     """RoundRobin scheduler."""
 
     def __init__(self, module):
         """Create a :class:`RoundRobin` scheduler."""
-        super().__init__(module, RoundRobinData())
+        super().__init__(module)
 
     def schedule(self):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
@@ -23,16 +16,16 @@ class RoundRobin(scheduler.Scheduler):
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler.schedule>`.
         """
         while True:
-            rcu_copy, removed = yield from self._start_schedule()
+            rcu_copy, last_thread_queue, last_thread_idx = yield from self._start_schedule()
             rcu_data = rcu_copy.data
             num_threads = len(rcu_data.ready_threads)
             if num_threads == 0:
-                idx = rcu_data.rr_idx = -1
+                idx = -1
             else:
-                idx = rcu_data.rr_idx
-                if not removed:
+                idx = last_thread_idx
+                if last_thread_queue is rcu_data.ready_threads:
                     idx = (idx + 1) % num_threads
-                elif idx == num_threads:
+                elif last_thread_queue is None or idx == num_threads:
                     idx = 0
 
             rcu_data.rr_idx = idx

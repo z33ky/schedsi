@@ -65,10 +65,14 @@ class Scheduler:
         Moves ready threads to the ready queue
         and finished ones to the finished queue.
 
-        Returns a tuple (RCUCopy of :attr:`rcu`, flag whether
-        previously scheduled thread has finished).
-        The latter tuple element can be of interest for
-        scheduling algorithms that store an index to the thread list.
+        Returns a tuple (
+            * RCUCopy of :attr:`_rcu`
+            * list where previously scheduled thread ended up
+                * (`rcu_copy_{ready,waiting,finished}_threads`)
+            * index of previously scheduled thread
+                * as passed to :meth:`_schedule`
+                * *not* necessarily the index into the list where the thread ended up
+        ).
 
         Yields the amount of time it wants to execute. None for no-op.
         This is a subset of :meth:`schedule`.
@@ -81,10 +85,11 @@ class Scheduler:
 
             #check if the last scheduled thread is done now
             #move to a different queue is necessary
-            removed = False
+            dest = None
+            last_idx = None
             if rcu_data.last_idx != -1:
-                last_thread = rcu_data.ready_threads[rcu_data.last_idx]
-                dest = None
+                last_idx = rcu_data.last_idx
+                last_thread = rcu_data.ready_threads[last_idx]
 
                 if last_thread.remaining == 0:
                     dest = rcu_data.finished_threads
@@ -93,17 +98,19 @@ class Scheduler:
                 else:
                     assert last_thread.ready_time != -1
 
-                if not dest is None:
-                    removed = True
-                    dest.append(rcu_data.ready_threads.pop(rcu_data.last_idx))
-                    rcu_data.last_idx = -1
-                    if not self._rcu.update(rcu_copy):
-                        #current_time = yield 1
-                        continue
+                if dest is None:
+                    dest = rcu_data.ready_threads
+                else:
+                    dest.append(rcu_data.ready_threads.pop(last_idx))
+                    #if not self._rcu.update(rcu_copy):
+                    #    #current_time = yield 1
+                    #    continue
+
+                rcu_data.last_idx = -1
 
             self._update_ready_threads(current_time, rcu_data)
 
-            return rcu_copy, removed
+            return rcu_copy, dest, last_idx
 
     def _schedule(self, idx, rcu_copy):
         """Update :attr:`_rcu` and schedule the thread at `idx`.

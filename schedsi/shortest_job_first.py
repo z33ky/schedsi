@@ -21,6 +21,7 @@ class SJF(scheduler.Scheduler):
         finished_threads = rcu_data.finished_threads
         new_idx = len(ready_threads)
         super()._update_ready_threads(time, rcu_data)
+        assert rcu_data.last_idx == -1
 
         new_threads = ready_threads[new_idx:]
         del ready_threads[new_idx:]
@@ -54,7 +55,7 @@ class SJF(scheduler.Scheduler):
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler.schedule>`.
         """
         while True:
-            rcu_copy, _ = yield from self._start_schedule()
+            rcu_copy, _, _ = yield from self._start_schedule()
             idx = 0
             if not rcu_copy.data.ready_threads:
                 idx = -1
