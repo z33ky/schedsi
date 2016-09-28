@@ -32,3 +32,7 @@
 * static hierarchy builder
 	* the current approach is a bit inconvenient
 	* we want automatic name generation and VCPU additions
+* per-thread timeslice values
+	* schedulers should maintain per-thread timeslice information to use instead of local timers
+	* penalties and bonuses can be applied when runtime differs from the timeslice
+	* when enough of a timeslice of the previous thread remains, that thread can be scheduled right away
