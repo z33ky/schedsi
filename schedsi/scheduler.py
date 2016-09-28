@@ -38,7 +38,7 @@ class Scheduler:
                               sum(len(x) for x in
                                   [d.ready_threads, d.waiting_threads, d.finished_threads]))
 
-    def add_threads(self, new_threads):
+    def add_threads(self, new_threads, rcu_data=None):
         """Add threads to schedule."""
         def appliance(data):
             """Append new threads to the waiting and finished queue."""
@@ -47,17 +47,25 @@ class Scheduler:
                     data.finished_threads.append(thread)
                 else:
                     data.waiting_threads.append(thread)
-        self._rcu.apply(appliance)
+        if rcu_data is None:
+            self._rcu.apply(appliance)
+        else:
+            appliance(rcu_data)
 
-    def _update_ready_threads(self, time, rcu_data):
+    @classmethod
+    def _update_ready_threads(cls, time, rcu_data):
         """Moves threads becoming ready to the ready threads list."""
-        for i in range(-len(rcu_data.waiting_threads), 0):
-            if rcu_data.waiting_threads[i].ready_time <= time:
-                rcu_data.ready_threads.append(rcu_data.waiting_threads.pop(i))
+        cls._update_ready_thread_queues(time, rcu_data.ready_threads, rcu_data.waiting_threads)
 
         #do a sanity check while we're here
         assert not (0, -1) in ((t.remaining, t.ready_time) for t in rcu_data.ready_threads)
         assert all(t.remaining == 0 for t in rcu_data.finished_threads)
+
+    @staticmethod
+    def _update_ready_thread_queues(time, ready_queue, waiting_queue):
+        for i in range(-len(waiting_queue), 0):
+            if waiting_queue[i].ready_time <= time:
+                ready_queue.append(waiting_queue.pop(i))
 
     def _start_schedule(self, _prev_run_time):
         """Prepare making a scheduling decision.
