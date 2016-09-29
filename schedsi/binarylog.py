@@ -17,43 +17,31 @@ _Event = enum.Enum('Event', [
 
 _GenericEvent = collections.namedtuple('_GenericEvent', 'cpu event')
 
-def _get_from_class(thing, keys):
-    """Returns a :obj:`dict` with all the keys from `thing`."""
-    return _get_from_dict(thing.__dict__, keys)
+def _encode_cpu(cpu):
+    """Encode a :class:`Core` to a :obj:`dict`."""
+    return {
+        'uid': cpu.uid,
+        'status': {'current_time': cpu.status.current_time}
+    }
 
-def _get_from_tuple(thing, keys):
-    """Returns a :obj:`dict` with all the keys from `thing`."""
-    return _get_from_dict(dict(thing._asdict()), keys)
+def _encode_contexts(contexts):
+    """Encode a :class:`_Context` to a :obj:`dict`."""
+    return [{'thread': _encode_thread(c.thread)} for c in contexts]
 
-def _get_from_dict(thing, keys):
-    """Returns a :obj:`dict` with all the keys from `thing`."""
-    return {k: thing[k] for k in keys}
+def _encode_module(module):
+    """Encode a :class:`Module` to a :obj:`dict`."""
+    return {'name': module.name}
 
-def _encode(thing):
-    """Encode schedsi types and :class:`_GenericEvent` to a :obj:`dict`."""
-    from schedsi import cpu, module, threads
-
-    if isinstance(thing, cpu._Context): # pylint: disable=protected-access
-        thing = _get_from_class(thing, ['thread'])
-    elif isinstance(thing, cpu._Status): # pylint: disable=protected-access
-        thing = _get_from_class(thing, ['current_time'])
-    elif isinstance(thing, cpu.Core):
-        thing = _get_from_class(thing, ['uid', 'status'])
-    elif isinstance(thing, module.Module):
-        thing = _get_from_class(thing, ['name'])
-    elif isinstance(thing, threads.Thread):
-        thing = _get_from_class(thing, ['module', 'tid'])
-    elif isinstance(thing, _GenericEvent):
-        thing = _get_from_tuple(thing, ['cpu', 'event'])
-        thing['type'] = _EntryType.event.name
-    return thing
+def _encode_thread(thread):
+    """Encode a :class:`Thread` to a :obj:`dict`."""
+    return {'module': _encode_module(thread.module), 'tid': thread.tid}
 
 def _encode_event(cpu, event, args=None):
     """Create a :class:`_GenericEvent`.
 
     `args` can contain additional parameters to put in the :obj:`dict`.
     """
-    encoded = _encode(_GenericEvent(cpu, event))
+    encoded = {'cpu': _encode_cpu(cpu), 'event': event, 'type': _EntryType.event.name}
     if not args is None:
         encoded.update(args)
     return encoded
@@ -76,19 +64,22 @@ def _encode_ctxsw(cpu, thread_to, time, required):
     else:
         raise RuntimeError('Unable to determine context switch direction')
     return _encode_event(cpu, _Event.context_switch.name,
-                         {'direction': direction, 'thread_to': thread_to,
-                          'time': time, 'required': required})
+                         {
+                             'direction': direction, 'thread_to': _encode_thread(thread_to),
+                             'time': time, 'required': required
+                         })
 
 def _encode_coreinit(cpu):
     """Encode a init_core event to a :obj:`dict`."""
-    return _encode_event(cpu, _Event.init_core.name, {'context': cpu.status.contexts})
+    return _encode_event(cpu, _Event.init_core.name,
+                         {'context': _encode_contexts(cpu.status.contexts)})
 
 class BinaryLog:
     """Binary logger using MessagePack."""
     def __init__(self, stream):
         """Create a :class:`BinaryLog`."""
         self.stream = stream
-        self.packer = msgpack.Packer(default=_encode)
+        self.packer = msgpack.Packer()
 
     def _write(self, data):
         """Write data to the MessagePack file."""
