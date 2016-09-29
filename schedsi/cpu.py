@@ -186,7 +186,10 @@ class _Status:
 
         while True:
             next_step = self.contexts[-1].execution.send(self.current_time)
-            if isinstance(next_step, (int, float)):
+            if next_step is None:
+                #no-op
+                continue
+            elif type(next_step) in (int, float): # pylint: disable=unidiomatic-typecheck
                 if next_step == 0:
                     #0 -> yield (to parent)
                     self.cpu.log.thread_yield(self.cpu)
@@ -200,14 +203,10 @@ class _Status:
                 self.stats.crunch_time += time
                 self._run_background(time)
                 self.contexts[-1].thread.run_crunch(self.current_time, time)
-            elif isinstance(next_step, threads.Thread):
+            else:
+                assert isinstance(next_step, threads.Thread)
                 #thread -> switch to it
                 self._switch_thread(next_step)
-            elif next_step is None:
-                #no-op
-                continue
-            else:
-                assert False
             break
 
 class Core:
