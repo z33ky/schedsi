@@ -82,7 +82,7 @@ class GraphLog:
         #draw axes
         path = pyx.path.path(pyx.path.moveto(0, 0), pyx.path.rlineto(self.cursor[0], 0))
         canvas.stroke(path, [pyx.color.rgb.black])
-        for point in range(0, self.cursor[0] + 1, 5):
+        for point in range(0, int(self.cursor[0] + 1), 5):
             line = pyx.path.line(point, 0, point, -0.5)
             canvas.stroke(line, [pyx.color.rgb.black])
             canvas.text(point, -1, point, TEXT_ATTR)
