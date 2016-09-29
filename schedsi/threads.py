@@ -249,10 +249,10 @@ class PeriodicWorkThread(Thread):
         Won't return more than :attr:`remaining`.
         """
         activations = int((current_time - self.original_ready_time) / self.period) + 1
-        quota = activations * self.burst
+        quota_left = activations * self.burst - self.total_run_time
         if self.remaining != -1:
-            quota = min(self.remaining + self.total_run_time, quota)
-        return quota
+            quota_left = min(self.remaining, quota_left)
+        return quota_left
 
     #will run as long as the summed up bursts require
     def execute(self):
@@ -265,18 +265,15 @@ class PeriodicWorkThread(Thread):
 
         current_time = yield
         while True:
-            quota = self._get_quota(current_time)
-            if quota < 0:
-                raise RuntimeError('Scheduled too eagerly')
-            quota_left = quota - self.total_run_time
+            quota_left = self._get_quota(current_time)
             if quota_left < 0:
                 raise RuntimeError('Executed too much')
-            quota_plus = self._get_quota(current_time + quota_left) - self.total_run_time
+            quota_plus = self._get_quota(current_time + quota_left)
             self.burst_started = current_time - self.original_ready_time
             #TODO: be smarter
             while quota_plus > quota_left:
                 quota_left = quota_plus
-                quota_plus = self._get_quota(current_time + quota_left) - self.total_run_time
+                quota_plus = self._get_quota(current_time + quota_left)
                 self.burst_started += self.period
             self.current_burst_left = quota_left
 
