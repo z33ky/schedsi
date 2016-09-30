@@ -27,18 +27,13 @@ class RoundRobin(scheduler.Scheduler):
             rcu_data = rcu_copy.data
             num_threads = len(rcu_data.ready_threads)
             if num_threads == 0:
-                rcu_data.rr_idx = -1
-                if not self._rcu.update(rcu_copy):
-                    #yield 1
-                    continue
-                yield 0
-                return
-
-            idx = rcu_data.rr_idx
-            if not removed:
-                idx = (idx + 1) % num_threads
-            elif idx == num_threads:
-                idx = 0
+                idx = rcu_data.rr_idx = -1
+            else:
+                idx = rcu_data.rr_idx
+                if not removed:
+                    idx = (idx + 1) % num_threads
+                elif idx == num_threads:
+                    idx = 0
 
             rcu_data.rr_idx = idx
 

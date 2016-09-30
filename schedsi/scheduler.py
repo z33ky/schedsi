@@ -102,14 +102,20 @@ class Scheduler:
             return rcu_copy, removed
 
     def _schedule(self, idx, rcu_copy):
-        """Schedule the thread at `idx`.
+        """Update :attr:`_rcu` and schedule the thread at `idx`.
+
+        If `idx` is -1, yield 0.
 
         Returns a flag indicating if the thread was successfully scheduled.
-        Yields the thread to execute.
+        Yields 0 or the thread to execute.
         """
         rcu_copy.data.last_idx = idx
         if not self._rcu.update(rcu_copy):
             return False
+
+        if idx == -1:
+            yield 0
+            return
 
         yield rcu_copy.data.ready_threads[idx]
         return True
@@ -129,9 +135,9 @@ class Scheduler:
         while True:
             rcu_copy, _ = yield from self._start_schedule()
             num_threads = len(rcu_copy.data.ready_threads)
+            idx = 0
             if num_threads == 0:
-                yield 0
-                return
+                idx = -1
             if num_threads != 1:
                 raise RuntimeError('Scheduler cannot make scheduling decision.')
-            yield from self._schedule(0, rcu_copy)
+            yield from self._schedule(idx, rcu_copy)

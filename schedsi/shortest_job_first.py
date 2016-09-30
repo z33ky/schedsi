@@ -57,7 +57,7 @@ class SJF(scheduler.Scheduler):
         """
         while True:
             rcu_copy, _ = yield from self._start_schedule()
+            idx = 0
             if not rcu_copy.data.ready_threads:
-                yield 0
-                return
-            yield from self._schedule(0, rcu_copy)
+                idx = -1
+            yield from self._schedule(idx, rcu_copy)
