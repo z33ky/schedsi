@@ -42,14 +42,18 @@ class Scheduler:
         """Add threads to schedule."""
         def appliance(data):
             """Append new threads to the waiting and finished queue."""
-            data.waiting_threads += (n for n in new_threads if n.remaining != 0)
-            data.finished_threads += (n for n in new_threads if n.remaining == 0)
+            for thread in new_threads:
+                if thread.remaining == 0:
+                    data.finished_threads.append(thread)
+                else:
+                    data.waiting_threads.append(thread)
         self._rcu.apply(appliance)
 
     def _update_ready_threads(self, time, rcu_data):
         """Moves threads becoming ready to the ready threads list."""
-        rcu_data.ready_threads += (r for r in rcu_data.waiting_threads if r.ready_time <= time)
-        rcu_data.waiting_threads = [r for r in rcu_data.waiting_threads if r.ready_time > time]
+        for i in range(-len(rcu_data.waiting_threads), 0):
+            if rcu_data.waiting_threads[i].ready_time <= time:
+                rcu_data.ready_threads.append(rcu_data.waiting_threads.pop(i))
 
         #do a sanity check while we're here
         assert not (0, -1) in ((t.remaining, t.ready_time) for t in rcu_data.ready_threads)
