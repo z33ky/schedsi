@@ -29,15 +29,13 @@ class SJF(scheduler.Scheduler):
         new_threads = sorted(new_threads, key=lambda t: t.remaining)
 
         #remaining_list should contain the remaining times of all non-infinitly threads
-        #so for inf_idx we could the number of -1 from the back
-        inf_idx = next((i for i, t in enumerate(reversed(ready_threads)) if t.remaining != -1),
-                       len(ready_threads))
-        remaining_list = list(t.remaining for t in ready_threads[0:-inf_idx])
+        inf_idx = next((i for i, t in enumerate(ready_threads) if t.remaining == -1), None)
+        remaining_list = list(t.remaining for t in ready_threads[:inf_idx])
 
         #filter out the infinitly executing ones from new_threads
         inf_idx = next((i for i, t in enumerate(new_threads) if t.remaining != -1),
                        len(new_threads))
-        ready_threads += new_threads[0:inf_idx]
+        ready_threads += new_threads[:inf_idx]
         new_threads = new_threads[inf_idx:]
 
         idx = 0
