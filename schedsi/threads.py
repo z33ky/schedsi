@@ -215,13 +215,15 @@ class VCPUThread(_BGStatThread):
         self._update_active = False
 
     def __getattribute__(self, key):
-        """:attr:`ready_time` and :attr:`remaining` should be taken from the :class:`SchedulerThread`.
+        """:attr:`ready_time` and :attr:`remaining` should be taken from the
+        :class:`SchedulerThread`.
 
         Except for ready_time when we're calculating this thread's statistics,
         for which `_update_active` should be set so the key is passed through.
         """
-        if key == 'remaining' or (key == 'ready_time' and not self._update_active):
-            return self._thread.__getattribute__(key)
+        if key == 'remaining' or (key == 'ready_time' and
+                                  not object.__getattribute__(self, '_update_active')):
+            return object.__getattribute__(self, '_thread').__getattribute__(key)
         return object.__getattribute__(self, key)
 
 class PeriodicWorkThread(Thread):
