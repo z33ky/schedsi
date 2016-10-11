@@ -153,12 +153,12 @@ class SchedulerThread(_BGStatThread):
 
         scheduler = self._scheduler.schedule()
         thing = next(scheduler)
-        assert thing is None
         current_time = yield
         while True:
             null = next(super()._execute(current_time, 0))
             assert null == 0
-            current_time = yield scheduler.send(current_time)
+            current_time = yield thing
+            thing = scheduler.send(current_time)
 
     def num_threads(self):
         return self._scheduler.num_threads()

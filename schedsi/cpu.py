@@ -17,8 +17,14 @@ class _Context: # pylint: disable=too-few-public-methods
         """Create a :class:`_Context`"""
         self.thread = thread
         self.execution = thread.execute()
-        startup = next(self.execution)
-        assert startup is None
+        self.started = False
+
+    def execute(self, current_time):
+        if self.started:
+            return self.execution.send(current_time)
+        else:
+            self.started = True
+            return next(self.execution)
 
 class _ContextSwitchStats: # pylint: disable=too-few-public-methods
     """Context switching statistics."""
@@ -112,8 +118,10 @@ class _Status:
         succeed, time = self._context_switch(self.contexts[0].thread)
         self.contexts[0].thread.run_ctxsw(self.current_time, time)
         if succeed:
-            for ctx in self.contexts[1:]:
+            for ctx in self.contexts[1:-1]:
                 ctx.thread.finish(self.current_time)
+            if self.contexts[-1].started:
+                self.contexts[-1].thread.finish(self.current_time)
             del self.contexts[1:]
 
     def _context_switch(self, thread):
@@ -185,7 +193,7 @@ class _Status:
             return
 
         while True:
-            next_step = self.contexts[-1].execution.send(self.current_time)
+            next_step = self.contexts[-1].execute(self.current_time)
             if next_step is None:
                 #no-op
                 continue
