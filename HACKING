@@ -5,12 +5,13 @@ The `Core` has a stack of contexts, where the first element of the stack in the 
 and each successive element is either a thread from the same module or the scheduler thread of a child module.
 It is imaginable that child threads run directly on the parent, but this is currently not used.
 
-The scheduler is a coroutine that can yield a number > 0 to indicate that it's using some processor time. -1 is also valid and stands for execution as long as possible (the remaining time slice).
-Yielding a value of 0 means that the scheduler currently has no `Thread`s to schedule, meaning that the `Core` will return execution to the parent,
-or if the kernel scheduler yield, the `Core` will idle the remaining time slice.
-The scheduler may also yield a `Thread`, which the `Core` interprets as a request to switch context to that `Thread`, so it's context is pushed on the stack.
+The scheduler is a coroutine that yields a `cpu.Request`.
+It may be an execution request containing a number > 0 to indicate that it's using some processor time. -1 is also valid and stands for execution as long as possible (the remaining time slice).
+An idle request means that the scheduler currently has no `Thread`s to schedule, meaning that the `Core` will return execution to the parent,
+or if the kernel scheduler yields, the `Core` will idle the remaining time slice.
+The scheduler may also yield a thread-switch request containing a `Thread`, the context of which is pushed on the stack.
 
-A `Thread` may also yield the same values as a scheduler. In fact, schedulers are represented as `Thread`s via the `SchedulerThread` class.
+A `Thread` yields the same requests as a scheduler. In fact, schedulers are represented as `Thread`s via the `SchedulerThread` class.
 
 Whenever the `Core` receives the request to spend time executing the `Thread` it will check how long it can run and call the `run()` function of the thread and pass the current time and the time it runs for.
 This allows the `Thread` to gather how long it has actually run.

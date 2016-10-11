@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Defines the base class for schedulers."""
 
-from schedsi import rcu
+from schedsi import cpu, rcu
 
 class SchedulerData: # pylint: disable=too-few-public-methods
     """Mutable data for the :class:`Scheduler`.
@@ -74,11 +74,10 @@ class Scheduler:
                 * *not* necessarily the index into the list where the thread ended up
         ).
 
-        Yields the amount of time it wants to execute. None for no-op.
-        This is a subset of :meth:`schedule`.
+        Yields an idle or execute :class:`Request <schedsi.cpu.Request>`.
         Consumes the current time.
         """
-        current_time = yield
+        current_time = yield cpu.Request.current_time()
         while True:
             rcu_copy = self._rcu.copy()
             rcu_data = rcu_copy.data
@@ -103,7 +102,7 @@ class Scheduler:
                 else:
                     dest.append(rcu_data.ready_threads.pop(last_idx))
                     #if not self._rcu.update(rcu_copy):
-                    #    #current_time = yield 1
+                    #    #current_time = yield cpu.Request.execute(1)
                     #    continue
 
                 rcu_data.last_idx = -1
@@ -115,20 +114,20 @@ class Scheduler:
     def _schedule(self, idx, rcu_copy):
         """Update :attr:`_rcu` and schedule the thread at `idx`.
 
-        If `idx` is -1, yield 0.
+        If `idx` is -1, yield an idle request.
 
         Returns a flag indicating if the thread was successfully scheduled.
-        Yields 0 or the thread to execute.
+        Yields a :class:`Request <schedsi.cpu.Request>`.
         """
         rcu_copy.data.last_idx = idx
         if not self._rcu.update(rcu_copy):
             return False
 
         if idx == -1:
-            yield 0
+            yield cpu.Request.idle()
             return
 
-        yield rcu_copy.data.ready_threads[idx]
+        yield cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx])
         return True
 
     def schedule(self):
@@ -138,9 +137,7 @@ class Scheduler:
         This function will only deal with a single :class:`Thread <schedsi.threads.Thread>`.
         If more are present, a :exc:`RuntimeError` is raised.
 
-        Yields the amount of time it wants to execute,
-        0 to indicate the desire to yield, or a thread to switch to.
-        None for no-op.
+        Yields a :class:`Request <schedsi.cpu.Request>`.
         Consumes the current time.
         """
         while True:
