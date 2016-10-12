@@ -116,19 +116,17 @@ class Scheduler:
 
         If `idx` is -1, yield an idle request.
 
-        Returns a flag indicating if the thread was successfully scheduled.
         Yields a :class:`Request <schedsi.cpu.Request>`.
         """
         rcu_copy.data.last_idx = idx
         if not self._rcu.update(rcu_copy):
-            return False
+            return
 
         if idx == -1:
             yield cpu.Request.idle()
             return
 
         yield cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx])
-        return True
 
     def schedule(self):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
