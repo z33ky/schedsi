@@ -49,14 +49,15 @@ class SJF(scheduler.Scheduler):
             ready_threads.insert(idx + count, thread)
             count += 1
 
-    def schedule(self):
+    @staticmethod
+    def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
-        See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler.schedule>`.
+        See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler._sched_loop>`.
         """
-        while True:
-            rcu_copy, _, _ = yield from self._start_schedule()
-            idx = 0
-            if not rcu_copy.data.ready_threads:
-                idx = -1
-            yield from self._schedule(idx, rcu_copy)
+        idx = 0
+        if not rcu_copy.data.ready_threads:
+            idx = -1
+        return idx
+        #needs to be a coroutine
+        yield # pylint: disable=unreachable

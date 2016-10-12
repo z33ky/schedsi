@@ -111,6 +111,13 @@ class Scheduler:
 
             return rcu_copy, dest, last_idx
 
+    @staticmethod
+    def _get_last_thread(rcu_data, last_thread_queue, last_thread_idx):
+        if last_thread_queue is rcu_data.ready_threads:
+            return rcu_data.ready_threads[last_thread_idx]
+        elif not last_thread_queue is None:
+            return last_thread_queue[-1]
+
     def _schedule(self, idx, rcu_copy):
         """Update :attr:`_rcu` and schedule the thread at `idx`.
 
@@ -131,19 +138,35 @@ class Scheduler:
     def schedule(self):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
-        This :class:`Scheduler` is a base class.
-        This function will only deal with a single :class:`Thread <schedsi.threads.Thread>`.
-        If more are present, a :exc:`RuntimeError` is raised.
+        This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
+        :meth:`_schedule_` in a loop, passing appropriate arguments.
 
         Yields a :class:`Request <schedsi.cpu.Request>`.
         Consumes the current time.
         """
         while True:
-            rcu_copy, _ = yield from self._start_schedule()
-            num_threads = len(rcu_copy.data.ready_threads)
-            idx = 0
-            if num_threads == 0:
-                idx = -1
-            if num_threads != 1:
-                raise RuntimeError('Scheduler cannot make scheduling decision.')
+            rcu_copy, *rest = yield from self._start_schedule()
+            idx = yield from self._sched_loop(rcu_copy, *rest)
             yield from self._schedule(idx, rcu_copy)
+
+    @staticmethod
+    def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):
+        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
+
+        This :class:`Scheduler` is a base class.
+        This function will only deal with a single :class:`Thread <schedsi.threads.Thread>`.
+        If more are present, a :exc:`RuntimeError` is raised.
+
+        Returns the selected thread index, or -1 if none.
+        Yields a :class:`Request <schedsi.cpu.Request>`.
+        Consumes the current time.
+        """
+        num_threads = len(rcu_copy.data.ready_threads)
+        idx = 0
+        if num_threads == 0:
+            idx = -1
+        if num_threads != 1:
+            raise RuntimeError('Scheduler cannot make scheduling decision.')
+        return idx
+        #needs to be a coroutine
+        yield # pylint: disable=unreachable
