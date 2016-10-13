@@ -9,7 +9,10 @@ CTXSW_COST = 1
 _RequestType = enum.Enum('RequestType', ['current_time', 'switch_thread', 'idle', 'execute'])
 
 class Request:
+    """A request to the CPU."""
+
     def __init__(self, rtype, thing):
+        """Create a :class:`Request`."""
         if rtype == _RequestType.current_time:
             assert thing is None
         elif rtype == _RequestType.switch_thread:
@@ -25,18 +28,25 @@ class Request:
 
     @classmethod
     def current_time(cls):
+        """Create a :class:`Request` to get the current time.
+
+        The CPU will not spend any virtual time doing this.
+        """
         return cls(_RequestType.current_time, None)
 
     @classmethod
     def switch_thread(cls, thread):
+        """Create a :class:`Request` to switch context."""
         return cls(_RequestType.switch_thread, thread)
 
     @classmethod
     def idle(cls):
+        """Create a :class:`Request` to idle."""
         return cls(_RequestType.idle, None)
 
     @classmethod
     def execute(cls, amount):
+        """Create a :class:`Request` to spend some time executing."""
         return cls(_RequestType.execute, amount)
 
 class _Context: # pylint: disable=too-few-public-methods
