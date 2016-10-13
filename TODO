@@ -7,10 +7,13 @@
 	* thanks to the recent re-architecturing this should be implementable fairly easily
 	* does this work without supporting multiple VCPUs per module?
 		* since in the current hierarchical scheduling approach VCPUThreads are essentially checkpointed threads
-		  that start from the checkpoint each time they are invoked, running a single VCPUThread multiple times from multiple core seems conceptually sound
+		  that start from the checkpoint each time they are invoked, running a single VCPUThread multiple times in parallel from multiple core seems conceptually sound
 		* scheduling data is protected against concurrent access, thread data access would need the same approach
 		* (currently locking the mutex of the running VCPUThread would fail and trigger an assert)
 		* the CPU analogy breaks down though
+	* schedsi.Scheduler thread queues need to be fixed
+		* a thread might still be executing while another scheduler-thread moves it around the queues
+		* prev_run_time tracking needs to be fixed
 * support multiple VCPUs per module
 	* easy: sort threads to VCPUs on creation
 		* could also use run-time balancing
