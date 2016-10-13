@@ -175,3 +175,77 @@ class Scheduler:
         return idx
         #needs to be a coroutine
         yield # pylint: disable=unreachable
+
+class SchedulerAddonBase():
+    """Scheduler addon base-class.
+
+    Scheduler addons should use this as their baseclass.
+    The :class:`SchedulerAddon` will call these functions
+    like hooks.
+    """
+
+    def transmute_rcu_data(self, original, *addon_data): # pylint: disable=no-self-use
+        """Transmute a :class:`SchedulerData`.
+
+        This should be called like `super().transmute_rcu_data(original, MyAddonData, *addon_data)`.
+        `MyAddonData` should not inherit from :class:`SchedulerData`.
+
+        The result is that the scheduler's rcu_data will be merged with `MyAddonData`.
+        """
+        if len(addon_data) == 0:
+            return
+        class AddonData(*addon_data): # pylint: disable=too-few-public-methods
+            pass
+        original.__class__ = AddonData
+        for data in addon_data:
+            data.__init__(original)
+
+    def start_schedule(self, _prev_run_time, _rcu_data, _last_thread_queue, _last_thread_idx): # pylint: disable=no-self-use
+        """Hook for :meth:`_start_schedule`."""
+        #needs to be a coroutine
+        return
+        yield # pylint: disable=unreachable
+
+    def schedule(self, idx, _rcu_data): # pylint: disable=no-self-use
+        """Hook for :meth:`_schedule`."""
+        return idx
+
+class SchedulerAddon(Scheduler):
+    """Scheduler with addon.
+
+    This can be used to add scheduler addons via
+    multiple inheritance.
+    For instance, if we wanted the Addon `MyAddon`
+    with the `BaseScheduler` scheduler, you can do this::
+
+        class MyScheduler(SchedulerAddon, BaseScheduler):
+            def __init__(self, module):
+                super().__init__(module, MyAddon("addon-param"), "sched-param")
+
+    """
+
+    def __init__(self, module, addon, *args, **kwargs):
+        """Create a :class:`SchedulerAddon`."""
+        super().__init__(module, *args, **kwargs)
+        self.addon = addon
+        addon.transmute_rcu_data(self._rcu._data)
+
+    def _start_schedule(self, prev_run_time):
+        """See :meth:`Scheduler._start_schedule`.
+
+        This will also call the
+        :attr:`addon`'s :meth:`start_schedule <SchedulerAddonBase.schedule>` hook.
+        """
+        rcu_copy, *rest = yield from super()._start_schedule(prev_run_time)
+
+        self.addon.start_schedule(prev_run_time, rcu_copy.data, *rest)
+
+        return (rcu_copy, *rest)
+
+    def _schedule(self, idx, rcu_copy):
+        """See :meth:`Scheduler._schedule`.
+
+        This will also call the :attr:`addon`'s :meth:`schedule <SchedulerAddonBase.schedule>`.
+        """
+        idx = self.addon.schedule(idx, rcu_copy.data)
+        return (yield from super()._schedule(idx, rcu_copy))
