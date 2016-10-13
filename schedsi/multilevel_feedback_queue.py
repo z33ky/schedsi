@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Defines a multi-level feedback queue scheduler."""
 
-from schedsi import scheduler
+from schedsi import cpu, scheduler
 
 class MLFQData(scheduler.SchedulerData): # pylint: disable=too-few-public-methods
     """Mutable data for the :class:`MLFQ` scheduler."""
 
-    def __init__(self, levels):
+    def __init__(self, levels, priority_boost_time):
         """Create a :class:`MLFQData`."""
         super().__init__()
 
@@ -25,13 +25,24 @@ class MLFQData(scheduler.SchedulerData): # pylint: disable=too-few-public-method
         #assert not self.waiting_threads
         #self.waiting_threads = self.waiting_queues[0]
 
+        self.prio_boost_time = priority_boost_time
+        self.last_prio_boost = None
+
 class MLFQ(scheduler.Scheduler):
     """Multi-level feedback queue scheduler."""
 
-    def __init__(self, module, *, levels=8):
+    def __init__(self, module, *, levels=8, priority_boost_time):
         """Create a class:`MLFQ`."""
         assert levels > 0
-        super().__init__(module, MLFQData(levels))
+        if not priority_boost_time is None:
+            #priority boost has no effect with 1 queue
+            assert levels != 1
+            assert priority_boost_time >= 0
+        super().__init__(module, MLFQData(levels, priority_boost_time))
+        self.prio_boost_time = priority_boost_time
+        if priority_boost_time is None:
+            #_start_schedule does priority boost
+            self._start_schedule = super()._start_schedule
 
     def add_threads(self, new_threads, rcu_data=None):
         """Add threads to schedule.
@@ -68,6 +79,53 @@ class MLFQ(scheduler.Scheduler):
         #do a sanity check while we're here
         assert all((t.remaining != 0 for t in ready) for ready in rcu_data.ready_queues)
         assert all(t.remaining == 0 for t in rcu_data.finished_threads)
+
+    def _start_schedule(self, prev_run_time): # pylint: disable=method-hidden
+        """See :meth:`Scheduler._start_schedule`.
+
+        Boost priorities if necessary.
+        """
+        #this method is hidden when self.prio_boost_time is None
+        assert not self.priority_boost_time is None
+        rcu_copy, last_queue, last_queue_idx = yield from super()._start_schedule(prev_run_time)
+        rcu_data = rcu_copy.data
+
+        #note: real-time vs logical clock...
+        current_time = (yield cpu.Request.current_time())
+
+        last_queue, last_queue_idx = self._priority_boost(rcu_data, last_queue, last_queue_idx, current_time)
+
+        return rcu_copy, last_queue, last_queue_idx
+
+    def _priority_boost(self, rcu_data, last_queue, last_idx, current_time): # pylint: disable=method-hidden
+        """Put all threads in highest priority if :attr:`prio_boost_time` elapsed.
+
+        This is to avoid starvation.
+
+        This function should be run before selecting a new :attr:`ready_threads`.
+
+        This function takes the return values of :meth:`_start_schedule` and the current time.
+
+        Since this changes the queues around, the updated values for
+        `last_queue` and `last_idx` are returned.
+        """
+        if rcu_data.last_prio_boost is None:
+            rcu_data.last_prio_boost = current_time
+        delta = current_time - rcu_data.last_prio_boost
+        if rcu_data.prio_boost_time <= delta:
+            if last_queue is rcu_data.ready_threads:
+                last_queue = rcu_data.ready_queues[0]
+            rcu_data.ready_threads = rcu_data.ready_queues[0]
+            for queue in rcu_data.ready_queues[1:]:
+                if not queue is rcu_data.ready_threads:
+                    rcu_data.ready_threads.extend(queue)
+                    del queue[:]
+            rcu_data.prio_boost_time = self.prio_boost_time - (delta - rcu_data.prio_boost_time)
+        else:
+            rcu_data.prio_boost_time -= delta
+        rcu_data.last_prio_boost = current_time
+
+        return last_queue, last_idx
 
     def _sched_loop(self, rcu_copy, last_thread_queue, last_thread_idx):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.

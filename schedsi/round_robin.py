@@ -12,4 +12,4 @@ class RoundRobin(multilevel_feedback_queue.MLFQ):
 
     def __init__(self, module):
         """Create a :class:`RoundRobin` scheduler."""
-        super().__init__(module, levels=1)
+        super().__init__(module, levels=1, priority_boost_time=None)
