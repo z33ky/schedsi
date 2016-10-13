@@ -59,7 +59,7 @@ class Scheduler:
         assert not (0, -1) in ((t.remaining, t.ready_time) for t in rcu_data.ready_threads)
         assert all(t.remaining == 0 for t in rcu_data.finished_threads)
 
-    def _start_schedule(self):
+    def _start_schedule(self, _prev_run_time):
         """Prepare making a scheduling decision.
 
         Moves ready threads to the ready queue
@@ -135,7 +135,7 @@ class Scheduler:
 
         yield cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx])
 
-    def schedule(self):
+    def schedule(self, prev_run_time):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
@@ -145,9 +145,14 @@ class Scheduler:
         Consumes the current time.
         """
         while True:
-            rcu_copy, *rest = yield from self._start_schedule()
+            rcu_copy, *rest = yield from self._start_schedule(prev_run_time)
             idx = yield from self._sched_loop(rcu_copy, *rest)
+
+            current_time = (yield cpu.Request.current_time())
+
             yield from self._schedule(idx, rcu_copy)
+
+            prev_run_time = (yield cpu.Request.current_time()) - current_time
 
     @staticmethod
     def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):

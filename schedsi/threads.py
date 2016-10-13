@@ -161,6 +161,7 @@ class SchedulerThread(_BGStatThread):
         """Create a :class:`SchedulerThread`."""
         super().__init__(scheduler.module, *args, **kwargs)
         self._scheduler = scheduler
+        self.last_run_time = 0
 
     def execute(self):
         """Simulate execution.
@@ -172,14 +173,43 @@ class SchedulerThread(_BGStatThread):
         self.is_running.acquire(False)
         assert self.is_running.locked
 
-        scheduler = self._scheduler.schedule()
+        scheduler = self._scheduler.schedule(self.last_run_time)
         thing = next(scheduler)
         current_time = yield cpu.Request.current_time()
         while True:
             null = next(super()._execute(current_time, 0))
             assert null is None
             current_time = yield thing
+            self.last_run_time = 0
             thing = scheduler.send(current_time)
+
+    def run_ctxsw(self, _current_time, run_time):
+        """Update runtime state.
+
+        See :meth:`Thread.run_ctxsw`.
+        """
+        self.last_run_time += run_time
+
+    def run_background(self, _current_time, run_time):
+        """Update runtime state.
+
+        See :meth:`Thread.run_background`.
+        """
+        self.last_run_time += run_time
+
+    def run_crunch(self, _current_time, run_time):
+        """Update runtime state.
+
+        See :meth:`Thread.run_crunch`.
+        """
+        self.last_run_time += run_time
+
+    def finish(self, _current_time):
+        """Become inactive.
+
+        See :meth:`Thread.finish`.
+        """
+        self.last_run_time = 0
 
     def num_threads(self):
         return self._scheduler.num_threads()
