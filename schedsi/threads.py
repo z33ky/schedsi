@@ -88,9 +88,22 @@ class Thread:
         return current_time
 
     def run_ctxsw(self, current_time, run_time):
+        """Update runtime state.
+
+        This should be called just after a context switch to another thread
+        when this was just the active thread, or when returning to this thread,
+        whether the context switch was successful or not.
+        `current_time` refers to the time just after the context switch.
+        """
         pass
 
-    def run_background(self, current_time, run_time):
+    def run_background(self, current_time, _run_time):
+        """Update runtime state.
+
+        This should be called while the thread is in the context stack, but not
+        active (not the top).
+        `current_time` refers to the time just after the active thread has run.
+        """
         assert self.is_running.locked
         self.ready_time = current_time
 
@@ -117,7 +130,7 @@ class Thread:
                 #never start again
                 self.ready_time = -1
 
-    def finish(self, current_time):
+    def finish(self, _current_time):
         """Become inactive.
 
         This should be called when the thread becomes inactive.
@@ -131,6 +144,10 @@ class _BGStatThread(Thread):
         self.bg_times = []
 
     def run_background(self, current_time, run_time):
+        """Update runtime state.
+
+        See :meth:`Thread.run_background`.
+        """
         self.bg_times.append(run_time)
         super().run_background(current_time, run_time)
 
