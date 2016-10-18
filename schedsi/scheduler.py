@@ -113,10 +113,12 @@ class Scheduler:
 
     @staticmethod
     def _get_last_thread(rcu_data, last_thread_queue, last_thread_idx):
+        """Return the last scheduled thread."""
         if last_thread_queue is rcu_data.ready_threads:
             return rcu_data.ready_threads[last_thread_idx]
         elif not last_thread_queue is None:
             return last_thread_queue[-1]
+        return None
 
     def _schedule(self, idx, rcu_copy):
         """Update :attr:`_rcu` and schedule the thread at `idx`.
