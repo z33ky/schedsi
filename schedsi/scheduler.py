@@ -186,6 +186,10 @@ class SchedulerAddonBase():
     like hooks.
     """
 
+    def __init__(self, scheduler):
+        """Create a :class:`SchedulerAddonBase`."""
+        self.scheduler = scheduler
+
     def transmute_rcu_data(self, original, *addon_data): # pylint: disable=no-self-use
         """Transmute a :class:`SchedulerData`.
 
