@@ -26,8 +26,9 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
     :attr:`penalty` will be run instead.
     """
 
-    def __init__(self, timeslice, threshold=None):
+    def __init__(self, addee, timeslice, threshold=None):
         """Create a :class:`PenaltySchedulerAddon`."""
+        super().__init__(addee)
         self.timeslice = timeslice
         if threshold is None:
             #is this a reasonable default?
@@ -41,8 +42,7 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
 
     def start_schedule(self, prev_run_time, rcu_data, last_thread_queue, last_thread_idx):
         """See :meth:`SchedulerAddonBase.start_schedule`."""
-        yield from super().start_schedule(prev_run_time, rcu_data, last_thread_queue,
-                                          last_thread_idx)
+        super().start_schedule(prev_run_time, rcu_data, last_thread_queue, last_thread_idx)
         last_thread = self._get_last_thread(rcu_data, last_thread_queue, last_thread_idx)
 
         penalty = 0
