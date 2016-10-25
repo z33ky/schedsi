@@ -137,7 +137,7 @@ class Scheduler:
 
         yield cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx])
 
-    def schedule(self, prev_run_time):
+    def schedule(self, thread, prev_run_time):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
@@ -150,24 +150,9 @@ class Scheduler:
             rcu_copy, *rest = yield from self._start_schedule(prev_run_time)
             idx = yield from self._sched_loop(rcu_copy, *rest)
 
-            current_time = None
-            response = None
-            schedule = self._schedule(idx, rcu_copy)
-            while True:
-                try:
-                    request = schedule.send(response)
-                except StopIteration:
-                    break
+            yield from self._schedule(idx, rcu_copy)
 
-                assert current_time is None
-                update_prev_time = request.rtype == cpu.RequestType.switch_thread
-                if update_prev_time:
-                    current_time = (yield cpu.Request.current_time())
-
-                response = (yield request)
-
-                if update_prev_time:
-                    prev_run_time = (yield cpu.Request.current_time()) - current_time
+            prev_run_time = thread.last_bg_time
 
     @staticmethod
     def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):

@@ -161,7 +161,7 @@ class SchedulerThread(_BGStatThread):
         """Create a :class:`SchedulerThread`."""
         super().__init__(scheduler.module, *args, **kwargs)
         self._scheduler = scheduler
-        self.last_run_time = 0
+        self.last_bg_time = None
 
     def execute(self):
         """Simulate execution.
@@ -173,43 +173,37 @@ class SchedulerThread(_BGStatThread):
         self.is_running.acquire(False)
         assert self.is_running.locked
 
-        scheduler = self._scheduler.schedule(self.last_run_time)
+        scheduler = self._scheduler.schedule(self, self.last_bg_time)
         thing = next(scheduler)
         current_time = yield cpu.Request.current_time()
         while True:
             null = next(super()._execute(current_time, 0))
             assert null is None
+            self.last_bg_time = 0
             current_time = yield thing
-            self.last_run_time = 0
             thing = scheduler.send(current_time)
-
-    def run_ctxsw(self, _current_time, run_time):
-        """Update runtime state.
-
-        See :meth:`Thread.run_ctxsw`.
-        """
-        self.last_run_time += run_time
 
     def run_background(self, _current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_background`.
         """
-        self.last_run_time += run_time
+        self.last_bg_time += run_time
 
-    def run_crunch(self, _current_time, run_time):
+    def run_ctxsw(self, _current_time, run_time):
         """Update runtime state.
 
-        See :meth:`Thread.run_crunch`.
+        See :meth:`Thread.run_ctxsw`.
         """
-        self.last_run_time += run_time
-
-    def finish(self, _current_time):
-        """Become inactive.
-
-        See :meth:`Thread.finish`.
-        """
-        self.last_run_time = 0
+        #HACK: Also count switching to the kernel.
+        #      for other modules, context switching time
+        #      is attributed to them.
+        #      However, for the kernel there is no single module
+        #      that we're switching from, since it can come from
+        #      deep down the hierarchy.
+        #      So run_ctxsw is invoked on the kernel thread.
+        if self.module.parent is None:
+            self.last_bg_time += run_time
 
     def num_threads(self):
         return self._scheduler.num_threads()
