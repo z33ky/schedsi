@@ -215,9 +215,7 @@ class SchedulerAddonBase():
 
     def start_schedule(self, _prev_run_time, _rcu_data, _last_thread_queue, _last_thread_idx): # pylint: disable=no-self-use
         """Hook for :meth:`_start_schedule`."""
-        #needs to be a coroutine
-        return
-        yield # pylint: disable=unreachable
+        pass
 
     def schedule(self, idx, _rcu_data): # pylint: disable=no-self-use
         """Hook for :meth:`_schedule`."""
