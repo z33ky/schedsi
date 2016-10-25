@@ -6,20 +6,20 @@ from schedsi import threads
 
 CTXSW_COST = 1
 
-_RequestType = enum.Enum('RequestType', ['current_time', 'switch_thread', 'idle', 'execute'])
+RequestType = enum.Enum('RequestType', ['current_time', 'switch_thread', 'idle', 'execute'])
 
 class Request:
     """A request to the CPU."""
 
     def __init__(self, rtype, thing):
         """Create a :class:`Request`."""
-        if rtype == _RequestType.current_time:
+        if rtype == RequestType.current_time:
             assert thing is None
-        elif rtype == _RequestType.switch_thread:
+        elif rtype == RequestType.switch_thread:
             assert isinstance(thing, threads.Thread)
-        elif rtype == _RequestType.idle:
+        elif rtype == RequestType.idle:
             assert thing is None
-        elif rtype == _RequestType.execute:
+        elif rtype == RequestType.execute:
             assert thing > 0 or thing == -1
         else:
             assert False
@@ -32,22 +32,22 @@ class Request:
 
         The CPU will not spend any virtual time doing this.
         """
-        return cls(_RequestType.current_time, None)
+        return cls(RequestType.current_time, None)
 
     @classmethod
     def switch_thread(cls, thread):
         """Create a :class:`Request` to switch context."""
-        return cls(_RequestType.switch_thread, thread)
+        return cls(RequestType.switch_thread, thread)
 
     @classmethod
     def idle(cls):
         """Create a :class:`Request` to idle."""
-        return cls(_RequestType.idle, None)
+        return cls(RequestType.idle, None)
 
     @classmethod
     def execute(cls, amount):
         """Create a :class:`Request` to spend some time executing."""
-        return cls(_RequestType.execute, amount)
+        return cls(RequestType.execute, amount)
 
 class _Context: # pylint: disable=too-few-public-methods
     """An operation context for a CPU Core.
@@ -238,10 +238,10 @@ class _Status:
 
         while True:
             next_step = self.contexts[-1].execute(self.current_time)
-            if next_step.rtype == _RequestType.current_time:
+            if next_step.rtype == RequestType.current_time:
                 #no-op
                 continue
-            elif next_step.rtype == _RequestType.execute:
+            elif next_step.rtype == RequestType.execute:
                 _, time = self._calc_runtime(next_step.thing)
                 assert time > 0, time <= next_step
                 self.cpu.log.thread_execute(self.cpu, time)
@@ -249,11 +249,11 @@ class _Status:
                 self.stats.crunch_time += time
                 self._run_background(time)
                 self.contexts[-1].thread.run_crunch(self.current_time, time)
-            elif next_step.rtype == _RequestType.idle:
+            elif next_step.rtype == RequestType.idle:
                 self.cpu.log.thread_yield(self.cpu)
                 self._switch_to_parent()
                 break
-            elif next_step.rtype == _RequestType.switch_thread:
+            elif next_step.rtype == RequestType.switch_thread:
                 self._switch_thread(next_step.thing)
             else:
                 assert False
