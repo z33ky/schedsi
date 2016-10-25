@@ -13,7 +13,8 @@ class PenaltySchedulerAddonData(): # pylint: disable=too-few-public-methods
 
     def __init__(self):
         """Create a :class:`PenaltySchedulerAddonData`."""
-        self.sat_out_thread = None
+        self.sat_out_threads = []
+        self.last_timeslice = None
         self.penalties = {}
 
 class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
@@ -46,49 +47,76 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         last_thread = self._get_last_thread(rcu_data, last_thread_queue, last_thread_idx)
 
         penalty = 0
-        if not last_thread is None:
+        if not last_thread is None and not last_thread in rcu_data.sat_out_threads:
             if last_thread.remaining == 0:
-                del rcu_data.penalties[last_thread]
+                penalty = rcu_data.penalties.pop(last_thread)
+                if penalty >= 0 and rcu_data.penalties:
+                    penalty = max(rcu_data.penalties.values())
+                else:
+                    penalty = 0
             else:
-                rcu_data.penalties[last_thread] -= prev_run_time
-                penalty = rcu_data.penalties[last_thread]
+                if prev_run_time == 0:
+                    #probably was blocked by another addon
+                    self.sat_out_threads.append(last_thread)
+                else:
+                    rcu_data.penalties[last_thread] += rcu_data.last_timeslice - prev_run_time
+                    penalty = rcu_data.penalties[last_thread]
+                rcu_data.last_timeslice = None
 
-        if rcu_data.sat_out_thread:
-            assert last_thread and not last_thread is rcu_data.sat_out_thread
-            rcu_data.penalties[rcu_data.sat_out_thread] += prev_run_time
-            penalty = max(penalty, rcu_data.penalties[rcu_data.sat_out_thread])
-            rcu_data.sat_out_thread = None
+        if rcu_data.sat_out_threads:
+            assert last_thread
+            if not last_thread is rcu_data.sat_out_threads[-1]:
+                assert prev_run_time > 0
+                for thread in rcu_data.sat_out_threads:
+                    rcu_data.penalties[thread] += prev_run_time
+                    penalty = max(penalty, rcu_data.penalties[thread])
+                rcu_data.sat_out_threads = []
 
-        if penalty > 0:
+        if penalty > 0 or \
+           penalty < 0 and max(rcu_data.penalties.values()) == penalty:
             #shift back to 0
             for k in rcu_data.penalties:
                 rcu_data.penalties[k] -= penalty
+        assert not rcu_data.penalties or 0 in rcu_data.penalties.values()
 
     #this differs only in optional arguments
-    def schedule(self, idx, rcu_data, timeslice=None): # pylint: disable=arguments-differ
+    def schedule(self, idx, rcu_data, timeslice=None, threshold=None): # pylint: disable=arguments-differ
         """Proxy for a :meth:`_schedule <schedsi.scheduler.Scheduler._schedule>` call.
 
         Checks the penalty for the selected thread and may return a different index to choose
         with the lowest penalty.
         """
         if idx == -1:
-            assert not rcu_data.ready_threads
-            return -1
+            return True
 
         if not timeslice:
             timeslice = self.timeslice
+        assert timeslice
+
+        if not threshold:
+            threshold = self.threshold
+        assert threshold
 
         thread = rcu_data.ready_threads[idx]
 
         penalty = rcu_data.penalties.setdefault(thread, 0)
-        if penalty < self.threshold:
-            rcu_data.sat_out_thread = thread
-            idx = max(range(0, len(rcu_data.ready_threads)),
-                      key=lambda i: rcu_data.penalties.get(rcu_data.ready_threads[i], 0))
-            thread = rcu_data.ready_threads[idx]
-            if rcu_data.sat_out_thread is thread:
-                rcu_data.sat_out_thread = None
+        if penalty < threshold:
+            if thread in rcu_data.sat_out_threads:
+                #scheduler selected a thread that we wanted to stall again
+                #allow it to run then
+                #TODO: retry & count retries to self.max_retries
+                rcu_data.sat_out_threads = []
+            else:
+                rcu_data.sat_out_threads.append(thread)
+                idx = max(range(0, len(rcu_data.ready_threads)),
+                          key=lambda i: rcu_data.penalties.get(rcu_data.ready_threads[i], 0))
+                thread = rcu_data.ready_threads[idx]
+                if rcu_data.sat_out_threads[-1] is thread:
+                    rcu_data.sat_out_threads.pop()
+                else:
+                    return False
 
-        rcu_data.penalties[thread] += timeslice
+        assert rcu_data.sat_out_threads
+        rcu_data.last_timeslice = timeslice
 
-        return super().schedule(idx, rcu_data)
+        return True

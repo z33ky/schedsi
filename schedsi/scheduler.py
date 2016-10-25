@@ -215,9 +215,13 @@ class SchedulerAddonBase():
         """Hook for :meth:`_start_schedule`."""
         pass
 
-    def schedule(self, idx, _rcu_data): # pylint: disable=no-self-use
-        """Hook for :meth:`_schedule`."""
-        return idx
+    def schedule(self, _idx, _rcu_data): # pylint: disable=no-self-use
+        """Hook for :meth:`_schedule`.
+
+        Return True to proceed or False to schedule another thread.
+        Care should be taken for the case the same thread is selected again.
+        """
+        return True
 
 class SchedulerAddon(Scheduler):
     """Scheduler with addon.
@@ -256,5 +260,12 @@ class SchedulerAddon(Scheduler):
 
         This will also call the :attr:`addon`'s :meth:`schedule <SchedulerAddonBase.schedule>`.
         """
-        idx = self.addon.schedule(idx, rcu_copy.data)
-        return (yield from super()._schedule(idx, rcu_copy))
+        schedule = super()._schedule(idx, rcu_copy)
+        if self.addon.schedule(idx, rcu_copy.data):
+            yield from schedule
+        else:
+            #TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
+            for request in schedule:
+                if request.rtype != cpu.RequestType.switch_thread:
+                    assert request.rtype != cpu.RequestType.idle
+                    yield request
