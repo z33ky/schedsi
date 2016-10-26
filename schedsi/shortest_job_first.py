@@ -49,8 +49,7 @@ class SJF(scheduler.Scheduler):
             ready_threads.insert(idx + count, thread)
             count += 1
 
-    @staticmethod
-    def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):
+    def _sched_loop(self, rcu_copy, _last_thread_queue, _last_thread_idx):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler._sched_loop>`.

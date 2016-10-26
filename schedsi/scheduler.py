@@ -111,8 +111,7 @@ class Scheduler:
 
             return rcu_copy, dest, last_idx
 
-    @staticmethod
-    def _get_last_thread(rcu_data, last_thread_queue, last_thread_idx):
+    def _get_last_thread(self, rcu_data, last_thread_queue, last_thread_idx): # pylint: disable=no-self-use
         """Return the last scheduled thread."""
         if last_thread_queue is rcu_data.ready_threads:
             return rcu_data.ready_threads[last_thread_idx]
@@ -154,8 +153,7 @@ class Scheduler:
 
             prev_run_time = thread.last_bg_time
 
-    @staticmethod
-    def _sched_loop(rcu_copy, _last_thread_queue, _last_thread_idx):
+    def _sched_loop(self, rcu_copy, _last_thread_queue, _last_thread_idx): # pylint: disable=no-self-use
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         This :class:`Scheduler` is a base class.
