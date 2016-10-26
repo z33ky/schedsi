@@ -1,5 +1,10 @@
 0.3.0dev:
 	* thread statistics fixes
+	* PeriodicWorkThread fixes
+	* SchedulerAddon added
+	* thread statistics gather individual data points, instead of just the sum
+	* VCPUs return after their thread yielded (see 219745623331c0d7d787b505470d745d645b20c0 for more info)
+	* performance optimizations in hot paths
 0.2.0:
 	* thread/scheduling fixes
 	* Shortest Job First scheduling
