@@ -243,12 +243,12 @@ class VCPUThread(_BGStatThread):
         assert locked
 
         current_time = yield cpu.Request.current_time()
-        while True:
-            self._update_active = True
-            null = next(super()._execute(current_time, 0))
-            assert null is None
-            self._update_active = False
-            current_time = yield cpu.Request.switch_thread(self._thread)
+        self._update_active = True
+        null = next(super()._execute(current_time, 0))
+        assert null is None
+        self._update_active = False
+        yield cpu.Request.switch_thread(self._thread)
+        yield cpu.Request.idle()
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.
