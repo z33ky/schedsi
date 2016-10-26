@@ -28,6 +28,8 @@ class MLFQData(scheduler.SchedulerData): # pylint: disable=too-few-public-method
         self.prio_boost_time = priority_boost_time
         self.last_prio_boost = None
 
+        self.previous_ready_queue = None
+
 class MLFQ(scheduler.Scheduler):
     """Multi-level feedback queue scheduler."""
 
@@ -41,8 +43,7 @@ class MLFQ(scheduler.Scheduler):
         super().__init__(module, MLFQData(levels, priority_boost_time))
         self.prio_boost_time = priority_boost_time
         if priority_boost_time is None:
-            #_start_schedule does priority boost
-            self._start_schedule = super()._start_schedule
+            self._priority_boost = self._no_priority_boost
 
     def add_threads(self, new_threads, rcu_data=None):
         """Add threads to schedule.
@@ -71,7 +72,7 @@ class MLFQ(scheduler.Scheduler):
 
         This function updates multiple queues.
         Switching to the highest priority queue is handled in
-        :meth:`schedule`.
+        :meth:`_start_schedule`.
         """
         for (ready, waiting) in zip(rcu_data.ready_queues, rcu_data.waiting_queues):
             cls._update_ready_thread_queues(time, ready, waiting)
@@ -83,39 +84,77 @@ class MLFQ(scheduler.Scheduler):
     def _start_schedule(self, prev_run_time): # pylint: disable=method-hidden
         """See :meth:`Scheduler._start_schedule`.
 
-        Boost priorities if necessary.
+        Lower priority of last thread if it outran its time-slice.
+        Boost priorities if it's time.
         """
-        #this method is hidden when self.prio_boost_time is None
-        assert not self.priority_boost_time is None
-        rcu_copy, last_queue, last_queue_idx = yield from super()._start_schedule(prev_run_time)
+        rcu_copy, last_queue, last_idx = yield from super()._start_schedule(prev_run_time)
         rcu_data = rcu_copy.data
 
-        #note: real-time vs logical clock...
-        current_time = (yield cpu.Request.current_time())
+        prev_has_run = not prev_run_time is None and prev_run_time > 0
+        #important: == vs is; empty arrays will compare equal with ==
+        prev_ready_queue_idx = next(i for i, v in enumerate(rcu_data.ready_queues)
+                                    if v is rcu_data.ready_threads)
 
-        last_queue, last_queue_idx = self._priority_boost(rcu_data, last_queue, last_queue_idx, current_time)
+        if prev_has_run:
+            current_time = (yield cpu.Request.current_time())
+            (last_queue,
+             last_idx,
+             prev_ready_queue_idx) = self._priority_boost(rcu_data, last_queue, last_idx,
+                                                          prev_ready_queue_idx, current_time)
 
-        return rcu_copy, last_queue, last_queue_idx
+        rcu_data.previous_ready_queue = rcu_data.ready_threads
 
-    def _priority_boost(self, rcu_data, last_queue, last_idx, current_time): # pylint: disable=method-hidden
+        #switch to highest priority queue
+        prev_ready_queue = rcu_data.ready_threads
+        rcu_data.ready_threads = next((x for x in rcu_data.ready_queues if x),
+                                      rcu_data.ready_threads)
+
+        if prev_has_run:
+            #and (rcu_data.last_prio_boost is None or rcu_data.last_prio_boost != current_time) ?
+            last_queue, last_idx = self._priority_reduction(rcu_data,
+                                                            last_queue, last_idx,
+                                                            prev_ready_queue, prev_ready_queue_idx)
+
+        return rcu_copy, last_queue, last_idx
+
+    def _get_last_thread(self, rcu_data, last_thread_queue, last_thread_idx):
+        """See :meth:`Scheduler._get_last_thread`."""
+        ready_threads = rcu_data.ready_threads
+        rcu_data.ready_threads = rcu_data.previous_ready_queue
+        thread = super()._get_last_thread(rcu_data, last_thread_queue, last_thread_idx)
+        rcu_data.ready_threads = ready_threads
+        return thread
+
+    # this may get overwritten by _no_priority_boost
+    def _priority_boost(self, rcu_data, last_queue, last_idx, prev_ready_queue_idx, current_time): # pylint: disable=method-hidden
         """Put all threads in highest priority if :attr:`prio_boost_time` elapsed.
 
         This is to avoid starvation.
 
         This function should be run before selecting a new :attr:`ready_threads`.
 
-        This function takes the return values of :meth:`_start_schedule` and the current time.
+        This function takes the return values of :meth:`_start_schedule`,
+        the index of :attr:`ready_threads` in :attr:`ready_queues` and the current time.
 
         Since this changes the queues around, the updated values for
-        `last_queue` and `last_idx` are returned.
+        `last_queue`, `last_idx` and `prev_ready_queue_idx` are returned.
+
+        `prev_ready_queue_idx` could be obtained within this function
+        and the new value from outside by finding the index of :attr:`ready_threads`
+        in :attr:`ready_queues`, but it is passed in and out as an
+        optimization.
         """
+        assert not self.prio_boost_time is None
         if rcu_data.last_prio_boost is None:
             rcu_data.last_prio_boost = current_time
         delta = current_time - rcu_data.last_prio_boost
         if rcu_data.prio_boost_time <= delta:
             if last_queue is rcu_data.ready_threads:
+                last_idx += sum(len(queue) for queue in
+                                rcu_data.ready_queues[0:prev_ready_queue_idx])
                 last_queue = rcu_data.ready_queues[0]
             rcu_data.ready_threads = rcu_data.ready_queues[0]
+            prev_ready_queue_idx = 0
             for queue in rcu_data.ready_queues[1:]:
                 if not queue is rcu_data.ready_threads:
                     rcu_data.ready_threads.extend(queue)
@@ -125,7 +164,16 @@ class MLFQ(scheduler.Scheduler):
             rcu_data.prio_boost_time -= delta
         rcu_data.last_prio_boost = current_time
 
-        return last_queue, last_idx
+        return last_queue, last_idx, prev_ready_queue_idx
+
+    def _no_priority_boost(self, _rcu_data, last_queue, last_idx, prev_ready_queue_idx, # pylint: disable=no-self-use
+                           _current_time):
+        """This overwrites :meth:`_priority_boost` if :attr:`prio_boost_time` is `None`.
+
+        A no-op.
+
+        See :meth:`_priority_boost`."""
+        return last_queue, last_idx, prev_ready_queue_idx
 
     def _priority_reduction(self, rcu_data, last_queue, last_idx, # pylint: disable=no-self-use
                             prev_ready_queue, prev_ready_queue_idx):
@@ -171,19 +219,6 @@ class MLFQ(scheduler.Scheduler):
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler._sched_loop>`.
         """
         rcu_data = rcu_copy.data
-
-        #switch to highest priority queue
-        prev_ready_queue = rcu_data.ready_threads
-        rcu_data.ready_threads = next((x for x in rcu_data.ready_queues if x),
-                                      rcu_data.ready_threads)
-        #important: == vs is; empty arrays will compare equal with ==
-        prev_ready_queue_idx = next(i for i, v in enumerate(rcu_data.ready_queues)
-                                    if v is prev_ready_queue)
-
-        (last_thread_queue,
-         last_thread_idx   ) = self._priority_reduction(rcu_data,
-                                                        last_thread_queue, last_thread_idx,
-                                                        prev_ready_queue, prev_ready_queue_idx)
 
         #do a round robin
         num_threads = len(rcu_data.ready_threads)
