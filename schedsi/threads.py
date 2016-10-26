@@ -46,8 +46,8 @@ class Thread:
         Yields a :class:`Request <schedsi.cpu.Request>`.
         Consumes the current time.
         """
-        self.is_running.acquire(False)
-        assert self.is_running.locked
+        locked = self.is_running.acquire(False)
+        assert locked
 
         current_time = yield cpu.Request.current_time()
         while True:
@@ -170,8 +170,8 @@ class SchedulerThread(_BGStatThread):
 
         See :meth:`Thread.execute`.
         """
-        self.is_running.acquire(False)
-        assert self.is_running.locked
+        locked = self.is_running.acquire(False)
+        assert locked
 
         scheduler = self._scheduler.schedule(self, self.last_bg_time)
         thing = next(scheduler)
@@ -239,8 +239,8 @@ class VCPUThread(_BGStatThread):
 
         See :meth:`Thread.execute`.
         """
-        self.is_running.acquire(False)
-        assert self.is_running.locked
+        locked = self.is_running.acquire(False)
+        assert locked
 
         current_time = yield cpu.Request.current_time()
         while True:
@@ -317,8 +317,8 @@ class PeriodicWorkThread(Thread):
 
         See :meth:`Thread.execute`.
         """
-        self.is_running.acquire(False)
-        assert self.is_running.locked
+        locked = self.is_running.acquire(False)
+        assert locked
 
         current_time = yield cpu.Request.current_time()
         while True:
