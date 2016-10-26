@@ -127,6 +127,44 @@ class MLFQ(scheduler.Scheduler):
 
         return last_queue, last_idx
 
+    def _priority_reduction(self, rcu_data, last_queue, last_idx, # pylint: disable=no-self-use
+                            prev_ready_queue, prev_ready_queue_idx):
+        """Lower last thread's priority if it outran its time-slice.
+
+        This represents the heuristic of the MLFQ scheduler.
+
+        This function should be run after selecting a new :attr:`ready_threads`.
+
+        This function takes the return values of :meth:`_start_schedule`,
+        the previous :attr:`ready_threads` and the index of that in :attr:`ready_queues`.
+
+        Since this changes the queues around, the updated values for
+        `last_queue` and `last_idx` are returned.
+
+        `prev_ready_queue_idx` could be obtained within this function
+        by finding the index of `prev_ready_queue` in :attr:`ready_queues`,
+        but it is passed in as an optimization.
+        """
+        if last_queue is prev_ready_queue:
+            #previous thread outran its time-slice
+            next_idx = prev_ready_queue_idx + 1
+            if next_idx != len(rcu_data.ready_queues):
+                next_thread_queue = rcu_data.ready_queues[next_idx]
+                next_thread_queue.append(prev_ready_queue.pop(last_idx))
+                if not rcu_data.ready_threads:
+                    rcu_data.ready_threads = next_thread_queue
+                    last_idx = len(next_thread_queue) - 1
+                last_queue = next_thread_queue
+        elif rcu_data.waiting_threads:
+            assert last_queue is rcu_data.waiting_threads
+            last_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
+            last_queue.append(rcu_data.waiting_threads.pop())
+            assert not rcu_data.waiting_threads
+        else:
+            assert last_queue is None or last_queue is rcu_data.finished_threads
+
+        return last_queue, last_idx
+
     def _sched_loop(self, rcu_copy, last_thread_queue, last_thread_idx):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
@@ -142,24 +180,10 @@ class MLFQ(scheduler.Scheduler):
         prev_ready_queue_idx = next(i for i, v in enumerate(rcu_data.ready_queues)
                                     if v is prev_ready_queue)
 
-        if last_thread_queue is prev_ready_queue:
-            #previous thread outran its time-slice
-            next_idx = prev_ready_queue_idx + 1
-            if next_idx != len(rcu_data.ready_queues):
-                next_thread_queue = rcu_data.ready_queues[next_idx]
-                next_thread_queue.append(prev_ready_queue.pop(last_thread_idx))
-                if not rcu_data.ready_threads:
-                    rcu_data.ready_threads = next_thread_queue
-                    last_thread_idx = len(next_thread_queue) - 1
-                last_thread_queue = next_thread_queue
-        elif rcu_data.waiting_threads:
-            assert last_thread_queue is rcu_data.waiting_threads
-            last_thread_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
-            last_thread_queue.append(rcu_data.waiting_threads.pop())
-            assert not rcu_data.waiting_threads
-        else:
-            assert last_thread_queue is None or last_thread_queue is rcu_data.finished_threads
-
+        (last_thread_queue,
+         last_thread_idx   ) = self._priority_reduction(rcu_data,
+                                                        last_thread_queue, last_thread_idx,
+                                                        prev_ready_queue, prev_ready_queue_idx)
 
         #do a round robin
         num_threads = len(rcu_data.ready_threads)
