@@ -19,7 +19,7 @@ html: .PHONY
 	$(MAKE) -C docs html
 
 pylint: .PHONY
-	pylint schedsi example tests replay.py
+	pylint -r n schedsi example tests replay.py
 
 pylint-disabled: .PHONY
 	pylint -e locally-disabled schedsi example tests replay.py
