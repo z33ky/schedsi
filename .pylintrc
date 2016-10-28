@@ -66,7 +66,7 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 #disable=standarderror-builtin,no-absolute-import,filter-builtin-not-iterating,unichr-builtin,reload-builtin,next-method-called,intern-builtin,old-raise-syntax,parameter-unpacking,apply-builtin,setslice-method,long-suffix,coerce-method,getslice-method,range-builtin-not-iterating,raw_input-builtin,long-builtin,cmp-method,backtick,metaclass-assignment,unicode-builtin,suppressed-message,xrange-builtin,old-ne-operator,nonzero-method,using-cmp-argument,file-builtin,useless-suppression,indexing-exception,raising-string,dict-iter-method,dict-view-method,map-builtin-not-iterating,print-statement,buffer-builtin,oct-method,old-division,hex-method,delslice-method,old-octal-literal,unpacking-in-except,coerce-builtin,import-star-module-level,round-builtin,execfile-builtin,basestring-builtin,zip-builtin-not-iterating,input-builtin,cmp-builtin,reduce-builtin
-disable=locally-disabled
+disable=fixme,locally-disabled
 
 
 [REPORTS]

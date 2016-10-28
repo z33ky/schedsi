@@ -22,7 +22,7 @@ pylint: .PHONY
 	pylint -r n schedsi example tests replay.py
 
 pylint-disabled: .PHONY
-	pylint -e locally-disabled schedsi example tests replay.py
+	pylint -e fixme,locally-disabled schedsi example tests replay.py
 
 build: .PHONY
 	./setup.py build
