@@ -66,7 +66,7 @@ class Thread:
         """
         assert self.ready_time != -1 and self.ready_time <= current_time
         assert self.remaining != 0
-        assert self.is_running.locked
+        assert self.is_running.locked()
 
         self.stats.wait_times.append(current_time - self.ready_time)
         self.ready_time = current_time
@@ -104,7 +104,7 @@ class Thread:
         active (not the top).
         `current_time` refers to the time just after the active thread has run.
         """
-        assert self.is_running.locked
+        assert self.is_running.locked()
         self.ready_time = current_time
 
     def run_crunch(self, current_time, run_time):
@@ -113,7 +113,7 @@ class Thread:
         This should be called while the thread is active.
         `current_time` refers to the time just after this thread has run.
         """
-        assert self.is_running.locked
+        assert self.is_running.locked()
 
         self.stats.run_times.append(run_time)
 
@@ -135,7 +135,6 @@ class Thread:
 
         This should be called when the thread becomes inactive.
         """
-        assert self.is_running.locked
         self.is_running.release()
 
 class _BGStatThread(Thread):
