@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Defines a multi-level feedback queue scheduler."""
+"""Defines a multi-level feedback queue scheduler.
+
+This scheduler does not prevent gaming the scheduler by
+almost, but not completely, running for a time-slice.
+Such a thread will not get a priority reduction.
+"""
 
 from schedsi import cpu, scheduler
 
