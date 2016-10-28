@@ -13,6 +13,8 @@ class World:
             raise RuntimeError("Does not support more than 1 core yet.")
         self.cores = [cpu.Core(idx, timer_quantum, kernel._scheduler_thread, log)
                       for idx in range(0, cores)]
+        for core in self.cores:
+            kernel.register_vcpu(core)
         self.log = log
 
     def step(self):
