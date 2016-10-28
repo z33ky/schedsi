@@ -50,17 +50,17 @@ class MLFQ(scheduler.Scheduler):
         if priority_boost_time is None:
             self._priority_boost = self._no_priority_boost
 
-    def add_threads(self, new_threads, rcu_data=None):
+    def add_thread(self, thread, rcu_data=None):
         """Add threads to schedule.
 
         New threads are put in the highest priority queue.
         """
-        super_add_threads = super().add_threads
+        super_add_thread = super().add_thread
         def appliance(data):
             """Append new threads to the waiting and finished queue."""
             waiting_tmp = data.waiting_threads
             data.waiting_threads = data.waiting_queues[0]
-            super_add_threads(new_threads, data)
+            super_add_thread(thread, data)
             data.waiting_threads = waiting_tmp
         if rcu_data is None:
             self._rcu.apply(appliance)

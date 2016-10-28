@@ -51,16 +51,20 @@ class Module:
         assert isinstance(child, Module)
         self._children.append(child)
 
+    def num_children(self):
+        """Return the number of children."""
+        return len(self._children)
+
     def num_threads(self):
         """Return number of threads managed by this module."""
         return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
 
-    def add_threads(self, new_threads):
+    def add_thread(self, thread):
         """Add threads.
 
         See :meth:`SchedulerThread.add_threads() <schedsi.threads.SchedulerThread.add_threads>`.
         """
-        self._scheduler_thread.add_threads(new_threads)
+        self._scheduler_thread.add_thread(thread)
 
     def get_thread_statistics(self):
         """Obtain statistics of threads managed by this module."""

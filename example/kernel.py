@@ -7,38 +7,30 @@ one with periodic bursts.
 """
 
 import sys
-from schedsi import binarylog, module, schedulers, threads, world
+from schedsi import binarylog, hierarchy_builder, schedulers, threads, world
 
-#Create a hierarchy of a kernel module and a child module.
+#Create a hierarchy of a kernel, a child module and two grand-children.
 #this is the same as tests/simple_hierarchy.py
 #pylint: disable=duplicate-code
-KERNEL = module.Module("0", None, schedulers.RoundRobin)
-TOP_MODULE = module.Module("0.0", KERNEL, schedulers.RoundRobin)
-BOTTOM_MODULE_A = module.Module("0.0.0", TOP_MODULE, schedulers.RoundRobin)
-BOTTOM_MODULE_B = module.Module("0.0.1", TOP_MODULE, schedulers.SJF)
+KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin)
+TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin)
+BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin)
+BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
 
-#Add two work threads to the KERNEL and one scheduler thread to run the child.
-KERNEL.add_threads([
-    threads.Thread(KERNEL, 1, units=50),
-    threads.PeriodicWorkThread(KERNEL, 2, ready_time=5, units=50, period=20, burst=5),
-    threads.VCPUThread(KERNEL, 3, child=TOP_MODULE)
-])
-#Add one work thread to the child and two scheduler threads for its children.
-TOP_MODULE.add_threads([
-    threads.Thread(TOP_MODULE, 1, units=25),
-    threads.VCPUThread(TOP_MODULE, 2, child=BOTTOM_MODULE_A),
-    threads.VCPUThread(TOP_MODULE, 3, child=BOTTOM_MODULE_B)
-])
-#Add work threads to the grandchildren.
-BOTTOM_MODULE_A.add_threads([
-    threads.Thread(BOTTOM_MODULE_A, 1, units=10),
-    threads.Thread(BOTTOM_MODULE_A, 2, ready_time=50, units=25)
-])
-BOTTOM_MODULE_B.add_threads([
-    threads.PeriodicWorkThread(BOTTOM_MODULE_B, 1, units=10, period=10, burst=2),
-    threads.PeriodicWorkThread(BOTTOM_MODULE_B, 2, period=10, burst=2),
-    threads.Thread(BOTTOM_MODULE_B, 3, ready_time=10, units=10)
-])
+KERNEL.add_thread(threads.Thread, units=50) \
+      .add_thread(threads.PeriodicWorkThread, ready_time=5, units=50, period=20, burst=5) \
+      .add_vcpus()
+
+TOP_MODULE.add_thread(threads.Thread, units=25).add_vcpus()
+
+BOTTOM_MODULE_A.add_thread(threads.Thread, units=10) \
+               .add_thread(threads.Thread, ready_time=50, units=25) \
+               .add_vcpus()
+
+BOTTOM_MODULE_B.add_thread(threads.PeriodicWorkThread, units=10, period=10, burst=2) \
+               .add_thread(threads.PeriodicWorkThread, period=10, burst=2) \
+               .add_thread(threads.Thread, ready_time=10, units=10) \
+               .add_vcpus()
 
 def main():
     """Run the test."""
@@ -50,7 +42,7 @@ def main():
         binary_log = binarylog.BinaryLog(log_file)
 
         #Create and run the world.
-        the_world = world.World(1, 10, KERNEL, binary_log)
+        the_world = world.World(1, 10, KERNEL.module, binary_log)
         while the_world.step() <= 400:
             pass
 

@@ -26,9 +26,6 @@
 	* basically we just want to jump back to the kernel to "handle" some interrupts
 * simulate message-passing
 	* synchronous message-passing should be the most interesting thing here, since it puts threads to sleep until the message round-tripped back and wakes it again
-* static hierarchy builder
-	* the current approach is a bit inconvenient
-	* we want automatic name generation and VCPU additions
 * per-thread timeslice values
 	* schedulers should maintain per-thread timeslice information to use instead of local timers
 	* penalties and bonuses can be applied when runtime differs from the timeslice

@@ -46,15 +46,14 @@ class Scheduler:
                               sum(len(x) for x in
                                   [d.ready_threads, d.waiting_threads, d.finished_threads]))
 
-    def add_threads(self, new_threads, rcu_data=None):
+    def add_thread(self, thread, rcu_data=None):
         """Add threads to schedule."""
         def appliance(data):
             """Append new threads to the waiting and finished queue."""
-            for thread in new_threads:
-                if thread.is_finished():
-                    data.finished_threads.append(thread)
-                else:
-                    data.waiting_threads.append(thread)
+            if thread.is_finished():
+                data.finished_threads.append(thread)
+            else:
+                data.waiting_threads.append(thread)
         if rcu_data is None:
             self._rcu.apply(appliance)
         else:

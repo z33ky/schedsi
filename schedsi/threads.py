@@ -270,9 +270,9 @@ class SchedulerThread(_BGStatThread):
         """Return number of threads in :attr:`_scheduler`."""
         return self._scheduler.num_threads()
 
-    def add_threads(self, new_threads):
+    def add_thread(self, thread):
         """Add threads to scheduler."""
-        self._scheduler.add_threads(new_threads)
+        self._scheduler.add_thread(thread)
 
     def get_statistics(self):
         """Obtain statistics.
