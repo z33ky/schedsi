@@ -7,7 +7,7 @@ import unittest
 class TestExample(unittest.TestCase):
     """Test that the example works."""
 
-    def test_example(self):
+    def test_example(self): # pylint: disable=no-self-use
         """Test that the example works."""
         subprocess.run(["example/kernel.py", "-"], stdout=subprocess.DEVNULL, check=True)
 
