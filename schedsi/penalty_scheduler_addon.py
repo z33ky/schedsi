@@ -114,9 +114,9 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
                 if rcu_data.sat_out_threads[-1] is thread:
                     rcu_data.sat_out_threads.pop()
                 else:
+                    rcu_data.last_timeslice = None
                     return False
 
-        assert rcu_data.sat_out_threads
         rcu_data.last_timeslice = timeslice
 
         return True
