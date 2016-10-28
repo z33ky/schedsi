@@ -24,6 +24,9 @@ class Module:
         #      to get a num_threads count for naming threads.
         #      In particular, this is a problem for Cores, which are added in World.
         self._vcpus = [(None, self._scheduler_thread)]
+        self._children = []
+        if not parent is None:
+            parent.register_child(self)
 
     def register_vcpu(self, vcpu):
         """Register a VCPU.
@@ -42,6 +45,9 @@ class Module:
             print(self.name, "expected a VCPU, got", type(vcpu).__name__, ".", file=sys.stderr)
         self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread
+
+    def register_child(self, child):
+        self._children.append(child)
 
     def num_threads(self):
         return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
