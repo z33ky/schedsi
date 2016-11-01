@@ -164,7 +164,7 @@ class _Status:
         if succeed:
             for ctx in self.contexts[1:-1]:
                 ctx.thread.finish(self.current_time)
-            if self.contexts[-1].started:
+            if self.contexts[-1].started and len(self.contexts) > 1:
                 self.contexts[-1].thread.finish(self.current_time)
             del self.contexts[1:]
 
