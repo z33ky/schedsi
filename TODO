@@ -1,6 +1,3 @@
-* dynamic hierarchy
-	* there should be no assumptions at the moment that the module hierarchy or thread queues are fixed, so all that's missing is a nice interface or helper functions/classes
-	* perhaps names for modules and tids for threads should be optional and auto-generated if not supplied, just following the convention used in the kernel.py example
 * multi-core
 	* thanks to the recent re-architecturing this should be implementable fairly easily
 	* does this work without supporting multiple VCPUs per module?
