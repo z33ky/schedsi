@@ -119,6 +119,11 @@ class MLFQ(scheduler.Scheduler):
             last_queue, last_idx = self._priority_reduction(rcu_data,
                                                             last_queue, last_idx,
                                                             prev_ready_queue, prev_ready_queue_idx)
+        elif last_queue is rcu_data.waiting_threads:
+            assert rcu_data.waiting_threads
+            last_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
+            last_queue.append(rcu_data.waiting_threads.pop())
+            assert not rcu_data.waiting_threads
 
         return rcu_copy, last_queue, last_idx
 
