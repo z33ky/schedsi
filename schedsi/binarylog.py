@@ -56,7 +56,6 @@ def _encode_ctxsw(cpu, thread_to, time, required):
             if cpu.status.contexts[-2].thread == thread_to:
                 direction = 'own parent'
     elif cpu.status.contexts[0].thread == thread_to:
-        assert module_to.parent is None
         direction = 'kernel'
     elif module_from.parent == module_to:
         direction = 'parent'
@@ -210,7 +209,7 @@ def _decode_ctxsw(cpu, entry):
 def replay(binary, log):
     """Play a MessagePack file to another log."""
     contexts = {}
-    for entry in msgpack.Unpacker(binary, encoding='utf-8'):
+    for entry in msgpack.Unpacker(binary, read_size=16*1024, encoding='utf-8'):
         event = _decode_generic_event(entry)
         if not event is None:
             if event.event == _Event.init_core.name:
