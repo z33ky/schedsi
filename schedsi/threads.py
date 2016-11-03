@@ -275,7 +275,7 @@ class PeriodicWorkThread(Thread):
 
     def __init__(self, module, *args, period, burst, **kwargs):
         """Create a :class:`PeriodicWorkThread`."""
-        if period < burst:
+        if period <= burst:
             raise RuntimeError('burst must not exceed period')
         if period <= 0:
             raise RuntimeError('period must be > 0')
