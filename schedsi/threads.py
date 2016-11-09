@@ -65,17 +65,19 @@ class Thread:
         `run_time` is 0.
         """
         assert self.ready_time != -1 and self.ready_time <= current_time
-        assert not self.is_finished()
         assert self.is_running.locked()
 
         self.stats.wait_times.append(current_time - self.ready_time)
         self.ready_time = current_time
 
-        if run_time == -1:
-            run_time = self.remaining
-        elif run_time == 0:
+        if run_time == 0:
             yield
             return
+
+        assert not self.is_finished()
+
+        if run_time == -1:
+            run_time = self.remaining
         else:
             assert run_time <= self.remaining or self.remaining == -1
 
@@ -134,9 +136,15 @@ class Thread:
 
             if self.is_finished():
                 #the job was completed within the slice
-                self.stats.finished_time = self.ready_time
-                #never start again
-                self.ready_time = -1
+                self.end()
+                return
+
+    def end(self):
+        """End execution."""
+        assert self.is_finished()
+        self.stats.finished_time = self.ready_time
+        #never start again
+        self.ready_time = -1
 
     def finish(self, _current_time):
         """Become inactive.
