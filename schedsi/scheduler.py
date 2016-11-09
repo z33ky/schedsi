@@ -17,7 +17,10 @@ class SchedulerData: # pylint: disable=too-few-public-methods
         self.last_idx = -1
 
 class Scheduler:
-    """Scheduler.
+    """Scheduler base-class.
+
+    Can schedule a single thread,
+    raises an exception if more are in the queue.
 
     Has a :obj:`list` of :class:`Threads <schedsi.threads.Thread>`.
     """
