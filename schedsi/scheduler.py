@@ -43,7 +43,7 @@ class Scheduler:
         def appliance(data):
             """Append new threads to the waiting and finished queue."""
             for thread in new_threads:
-                if thread.remaining == 0:
+                if thread.is_finished():
                     data.finished_threads.append(thread)
                 else:
                     data.waiting_threads.append(thread)
@@ -59,7 +59,7 @@ class Scheduler:
 
         #do a sanity check while we're here
         assert not (0, -1) in ((t.remaining, t.ready_time) for t in rcu_data.ready_threads)
-        assert all(t.remaining == 0 for t in rcu_data.finished_threads)
+        assert all(t.is_finished() for t in rcu_data.finished_threads)
 
     @staticmethod
     def _update_ready_thread_queues(time, ready_queue, waiting_queue):
@@ -98,7 +98,7 @@ class Scheduler:
                 last_idx = rcu_data.last_idx
                 last_thread = rcu_data.ready_threads[last_idx]
 
-                if last_thread.remaining == 0:
+                if last_thread.is_finished():
                     dest = rcu_data.finished_threads
                 elif last_thread.ready_time > current_time:
                     dest = rcu_data.waiting_threads

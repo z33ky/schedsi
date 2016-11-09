@@ -48,7 +48,7 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
 
         penalty = 0
         if not last_thread is None and not last_thread in rcu_data.sat_out_threads:
-            if last_thread.remaining == 0:
+            if last_thread.is_finished():
                 penalty = rcu_data.penalties.pop(last_thread)
                 if penalty >= 0 and rcu_data.penalties:
                     penalty = max(rcu_data.penalties.values())

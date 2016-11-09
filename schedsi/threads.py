@@ -65,7 +65,7 @@ class Thread:
         `run_time` is 0.
         """
         assert self.ready_time != -1 and self.ready_time <= current_time
-        assert self.remaining != 0
+        assert not self.is_finished()
         assert self.is_running.locked()
 
         self.stats.wait_times.append(current_time - self.ready_time)
@@ -81,11 +81,19 @@ class Thread:
 
         current_time = yield cpu.Request.execute(run_time)
 
-        if self.remaining == 0:
+        if self.is_finished():
             yield cpu.Request.idle()
             return
 
         return current_time
+
+    def is_finished(self):
+        """Check if the :class:`Thread` is finished.
+
+        Returns True if the :class:`Thread` still has something to do,
+        False otherwise.
+        """
+        return self.remaining == 0
 
     def run_ctxsw(self, current_time, run_time):
         """Update runtime state.
@@ -117,14 +125,14 @@ class Thread:
 
         self.stats.run_times.append(run_time)
 
-        assert self.ready_time + run_time == current_time
-        self.ready_time = current_time
+        self.ready_time += run_time
+        assert self.ready_time == current_time
 
         if self.remaining != -1:
             assert self.remaining >= run_time
             self.remaining -= run_time
 
-            if self.remaining == 0:
+            if self.is_finished():
                 #the job was completed within the slice
                 self.stats.finished_time = self.ready_time
                 #never start again

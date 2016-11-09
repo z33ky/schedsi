@@ -83,8 +83,8 @@ class MLFQ(scheduler.Scheduler):
             cls._update_ready_thread_queues(time, ready, waiting)
 
         #do a sanity check while we're here
-        assert all((t.remaining != 0 for t in ready) for ready in rcu_data.ready_queues)
-        assert all(t.remaining == 0 for t in rcu_data.finished_threads)
+        assert all((not t.is_finished() for t in ready) for ready in rcu_data.ready_queues)
+        assert all(t.is_finished() for t in rcu_data.finished_threads)
 
     def _start_schedule(self, prev_run_time): # pylint: disable=method-hidden
         """See :meth:`Scheduler._start_schedule`.
