@@ -193,21 +193,22 @@ class SchedulerThread(_BGStatThread):
         scheduler = self._scheduler.schedule(self, self.last_bg_time)
         thing = next(scheduler)
         current_time = yield cpu.Request.current_time()
+        null = next(super()._execute(current_time, 0))
+        assert null is None
         while True:
-            null = next(super()._execute(current_time, 0))
-            assert null is None
             self.last_bg_time = 0
             current_time = yield thing
             thing = scheduler.send(current_time)
 
-    def run_background(self, _current_time, run_time):
+    def run_background(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_background`.
         """
         self.last_bg_time += run_time
+        super().run_background(current_time, run_time)
 
-    def run_ctxsw(self, _current_time, run_time):
+    def run_ctxsw(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_ctxsw`.
@@ -221,6 +222,7 @@ class SchedulerThread(_BGStatThread):
         #      So run_ctxsw is invoked on the kernel thread.
         if self.module.parent is None:
             self.last_bg_time += run_time
+        super().run_ctxsw(current_time, run_time)
 
     def num_threads(self):
         return self._scheduler.num_threads()
