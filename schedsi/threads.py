@@ -53,6 +53,7 @@ class Thread:
         self.remaining = units
         self.is_running = threading.Lock()
         self.stats = _ThreadStats()
+        self.completed_stats = _ThreadStats()
 
     def execute(self):
         """Simulate execution.
@@ -169,6 +170,8 @@ class Thread:
         This should be called when the thread becomes inactive.
         """
         assert self.is_running.locked()
+        self.completed_stats.append(self.stats)
+        self.stats.clear()
         self.is_running.release()
 
     def get_statistics(self):
@@ -422,7 +425,7 @@ class PeriodicWorkThread(Thread):
         self.current_burst_left -= run_time
         self._update_ready_time(current_time)
         self.total_run_time += run_time
-        assert self.total_run_time == sum(self.stats.run_times)
+        assert self.total_run_time == sum(self.stats.run + self.completed_stats.run)
 
     def finish(self, current_time):
         """Become inactive.
