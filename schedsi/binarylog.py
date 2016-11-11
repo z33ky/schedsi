@@ -258,3 +258,9 @@ def replay(binary, log):
             log.cpu_statistics(entry['stats'])
         else:
             print("Unknown entry:", entry)
+
+def get_thread_statistics(binary):
+    """Read thread statistics from a MessagePack file."""
+    for entry in msgpack.Unpacker(binary, read_size=16*1024, encoding='utf-8', use_list=False):
+        if entry['type'] == _EntryType.thread_statistics.name:
+            return entry['stats']

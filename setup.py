@@ -11,6 +11,9 @@ setuptools.setup(
     license="CC0",
     packages=["schedsi"],
     entry_points={
-        'console_scripts': [ 'schedsi-replay = replay:main' ]
+        'console_scripts': [
+            'schedsi-replay = replay:main'
+            'schedsi-plot = plot:main'
+            ]
     }
 )

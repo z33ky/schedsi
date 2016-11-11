@@ -13,4 +13,5 @@ Context switches are also modeled to take time (though it can be set to 0) and a
 
 A simple example is in `examples/kernel.py`. `./HACKING` provides an overview of the inner workings.
 The example script produces a binary log file (MessagePack). To get a human readable version of the log `./replay.py` can be used to convert it to either a text log or a SVG graph.
-The `replay` tool is installed as `schedsi-replay` by the `./setup.py` file (or the `install` make target).
+The text log also prints statistics. Thread statistics are in JSON and histograms of it can be plotted using `./plot.py`. `./plot.py` can also parse binary log files for the statistics.
+The `replay` and `plot` tools are installed as `schedsi-replay` and `schedsi-plot` by the `./setup.py` file (or the `install` make target).

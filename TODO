@@ -26,8 +26,6 @@
 	* basically we just want to jump back to the kernel to "handle" some interrupts
 * simulate message-passing
 	* synchronous message-passing should be the most interesting thing here, since it puts threads to sleep until the message round-tripped back and wakes it again
-* plotting statistics
-	* the graph log could plot some fancy distributions
 * static hierarchy builder
 	* the current approach is a bit inconvenient
 	* we want automatic name generation and VCPU additions

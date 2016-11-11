@@ -1,7 +1,7 @@
 PREFIX=/usr
 DESTDIR=/
 
-PY_SOURCES=schedsi example tests replay.py
+PY_SOURCES=schedsi example tests replay.py plot.py
 
 example: .PHONY
 	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py -
