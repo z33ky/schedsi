@@ -1,6 +1,8 @@
 PREFIX=/usr
 DESTDIR=/
 
+PY_SOURCES=schedsi example tests replay.py
+
 example: .PHONY
 	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py -
 
@@ -19,10 +21,10 @@ html: .PHONY
 	$(MAKE) -C docs html
 
 pylint: .PHONY
-	pylint -r n schedsi example tests replay.py
+	pylint -r n $(PY_SOURCES)
 
 pylint-disabled: .PHONY
-	pylint -e fixme,locally-disabled schedsi example tests replay.py
+	pylint -e fixme,locally-disabled $(PY_SOURCES)
 
 build: .PHONY
 	./setup.py build
