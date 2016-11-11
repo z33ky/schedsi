@@ -24,7 +24,7 @@ There's also the `_CoreContext` class, which contains an operation context.
 On a real machine it would contain a register dump, in the simulator this is represented by storing a reference to the `Thread`.
 Switching context has a cost and this is also simulated, although currently only for switching between `Module`s.
 
-The `Core` and the `Thread` record various statistics (mostly on timing), which are currently not pulled out and evaluated.
+The `Core` and the `Thread` record various statistics (mostly on timing).
 
 When a time slice is used up, and the next one begins, the `Core` will pop all threads from the context stack (calling `finish() on them`) with exception of the first, the kernel scheduler, where execution will resume next.
 
@@ -34,7 +34,7 @@ I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `cla
 Replaying is a bit of a hack and relies on Pythons duck-typing to work via "emulation classes" that pretend to be the real deal.
 If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy in the log file.
 The other loggers are the `TextLog` (`schedsi/textlog.py`) and the `GraphLog` (`schedsi/graphlog.py`). Both work fine with `BinaryLog.replay()`.
-The `TextLog` is the easiest to understand, since it simply pulls out some information from the `Core` it received the event from and formats it to a string.
+The `TextLog` is the easiest to understand, since it simply pulls out some information from the `Core` it received the event from and formats it to a string. It also prints the `Thread` statistics as JSON and the `Core` statistics as a simple list.
 The `BinaryLog` is less straight-forward; It aggregates 'relevant' information in a dictionary of primitive types and writes that to a MessagePack stream.
 The `GraphLog` also needs to keep track of some state for drawing, for instance what the current hierarchy depth is. Since switching the way `Core`s execute this could also be pulled from the context stack, but before that change this was not possible otherwise.
 
