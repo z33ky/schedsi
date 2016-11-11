@@ -29,7 +29,8 @@ def _usage():
     print("If FILENAME is not set, create use using the current system time.")
     print("If FILENAME is -, write to stdout.")
     print("TEXT_ALIGN is in the format :cpu:time:module:thread:, "
-          "where each is a number specifying the alignment.")
+          "where each element between to colons is a number "
+          "specifying the padding of the fields in the text log.")
     print("If neither --text nor --graph are specified, --text=- is assumed.")
     sys.exit(1)
 
