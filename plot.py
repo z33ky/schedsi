@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """A tool to plot schedsi simulation statistics."""
 
+import functools
 import json
 import math
+import multiprocessing
+import operator
 import string
 import sys
 import tempfile
@@ -61,30 +64,46 @@ class ThreadFigures:
             fig.savefig(prefix + name + ".svg")
             fig.clf()
 
-def plot_thread(name, stats, figures):
-    """Process thread stats.
-
-    Results are plotted to `figures`.
-    """
-    print("Entering Thread {}...".format(name))
-
-    figures.plot_thread(name, stats)
-
-    for (key, values) in stats.get('scheduler', {}).items():
-        plot_scheduler(key, values)
-
 def plot_scheduler(name, stats):
     """Process scheduler stats."""
     figures = ThreadFigures(len(stats['children']) + 1)
 
+    print("Plotting thread {}...".format(name))
     figures.plot_thread(name, stats)
 
     for (key, values) in stats['children'].items():
-        plot_thread(key, values, figures)
+        print("Plotting thread {}...".format(key))
+        figures.plot_thread(key, values)
 
+    #strip the thread-id from the name
     figures.save(name[:name.rindex('-') + 1])
 
     print("Scheduler {} plotted.".format(name))
+
+def get_scheduler_keyslist(scheduler_threads):
+    """Get a list of keys to all scheduler threads contained in `scheduler_threads`.
+
+    The returned list can be iterated over like so::
+
+        for keys in get_scheduler_keyslist(stats):
+            scheduler_stats = reduce(getitem, keys, stats)
+            #scheduler_stats now points to statistics of a scheduler
+    """
+    keyslist = []
+    for (name, scheduler) in scheduler_threads.items():
+        keyslist.append([name])
+        for (child, child_thread) in scheduler['children'].items():
+            scheduler = child_thread.get('scheduler', {})
+            prefix = [name, 'children', child, 'scheduler']
+            keyslist += (prefix + keys for keys in get_scheduler_keyslist(scheduler))
+    return keyslist
+
+def do_scheduler(stats, keys):
+    """Call :func:`plot_scheduler` on the stats available through `keys`.
+
+    :func:`get_scheduler_keyslist` can be used to obtain a list of valid `keys`.
+    """
+    plot_scheduler(keys[-1], functools.reduce(operator.getitem, keys, stats))
 
 def get_text_stats(log):
     """Return thread stats from a text file."""
@@ -150,8 +169,9 @@ def main():
 
     stats = get_stats(sys.argv[1])
 
-    for (name, stat) in stats.items():
-        plot_scheduler(name, stat)
+    keyslist = get_scheduler_keyslist(stats)
+    with multiprocessing.Pool() as pool:
+        pool.map(functools.partial(do_scheduler, stats), keyslist)
 
 if __name__ == '__main__':
     main()
