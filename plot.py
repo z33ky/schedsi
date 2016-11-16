@@ -43,6 +43,7 @@ class ThreadFigures:
 
     def plot_thread(self, title, stats):
         """Add subplots for the thread's timings."""
+        print('Plotting thread {}...'.format(title))
         for key, fig in self.figures.items():
             times = stats[key]
             subplot = fig[1][self.plot_count]
@@ -87,23 +88,6 @@ class ThreadFigures:
             fig.clf()
 
 
-def plot_scheduler(name, stats):
-    """Process scheduler stats."""
-    figures = ThreadFigures(len(stats['children']) + 1)
-
-    print('Plotting thread {}...'.format(name))
-    figures.plot_thread(name, stats)
-
-    for (key, values) in sorted(stats['children'].items()):
-        print('Plotting thread {}...'.format(key))
-        figures.plot_thread(key, values)
-
-    # strip the thread-id from the name
-    figures.save(name[:name.rindex('-') + 1])
-
-    print('Scheduler {} plotted.'.format(name))
-
-
 def get_scheduler_keyslist(scheduler_threads):
     """Get a list of keys to all scheduler threads contained in `scheduler_threads`.
 
@@ -123,12 +107,16 @@ def get_scheduler_keyslist(scheduler_threads):
     return keyslist
 
 
-def do_scheduler(stats, keys):
-    """Call :func:`plot_scheduler` on the stats available through `keys`.
+def gen_plotting_params(stats, keys):
+    """Generate a parameter list for :meth:`ThreadFigures.plot_thread`
+    for plotting all stats available through `keys`.
 
     :func:`get_scheduler_keyslist` can be used to obtain a list of valid `keys`.
     """
-    plot_scheduler(keys[-1], functools.reduce(operator.getitem, keys, stats))
+    stats = functools.reduce(operator.getitem, keys, stats)
+    figures = ThreadFigures(len(stats['children']) + 1)
+    return [(figures, keys[-1], stats)] \
+         + [(figures, *params) for params in sorted(stats['children'].items())]
 
 
 def get_text_stats(log):
@@ -200,8 +188,16 @@ def main():
     stats = get_stats(sys.argv[1])
 
     keyslist = get_scheduler_keyslist(stats)
+    job_params = []
+    for keys in keyslist:
+        job_params += gen_plotting_params(stats, keys)
+
     with multiprocessing.Pool() as pool:
-        pool.map(functools.partial(do_scheduler, stats), keyslist)
+        pool.starmap(ThreadFigures.plot_thread, job_params)
+        # save_params just needs the figure and the name stripped of the thread id
+        # since the thread id is appended as "-$ID" we strip after the last '-'-character
+        save_params = ((fig, name[:name.rindex('-') + 1]) for fig, name, _ in job_params)
+        pool.starmap(ThreadFigures.save, save_params)
 
 
 if __name__ == '__main__':
