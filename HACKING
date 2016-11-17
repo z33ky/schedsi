@@ -40,8 +40,9 @@ A context stack is also maintained while replaying, which is used to setup paren
 If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy and simulation parameters in the log file.
 Proper schedsi classes can be used then and scheduling decisions by the "replay scheduler" would come from the parsed log.
 
-The schedulers implemented at the moment is a preemptive round robin scheduler (`schedsi/round_robin.py`), a shorted job first scheduler (`schedsi/shortest_job_first.py`) and a single-thread scheduler serving as a base class (`schedsi/scheduler.py`).
+The schedulers implemented at the moment are a multi-level feedback queue (`schedsi/multilevel_feedback_queue.py`), a shorted job first scheduler (`schedsi/shortest_job_first.py`) and a single-thread scheduler serving as a base class (`schedsi/scheduler.py`).
 The SJF scheduler peeks directly into the `Thread`s to find their remaining time, which on a real system is not likely to be available information.
+A fixed time-slice round robin is implemented using the multi-level feedback queue with a single queue (`schedsi/round_robin.py`).
 
 Process hierarchies are built by creating the root of the hierarchy (the kernel) and adding further modules onto it.
 The `tests/simple_example.py` should give you a good idea on how it works.

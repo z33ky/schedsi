@@ -1,5 +1,9 @@
 0.4.0dev:
-
+	* MLFQ scheduling
+	* decreased binary log buffering for faster output
+	* thread statistics fixes
+	* logging of statistics
+	* plotting tool for statistics
 0.3.1:
 	* PenaltySchedulerAddon fix
 0.3.0:
