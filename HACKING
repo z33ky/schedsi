@@ -30,13 +30,15 @@ When a time slice is used up, and the next one begins, the `Core` will pop all t
 
 All actions of the `Core` are logged in a logger class.
 These logger classes are not loggers in the sense that they expect a string and store it somewhere, instead there is a function for each relevant event and the log will aggregate the relevant information for that event to store or present it how it sees fit.
-I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `class BinaryLog`), since it has a `replay()` function to replay a binary log file to another logger (see `replay.py').
-Replaying is a bit of a hack and relies on Pythons duck-typing to work via "emulation classes" that pretend to be the real deal.
-If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy in the log file.
-The other loggers are the `TextLog` (`schedsi/textlog.py`) and the `GraphLog` (`schedsi/graphlog.py`). Both work fine with `BinaryLog.replay()`.
 The `TextLog` is the easiest to understand, since it simply pulls out some information from the `Core` it received the event from and formats it to a string. It also prints the `Thread` statistics as JSON and the `Core` statistics as a simple list.
 The `BinaryLog` is less straight-forward; It aggregates 'relevant' information in a dictionary of primitive types and writes that to a MessagePack stream.
 The `GraphLog` also needs to keep track of some state for drawing, for instance what the current hierarchy depth is. Since switching the way `Core`s execute this could also be pulled from the context stack, but before that change this was not possible otherwise.
+
+I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `class BinaryLog`), since it has a `replay()` function to replay a binary log file to another logger (see `replay.py').
+Replaying is a bit of a hack and relies on Pythons duck-typing to work via "emulation classes" that pretend to be the real deal.
+A context stack is also maintained while replaying, which is used to setup parent-child relationships between emulated `Module`s.
+If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy and simulation parameters in the log file.
+Proper schedsi classes can be used then and scheduling decisions by the "replay scheduler" would come from the parsed log.
 
 The schedulers implemented at the moment is a preemptive round robin scheduler (`schedsi/round_robin.py`), a shorted job first scheduler (`schedsi/shortest_job_first.py`) and a single-thread scheduler serving as a base class (`schedsi/scheduler.py`).
 The SJF scheduler peeks directly into the `Thread`s to find their remaining time, which on a real system is not likely to be available information.
