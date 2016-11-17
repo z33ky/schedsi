@@ -22,9 +22,12 @@ class TestExample(unittest.TestCase):
         while the_world.step() <= 400:
             pass
 
+        the_world.log_statistics()
+
         expected = open("tests/simple_hierarchy.log", 'r')
-        result = io.StringIO(text_buf.getvalue())
-        diff = difflib.unified_diff(result.readlines(), expected.readlines(), "result", "expected")
+        text_buf.seek(0)
+        diff = difflib.unified_diff(text_buf.readlines(), expected.readlines(),
+                                    "result", "expected")
         has_diff = False
         for line in common.color_diff(diff):
             has_diff = True
