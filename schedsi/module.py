@@ -26,7 +26,7 @@ class Module:
         self._vcpus = [(None, self._scheduler_thread)]
         self._children = []
         if not parent is None:
-            parent.register_child(self)
+            parent.attach_module(self)
 
     def register_vcpu(self, vcpu):
         """Register a VCPU.
@@ -46,7 +46,9 @@ class Module:
         self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread
 
-    def register_child(self, child):
+    def attach_module(self, child):
+        """Attach a child module."""
+        assert isinstance(child, Module)
         self._children.append(child)
 
     def num_threads(self):
