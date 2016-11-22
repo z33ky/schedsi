@@ -52,6 +52,7 @@ class Module:
         self._children.append(child)
 
     def num_threads(self):
+        """Return number of threads managed by this module."""
         return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
 
     def add_threads(self, new_threads):

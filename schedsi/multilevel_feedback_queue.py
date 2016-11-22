@@ -57,6 +57,7 @@ class MLFQ(scheduler.Scheduler):
         """
         super_add_threads = super().add_threads
         def appliance(data):
+            """Append new threads to the waiting and finished queue."""
             waiting_tmp = data.waiting_threads
             data.waiting_threads = data.waiting_queues[0]
             super_add_threads(new_threads, data)
@@ -67,6 +68,10 @@ class MLFQ(scheduler.Scheduler):
             appliance(rcu_data)
 
     def num_threads(self):
+        """Return total number of threads.
+
+        See :meth:`Thread.num_threads`.
+        """
         return self._rcu.look(lambda d:
                               sum(len(x) for x in
                                   d.ready_queues + d.waiting_queues + [d.finished_threads]))

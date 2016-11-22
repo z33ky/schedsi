@@ -38,6 +38,10 @@ class Scheduler:
         self.module = module
 
     def num_threads(self):
+        """Return total number of threads.
+
+        Includes both running and finished threads.
+        """
         return self._rcu.look(lambda d:
                               sum(len(x) for x in
                                   [d.ready_threads, d.waiting_threads, d.finished_threads]))
@@ -67,6 +71,10 @@ class Scheduler:
 
     @staticmethod
     def _update_ready_thread_queues(time, ready_queue, waiting_queue):
+        """Moves threads becoming ready to the respective queues.
+
+        See :meth:`Scheduler._update_ready_threads`.
+        """
         for i in range(-len(waiting_queue), 0):
             if waiting_queue[i].ready_time <= time:
                 ready_queue.append(waiting_queue.pop(i))

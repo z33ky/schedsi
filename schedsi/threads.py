@@ -262,6 +262,7 @@ class SchedulerThread(_BGStatThread):
         super().run_ctxsw(current_time, run_time)
 
     def num_threads(self):
+        """Return number of threads in :attr:`_scheduler`."""
         return self._scheduler.num_threads()
 
     def add_threads(self, new_threads):

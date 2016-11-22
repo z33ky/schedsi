@@ -64,6 +64,7 @@ class _Context: # pylint: disable=too-few-public-methods
         self.started = False
 
     def execute(self, current_time):
+        """Run the execution coroutine."""
         if self.started:
             return self.execution.send(current_time)
         else:
