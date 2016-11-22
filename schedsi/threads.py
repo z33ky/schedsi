@@ -70,16 +70,12 @@ class Thread:
         while True:
             current_time = yield from self._execute(current_time, -1)
 
-    def _execute(self, current_time, run_time):
-        """Simulate execution.
+    def _get_ready(self, current_time):
+        """Get ready to execute.
 
-        Update some state.
-        Yields an execute :class:`Request <schedsi.cpu.Request>`
-        respecting :attr:`remaining`, so it won't yield more than that,
-        or None if `run_time` is 0.
-
-        Returns the next current time or None if :attr:`remaining` or
-        `run_time` is 0.
+        Called before :meth:`_execute`.
+        Can be used to update execution state without actually spending
+        time executing.
         """
         assert self.ready_time != -1 and self.ready_time <= current_time
         assert self.is_running.locked()
@@ -87,15 +83,25 @@ class Thread:
         self.stats.wait.append(current_time - self.ready_time)
         self.ready_time = current_time
 
-        if run_time == 0:
-            yield
-            return
+        #self.run_crunch(current_time, 0)
+
+    def _execute(self, current_time, run_time):
+        """Simulate execution.
+
+        Update some state.
+        Yields an execute :class:`Request <schedsi.cpu.Request>`
+        respecting :attr:`remaining`, so it won't yield more than that.
+
+        Returns the next current time or None if :attr:`remaining` is 0.
+        """
+        self._get_ready(current_time)
 
         assert not self.is_finished()
 
         if run_time == -1:
             run_time = self.remaining
         else:
+            assert run_time > 0
             assert run_time <= self.remaining or self.remaining == -1
 
         current_time = yield cpu.Request.execute(run_time)
@@ -230,8 +236,7 @@ class SchedulerThread(_BGStatThread):
         scheduler = self._scheduler.schedule(self, self.last_bg_time)
         thing = next(scheduler)
         current_time = yield cpu.Request.current_time()
-        null = next(super()._execute(current_time, 0))
-        assert null is None
+        self._get_ready(current_time)
         while True:
             self.last_bg_time = 0
             current_time = yield thing
@@ -310,8 +315,7 @@ class VCPUThread(_BGStatThread):
 
         current_time = yield cpu.Request.current_time()
         self._update_active = True
-        null = next(super()._execute(current_time, 0))
-        assert null is None
+        self._get_ready(current_time)
         self._update_active = False
         yield cpu.Request.switch_thread(self._thread)
         yield cpu.Request.idle()
