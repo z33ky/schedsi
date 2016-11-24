@@ -3,7 +3,7 @@
 
 import sys
 import threading
-from schedsi import cpurequest
+from schedsi import context, cpurequest
 
 class _ThreadStats:
     """Thread statistics."""
@@ -298,14 +298,18 @@ class VCPUThread(_BGStatThread):
         if child.parent != module:
             print(module.name, "is adding a VCPUThread for", child.name,
                   "although it is not a direct descendant.", file=sys.stderr)
-        self._thread = child.register_vcpu(self)
-        if not isinstance(self._thread, SchedulerThread):
+        self._chain = context.Chain.from_thread(child.register_vcpu(self))
+        if not isinstance(self._chain.bottom, SchedulerThread):
             print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".",
                   file=sys.stderr)
 
         super().__init__(module, *args, **kwargs, ready_time=self._thread.ready_time, units=None)
 
         self._update_active = False
+
+    @property
+    def _thread(self):
+        return self._chain.bottom
 
     def execute(self):
         """Simulate execution.
@@ -321,7 +325,7 @@ class VCPUThread(_BGStatThread):
         self._update_active = True
         self._get_ready(current_time)
         self._update_active = False
-        yield cpurequest.Request.switch_thread(self._thread)
+        self._chain = yield cpurequest.Request.resume_chain(self._chain)
         yield cpurequest.Request.idle()
 
     def run_crunch(self, current_time, run_time):

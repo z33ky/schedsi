@@ -26,7 +26,7 @@ class PenaltyMLFQ(scheduler.SchedulerAddon, multilevel_feedback_queue.MLFQ):
         self.addon.schedule = None
 
     def _start_schedule(self, prev_run_time):
-        """See :meth:`Scheduler._update_ready_threads`."""
+        """See :meth:`Scheduler._start_schedule`."""
         #this is just to make sure we do overwrite it before it's called
         self.addon.schedule = None
         return (yield from super()._start_schedule(prev_run_time))
@@ -34,7 +34,7 @@ class PenaltyMLFQ(scheduler.SchedulerAddon, multilevel_feedback_queue.MLFQ):
     def _schedule(self, idx, rcu_copy):
         """See :meth:`Scheduler._schedule`."""
         queue_idx = next(i for i, v in enumerate(rcu_copy.data.ready_queues)
-                         if v is rcu_copy.data.ready_threads)
+                         if v is rcu_copy.data.ready_chains)
 
         timeslice = self.timeslices[queue_idx]
         threshold = -timeslice / 2

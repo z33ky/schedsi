@@ -2,9 +2,9 @@
 """Defines a :class:`CPURequest`."""
 
 import enum
-from schedsi import threads
+from schedsi import context
 
-Type = enum.Enum('Type', ['current_time', 'switch_thread', 'idle', 'execute'])
+Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute'])
 
 class Request:
     """A request to the CPU."""
@@ -13,14 +13,14 @@ class Request:
         """Create a :class:`Request`."""
         if rtype == Type.current_time:
             assert thing is None
-        elif rtype == Type.switch_thread:
-            assert isinstance(thing, threads.Thread)
+        elif rtype == Type.resume_chain:
+            assert isinstance(thing, context.Chain)
         elif rtype == Type.idle:
             assert thing is None
         elif rtype == Type.execute:
             assert thing > 0 or thing == -1
         else:
-            assert False
+            assert False, "Unknown Type"
         self.rtype = rtype
         self.thing = thing
 
@@ -33,9 +33,9 @@ class Request:
         return cls(Type.current_time, None)
 
     @classmethod
-    def switch_thread(cls, thread):
-        """Create a :class:`Request` to switch context."""
-        return cls(Type.switch_thread, thread)
+    def resume_chain(cls, chain):
+        """Create a :class:`Request` to resume a :class:`context.Chain <schedsi.context.Chain>`."""
+        return cls(Type.resume_chain, chain)
 
     @classmethod
     def idle(cls):
@@ -46,4 +46,3 @@ class Request:
     def execute(cls, amount):
         """Create a :class:`Request` to spend some time executing."""
         return cls(Type.execute, amount)
-

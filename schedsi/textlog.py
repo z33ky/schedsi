@@ -36,8 +36,8 @@ class TextLog:
 
     def _ctt(self, cpu):
         """Stringifies CPU, time and the current thread."""
-        module = cpu.status.contexts[-1].thread.module
-        thread = cpu.status.contexts[-1].thread
+        thread = cpu.status.chain.top
+        module = thread.module
         align = self.align.thread + self.align.module - len(module.name)
         return self._ct(cpu) + "thread {}-{:<{thread_align}} ".format(module.name, thread.tid,
                                                                       thread_align=align)
@@ -45,7 +45,7 @@ class TextLog:
     def _ctm(self, cpu):
         """Stringifies CPU, time and the current module."""
         #we add alignment to align with _ctt output
-        module = cpu.status.contexts[-1].thread.module.name
+        module = cpu.status.chain.top.module.name
         align = self.align.module + self.align.thread + 1
         return self._ct(cpu) + "module {:<{module_align}} ".format(module, module_align=align)
 
@@ -55,7 +55,7 @@ class TextLog:
 
     def context_switch(self, cpu, thread_to, time):
         """Log an context switch event."""
-        if thread_to.module == cpu.status.contexts[-1].thread.module:
+        if thread_to.module == cpu.status.chain.top.module:
             if thread_to.tid == 0:
                 return
             self.stream.write(self._ctm(cpu) + "selects {}.\n".format(thread_to.tid))

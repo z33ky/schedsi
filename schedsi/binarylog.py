@@ -49,13 +49,13 @@ def _encode_event(cpu, event, args=None):
 def _encode_ctxsw(cpu, thread_to, time):
     """Encode a context switching event to a :obj:`dict`."""
     module_to = thread_to.module
-    module_from = cpu.status.contexts[-1].thread.module
+    module_from = cpu.status.chain.contexts[-1].thread.module
     if module_to == module_from:
         direction = 'own child'
-        if len(cpu.status.contexts) >= 2:
-            if cpu.status.contexts[-2].thread == thread_to:
+        if len(cpu.status.chain.contexts) >= 2:
+            if cpu.status.chain.contexts[-2].thread == thread_to:
                 direction = 'own parent'
-    elif cpu.status.contexts[0].thread == thread_to:
+    elif cpu.status.chain.contexts[0].thread == thread_to:
         direction = 'kernel'
     elif module_from.parent == module_to:
         direction = 'parent'
@@ -72,7 +72,7 @@ def _encode_ctxsw(cpu, thread_to, time):
 def _encode_coreinit(cpu):
     """Encode a init_core event to a :obj:`dict`."""
     return _encode_event(cpu, _Event.init_core.name,
-                         {'context': _encode_contexts(cpu.status.contexts)})
+                         {'context': _encode_contexts(cpu.status.chain.contexts)})
 
 class BinaryLog:
     """Binary logger using MessagePack."""
@@ -136,12 +136,24 @@ class _Module: # pylint: disable=too-few-public-methods
         self.name = name
         self.parent = None
 
+class _ContextChain:
+    def __init__(self):
+        self.contexts = []
+
+    @property
+    def bottom(self):
+        return self.contexts[0].thread
+
+    @property
+    def top(self):
+        return self.contexts[-1].thread
+
 class _CPUStatus: # pylint: disable=too-few-public-methods
     """A :class:`cpu._Status <schedsi.cpu._Status>` emulation class."""
     def __init__(self, current_time):
         """Create a :class:`_CPUStatus`."""
         self.current_time = current_time
-        self.contexts = None
+        self.chain = _ContextChain()
 
 class _Thread: # pylint: disable=too-few-public-methods
     """A :class:`threads.Thread <schedsi.threads.Thread>` emulation class."""
@@ -199,12 +211,12 @@ def _decode_ctxsw(cpu, entry):
     """
     thread_to = _decode_thread(entry['thread_to'])
     direction = entry['direction']
-    module_from = cpu.status.contexts[-1].thread.module
+    module_from = cpu.status.chain.top.module
 
     if direction == 'child':
         thread_to.module.parent = module_from
     elif direction == 'parent':
-        thread_to = cpu.status.contexts[-2].thread
+        thread_to = cpu.status.chain.contexts[-2].thread
     elif direction.startswith('own '):
         if thread_to.module.name != module_from.name:
             raise RuntimeError('Context switch to ' + direction + ' failed verification')
@@ -225,14 +237,14 @@ def replay(binary, log):
                     raise RuntimeError('init_core found twice for same core')
                 contexts[event.cpu.uid] = _decode_contexts(entry['context'])
 
-            event.cpu.status.contexts = contexts[event.cpu.uid]
+            event.cpu.status.chain.contexts = contexts[event.cpu.uid]
 
             if event.event == _Event.init_core.name:
                 log.init_core(event.cpu)
             elif event.event == _Event.context_switch.name:
                 event_args, direction = _decode_ctxsw(event.cpu, entry)
                 log.context_switch(*event_args)
-                core_contexts = event.cpu.status.contexts
+                core_contexts = event.cpu.status.chain.contexts
                 if direction == 'parent':
                     if len(core_contexts) > 1:
                         core_contexts.pop()

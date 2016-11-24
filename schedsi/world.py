@@ -28,8 +28,8 @@ class World:
 
     def log_statistics(self):
         """Log statistics."""
-        kernel = self.cores[0].status.contexts[0].thread.module
+        kernel = self.cores[0].status.chain.bottom.module
         #there should be only one kernel?
-        assert all(c.status.contexts[0].thread.module == kernel for c in self.cores)
+        assert all(c.status.chain.bottom.module == kernel for c in self.cores)
         self.log.thread_statistics(kernel.get_thread_statistics())
         self.log.cpu_statistics(core.get_statistics() for core in self.cores)

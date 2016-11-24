@@ -21,9 +21,9 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
     """Penalty tracking scheduler-addon.
 
     :attr:`penalty` is always <= 0 and represents how much longer
-    the thread ran than the timeslice specified.
-    When a thread's :attr:`penalty` exceeds the :attr:`threshold`
-    and is selected by the scheduler, the thread with the lowest
+    the chain ran than the timeslice specified.
+    When a chain's :attr:`penalty` exceeds the :attr:`threshold`
+    and is selected by the scheduler, the chain with the lowest
     :attr:`penalty` will be run instead.
     """
 
@@ -41,15 +41,17 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         """See :meth:`SchedulerAddonBase.transmute_rcu_data`."""
         super().transmute_rcu_data(original, PenaltySchedulerAddonData, *addon_data)
 
-    def start_schedule(self, prev_run_time, rcu_data, last_thread_queue, last_thread_idx):
+    def start_schedule(self, prev_run_time, rcu_data, last_chain_queue, last_chain_idx):
         """See :meth:`SchedulerAddonBase.start_schedule`."""
-        super().start_schedule(prev_run_time, rcu_data, last_thread_queue, last_thread_idx)
-        last_thread = self._get_last_thread(rcu_data, last_thread_queue, last_thread_idx)
+        super().start_schedule(prev_run_time, rcu_data, last_chain_queue, last_chain_idx)
+        last_chain = self._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)
+        last_thread = last_chain and last_chain.bottom
+        last_id = id(last_thread)
 
         penalty = 0
-        if not last_thread is None and not last_thread in rcu_data.sat_out_threads:
+        if not last_chain is None and not last_id in rcu_data.sat_out_threads:
             if last_thread.is_finished():
-                penalty = rcu_data.penalties.pop(last_thread)
+                penalty = rcu_data.penalties.pop(last_id)
                 if penalty >= 0 and rcu_data.penalties:
                     penalty = max(rcu_data.penalties.values())
                 else:
@@ -57,25 +59,25 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
             else:
                 if prev_run_time == 0:
                     #probably was blocked by another addon
-                    self.sat_out_threads.append(last_thread)
+                    rcu_data.sat_out_threads.append(last_id)
                 else:
-                    rcu_data.penalties[last_thread] += rcu_data.last_timeslice - prev_run_time
-                    penalty = rcu_data.penalties[last_thread]
+                    rcu_data.penalties[last_id] += rcu_data.last_timeslice - prev_run_time
+                    penalty = rcu_data.penalties[last_id]
                 rcu_data.last_timeslice = None
 
         if rcu_data.sat_out_threads:
-            assert last_thread
-            if not last_thread is rcu_data.sat_out_threads[-1]:
+            assert last_chain
+            if not last_id == rcu_data.sat_out_threads[-1]:
                 assert prev_run_time > 0
-                for thread in rcu_data.sat_out_threads:
-                    rcu_data.penalties[thread] += prev_run_time
-                    penalty = max(penalty, rcu_data.penalties[thread])
-                rcu_data.sat_out_threads = []
+                for tid in rcu_data.sat_out_threads:
+                    rcu_data.penalties[tid] += prev_run_time
+                    penalty = max(penalty, rcu_data.penalties[tid])
+                rcu_data.sat_out_threads.clear()
 
         if penalty > 0 or \
            penalty < 0 and max(rcu_data.penalties.values()) == penalty:
             #shift back to 0
-            for k in rcu_data.penalties:
+            for k in rcu_data.penalties.keys():
                 rcu_data.penalties[k] -= penalty
         assert not rcu_data.penalties or 0 in rcu_data.penalties.values()
 
@@ -97,23 +99,21 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
             threshold = self.threshold
         assert threshold
 
-        thread = rcu_data.ready_threads[idx]
+        tid = id(rcu_data.ready_chains[idx].bottom)
 
-        penalty = rcu_data.penalties.setdefault(thread, 0)
+        penalty = rcu_data.penalties.setdefault(tid, 0)
         if penalty < threshold:
-            if thread in rcu_data.sat_out_threads:
+            if tid in rcu_data.sat_out_threads:
                 #scheduler selected a thread that we wanted to stall again
                 #allow it to run then
                 #TODO: retry & count retries to self.max_retries
-                rcu_data.sat_out_threads = []
+                rcu_data.sat_out_threads.clear()
             else:
-                rcu_data.sat_out_threads.append(thread)
-                idx = max(range(0, len(rcu_data.ready_threads)),
-                          key=lambda i: rcu_data.penalties.get(rcu_data.ready_threads[i], 0))
-                thread = rcu_data.ready_threads[idx]
-                if rcu_data.sat_out_threads[-1] is thread:
-                    rcu_data.sat_out_threads.pop()
-                else:
+                min_pen_tid = max((id(c.bottom) for c in rcu_data.ready_chains),
+                                  key=lambda tid: rcu_data.penalties.get(tid, 0))
+                assert penalty <= rcu_data.penalties[min_pen_tid]
+                if tid != min_pen_tid:
+                    rcu_data.sat_out_threads.append(tid)
                     rcu_data.last_timeslice = None
                     return False
 

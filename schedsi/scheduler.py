@@ -2,7 +2,7 @@
 """Defines the base class for schedulers."""
 
 import itertools
-from schedsi import cpurequest, rcu
+from schedsi import context, cpurequest, rcu
 
 class SchedulerData: # pylint: disable=too-few-public-methods
     """Mutable data for the :class:`Scheduler`.
@@ -12,9 +12,9 @@ class SchedulerData: # pylint: disable=too-few-public-methods
     """
     def __init__(self):
         """Create a :class:`SchedulerRCU`."""
-        self.ready_threads = []
-        self.waiting_threads = []
-        self.finished_threads = []
+        self.ready_chains = []
+        self.waiting_chains = []
+        self.finished_chains = []
         self.last_idx = -1
 
 class Scheduler:
@@ -23,7 +23,7 @@ class Scheduler:
     Can schedule a single thread,
     raises an exception if more are in the queue.
 
-    Has a :obj:`list` of :class:`Threads <schedsi.threads.Thread>`.
+    Has a :obj:`list` of :class:`ContextChains <schedsi.cpu.ContextChain>`.
     """
 
     def __init__(self, module, rcu_storage=None):
@@ -44,45 +44,48 @@ class Scheduler:
         """
         return self._rcu.look(lambda d:
                               sum(len(x) for x in
-                                  [d.ready_threads, d.waiting_threads, d.finished_threads]))
+                                  [d.ready_chains, d.waiting_chains, d.finished_chains]))
 
     def add_thread(self, thread, rcu_data=None):
         """Add threads to schedule."""
         def appliance(data):
             """Append new threads to the waiting and finished queue."""
+            chain = context.Chain.from_thread(thread)
             if thread.is_finished():
-                data.finished_threads.append(thread)
+                data.finished_chains.append(chain)
             else:
-                data.waiting_threads.append(thread)
+                data.waiting_chains.append(chain)
         if rcu_data is None:
             self._rcu.apply(appliance)
         else:
             appliance(rcu_data)
 
     @classmethod
-    def _update_ready_threads(cls, time, rcu_data):
-        """Moves threads becoming ready to the ready threads list."""
-        cls._update_ready_thread_queues(time, rcu_data.ready_threads, rcu_data.waiting_threads)
+    def _update_ready_chains(cls, time, rcu_data):
+        """Moves threads becoming ready to the ready chains list."""
+        cls._update_ready_chain_queues(time, rcu_data.ready_chains, rcu_data.waiting_chains)
 
         #do a sanity check while we're here
-        assert not (0, -1) in ((t.remaining, t.ready_time) for t in rcu_data.ready_threads)
-        assert all(t.is_finished() for t in rcu_data.finished_threads)
+        assert not (0, -1) in ((c.bottom.remaining, c.bottom.ready_time)
+                               for c in rcu_data.ready_chains)
+        assert all(ctx.bottom.is_finished() for ctx in rcu_data.finished_chains)
 
     @staticmethod
-    def _update_ready_thread_queues(time, ready_queue, waiting_queue):
+    def _update_ready_chain_queues(time, ready_queue, waiting_queue):
         """Moves threads becoming ready to the respective queues.
 
-        See :meth:`Scheduler._update_ready_threads`.
+        See :meth:`Scheduler._update_ready_chains`.
         """
         for i in range(-len(waiting_queue), 0):
-            if waiting_queue[i].ready_time <= time:
+            if waiting_queue[i].bottom.ready_time <= time:
                 ready_queue.append(waiting_queue.pop(i))
 
     def get_thread_statistics(self):
         """Obtain statistics of all threads."""
         rcu_data = self._rcu.read()
-        all_threads = itertools.chain(rcu_data.finished_threads, rcu_data.waiting_threads,
-                                      rcu_data.ready_threads)
+        all_threads = (ctx.bottom for ctx in
+                       itertools.chain(rcu_data.finished_chains, rcu_data.waiting_chains,
+                                       rcu_data.ready_chains))
         return {tid: stats for tid, stats in
                 (((t.module.name, t.tid), t.get_statistics()) for t in all_threads)}
 
@@ -94,11 +97,11 @@ class Scheduler:
 
         Returns a tuple (
             * RCUCopy of :attr:`_rcu`
-            * list where previously scheduled thread ended up
-                * (`rcu_copy_{ready,waiting,finished}_threads`)
-            * index of previously scheduled thread
+            * list where previously scheduled chain ended up
+                * (`rcu_copy_{ready,waiting,finished}_chains`)
+            * index of previously scheduled chain
                 * as passed to :meth:`_schedule`
-                * *not* necessarily the index into the list where the thread ended up
+                * *not* necessarily the index into the list where the chain ended up
         ).
 
         Yields an idle or execute :class:`Request <schedsi.cpurequest.Request>`.
@@ -115,49 +118,49 @@ class Scheduler:
             last_idx = None
             if rcu_data.last_idx != -1:
                 last_idx = rcu_data.last_idx
-                #FIXME: last thread shouldn't be in ready_threads for multi-vcpu
+                #FIXME: last thread shouldn't be in ready_chains for multi-vcpu
                 #       see _schedule() FIXME
-                last_thread = rcu_data.ready_threads[last_idx]
+                last_context = rcu_data.ready_chains[last_idx]
 
-                if last_thread.is_finished():
-                    dest = rcu_data.finished_threads
-                elif last_thread.ready_time > current_time:
-                    dest = rcu_data.waiting_threads
+                if last_context.bottom.is_finished():
+                    dest = rcu_data.finished_chains
+                elif last_context.bottom.ready_time > current_time:
+                    dest = rcu_data.waiting_chains
                 else:
-                    assert last_thread.ready_time != -1
+                    assert last_context.bottom.ready_time != -1
 
                 if dest is None:
-                    dest = rcu_data.ready_threads
+                    dest = rcu_data.ready_chains
                 else:
-                    dest.append(rcu_data.ready_threads.pop(last_idx))
+                    dest.append(rcu_data.ready_chains.pop(last_idx))
                     #if not self._rcu.update(rcu_copy):
                     #    #current_time = yield cpurequest.Request.execute(1)
                     #    continue
 
                 rcu_data.last_idx = -1
 
-            self._update_ready_threads(current_time, rcu_data)
+            self._update_ready_chains(current_time, rcu_data)
 
             return rcu_copy, dest, last_idx
 
-    def _get_last_thread(self, rcu_data, last_thread_queue, last_thread_idx): # pylint: disable=no-self-use
-        """Return the last scheduled thread."""
-        if last_thread_queue is rcu_data.ready_threads:
-            return rcu_data.ready_threads[last_thread_idx]
-        elif not last_thread_queue is None:
-            return last_thread_queue[-1]
+    def _get_last_chain(self, rcu_data, last_chain_queue, last_chain_idx): # pylint: disable=no-self-use
+        """Return the last scheduled chain."""
+        if last_chain_queue is rcu_data.ready_chains:
+            return rcu_data.ready_chains[last_chain_idx]
+        elif not last_chain_queue is None:
+            return last_chain_queue[-1]
         return None
 
     def _schedule(self, idx, rcu_copy):
-        """Update :attr:`_rcu` and schedule the thread at `idx`.
+        """Update :attr:`_rcu` and schedule the chain at `idx`.
 
         If `idx` is -1, yield an idle request.
 
         Yields a :class:`Request <schedsi.cpurequest.Request>`.
         """
         rcu_copy.data.last_idx = idx
-        #FIXME: we need to take it out of the ready_threads for multi-vcpu
-        #       else we might try to run the same thread in parallel
+        #FIXME: we need to take it out of the ready_chains for multi-vcpu
+        #       else we might try to run the same chain in parallel
         if not self._rcu.update(rcu_copy):
             return
 
@@ -165,10 +168,14 @@ class Scheduler:
             yield cpurequest.Request.idle()
             return
 
-        yield cpurequest.Request.switch_thread(rcu_copy.data.ready_threads[idx])
+        rcu_copy.data.ready_chains[idx] = \
+            yield cpurequest.Request.resume_chain(rcu_copy.data.ready_chains[idx])
+        #FIXME: this can fail on multi-vcpu
+        if not self._rcu.update(rcu_copy):
+            assert False, "Multi-vcpu synchronization not yet supported"
 
     def schedule(self, prev_run_time):
-        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
+        """Schedule the next :class:`ContextChain <schedsi.cpu.ContextChain>`.
 
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
         :meth:`_schedule_` in a loop, passing appropriate arguments.
@@ -182,22 +189,22 @@ class Scheduler:
 
             yield from self._schedule(idx, rcu_copy)
 
-    def _sched_loop(self, rcu_copy, _last_thread_queue, _last_thread_idx): # pylint: disable=no-self-use
-        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
+    def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx): # pylint: disable=no-self-use
+        """Schedule the next :class:`ContextChain <schedsi.cpu.ContextChain>`.
 
         This :class:`Scheduler` is a base class.
-        This function will only deal with a single :class:`Thread <schedsi.threads.Thread>`.
+        This function will only deal with a single :class:`ContextChain <schedsi.cpu.ContextChain>`.
         If more are present, a :exc:`RuntimeError` is raised.
 
-        Returns the selected thread index, or -1 if none.
+        Returns the selected chain index, or -1 if none.
         Yields a :class:`Request <schedsi.cpurequest.Request>`.
         Consumes the current time.
         """
-        num_threads = len(rcu_copy.data.ready_threads)
+        num_chains = len(rcu_copy.data.ready_chains)
         idx = 0
-        if num_threads == 0:
+        if num_chains == 0:
             idx = -1
-        if num_threads != 1:
+        if num_chains != 1:
             raise RuntimeError('Scheduler cannot make scheduling decision.')
         return idx
         #needs to be a coroutine
@@ -231,22 +238,22 @@ class SchedulerAddonBase():
         for data in addon_data:
             data.__init__(original)
 
-    def _get_last_thread(self, rcu_data, last_thread_queue, last_thread_idx):
+    def _get_last_chain(self, rcu_data, last_chain_queue, last_chain_idx):
         """Return the last scheduled thread of :attr:`scheduler`.
 
-        See :meth:`Scheduler._get_last_thread`.
+        See :meth:`Scheduler._get_last_chain`.
         """
-        return self.scheduler._get_last_thread(rcu_data, last_thread_queue, last_thread_idx) # pylint: disable=protected-access
+        return self.scheduler._get_last_chain(rcu_data, last_chain_queue, last_chain_idx) # pylint: disable=protected-access
 
-    def start_schedule(self, _prev_run_time, _rcu_data, _last_thread_queue, _last_thread_idx): # pylint: disable=no-self-use
+    def start_schedule(self, _prev_run_time, _rcu_data, _last_chain_queue, _last_chain_idx): # pylint: disable=no-self-use
         """Hook for :meth:`_start_schedule`."""
         pass
 
     def schedule(self, _idx, _rcu_data): # pylint: disable=no-self-use
         """Hook for :meth:`_schedule`.
 
-        Return True to proceed or False to schedule another thread.
-        Care should be taken for the case the same thread is selected again.
+        Return True to proceed or False to schedule another chain.
+        Care should be taken for the case the same chain is selected again.
         """
         return True
 
@@ -293,6 +300,7 @@ class SchedulerAddon(Scheduler):
         else:
             #TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
             for request in schedule:
-                if request.rtype != cpurequest.Type.switch_thread:
-                    assert request.rtype != cpurequest.Type.idle
-                    yield request
+                if request.rtype == cpurequest.Type.resume_chain:
+                    request = schedule.send(request.thing)
+                assert request.rtype != cpurequest.Type.idle
+                yield request

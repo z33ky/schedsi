@@ -34,7 +34,7 @@ class _Background: #pylint: disable=too-few-public-methods
 
 def name_current_thread(cpu):
     """Return a string identifying the current thread."""
-    thread = cpu.status.contexts[-1].thread
+    thread = cpu.status.chain.top
     return thread.module.name + "-" + str(thread.tid)
 
 class GraphLog:
@@ -259,7 +259,7 @@ class GraphLog:
 
     def context_switch(self, cpu, thread_to, time):
         """Log an context switch event."""
-        if thread_to.module == cpu.status.contexts[-1].thread.module:
+        if thread_to.module == cpu.status.chain.top.module:
             return
 
         current_thread_name = name_current_thread(cpu)
@@ -277,13 +277,14 @@ class GraphLog:
             if self.level == 0:
                 #we just had an unsuccessful switch from the kernel
                 #pretend to be on the previous level for the graph
-                self.level = LEVEL * (len(set(c.thread.module for c in cpu.status.contexts)) - 1)
+                self.level = LEVEL \
+                           * (len(set(c.thread.module for c in cpu.status.chain.contexts)) - 1)
                 self._move(0, self.level)
             else:
                 #go down all the way
                 levels = self.level
             ctx_func = self._ctx_down
-        elif cpu.status.contexts[-1].thread.module.parent == module_to:
+        elif cpu.status.chain.top.module.parent == module_to:
             #switch to parent
             ctx_func = self._ctx_down
         else:
