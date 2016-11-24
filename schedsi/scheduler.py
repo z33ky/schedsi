@@ -115,6 +115,8 @@ class Scheduler:
             last_idx = None
             if rcu_data.last_idx != -1:
                 last_idx = rcu_data.last_idx
+                #FIXME: last thread shouldn't be in ready_threads for multi-vcpu
+                #       see _schedule() FIXME
                 last_thread = rcu_data.ready_threads[last_idx]
 
                 if last_thread.is_finished():
@@ -154,6 +156,8 @@ class Scheduler:
         Yields a :class:`Request <schedsi.cpu.Request>`.
         """
         rcu_copy.data.last_idx = idx
+        #FIXME: we need to take it out of the ready_threads for multi-vcpu
+        #       else we might try to run the same thread in parallel
         if not self._rcu.update(rcu_copy):
             return
 
