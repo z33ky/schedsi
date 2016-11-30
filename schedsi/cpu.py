@@ -77,11 +77,7 @@ class _ContextSwitchStats: # pylint: disable=too-few-public-methods
     def __init__(self):
         """Create a :class:`_ContextSwitchStats`."""
         self.thread_time = 0
-        self.thread_succ = 0
-        self.thread_fail = 0
         self.module_time = 0
-        self.module_succ = 0
-        self.module_fail = 0
 
 class _TimeStats: # pylint: disable=too-few-public-methods
     """CPU Time statistics."""
@@ -89,6 +85,7 @@ class _TimeStats: # pylint: disable=too-few-public-methods
         """Create a :class:`_TimeStats`."""
         self.crunch_time = 0
         self.idle_time = 0
+        self.timer_delay = 0
 
 class _Status:
     """Status of a CPU Core.
@@ -121,24 +118,18 @@ class _Status:
 
         Also see :meth:`_update_time`.
 
-        Returns a tuple (flag indicating if full time was not used,
-                         how much current :attr:`time_slice` allows execution).
+        Returns how long the current :attr:`time_slice` allows execution for.
         """
         if time > self.time_slice or time == -1:
             time = self.time_slice
-            return False, time
 
         assert time > 0
-        return True, time
+        return time
 
     def _update_time(self, time):
         """Update the time and check if interrupt happens.
 
-        The arguments should come from :meth:`_calc_runtime`,
-        they indicate whether an interrupt should be triggered and
-        how much time should pass.
-
-        The functions are separated for logging reasons.
+        `time` must not be negative or greater than :attr:`time_slice`.
         """
         assert time <= self.time_slice and time > 0
 
@@ -160,38 +151,39 @@ class _Status:
         assert self.time_slice == 0
         self.cpu.log.timer_interrupt(self.cpu)
         self.time_slice = self.cpu.timer_quantum
-        succeed, time = self._context_switch(self.contexts[0].thread)
+        time = self._context_switch(self.contexts[0].thread)
         self.contexts[0].thread.run_ctxsw(self.current_time, time)
-        if succeed:
-            for ctx in self.contexts[1:-1]:
-                ctx.thread.finish(self.current_time)
-            if self.contexts[-1].started and len(self.contexts) > 1:
-                self.contexts[-1].thread.finish(self.current_time)
-            del self.contexts[1:]
+        for ctx in self.contexts[1:-1]:
+            ctx.thread.finish(self.current_time)
+        if self.contexts[-1].started and len(self.contexts) > 1:
+            self.contexts[-1].thread.finish(self.current_time)
+        del self.contexts[1:]
 
     def _context_switch(self, thread):
         """Perform a context switch.
 
         The caller is responsible for modifying the :attr:`contexts` stack
         and call :meth:`Thread.run_ctxsw` on the appropriate :class:`Thread`.
+
+        Returns the context switching time.
         """
         if thread.module == self.contexts[-1].thread.module:
-            self.cpu.log.context_switch(self.cpu, thread, 0, 0)
-            self.ctxsw_stats.thread_succ += 1
-            return True, 0
+            self.cpu.log.context_switch(self.cpu, thread, 0)
+            #self.ctxsw_stats.thread_time += 0
+            return 0
 
-        proceed, time = self._calc_runtime(CTXSW_COST)
-        assert proceed and time == CTXSW_COST or not proceed and time < CTXSW_COST
+        self.cpu.log.context_switch(self.cpu, thread, CTXSW_COST)
 
-        self.cpu.log.context_switch(self.cpu, thread, time, CTXSW_COST)
-        self._update_time(time)
-        self.ctxsw_stats.module_time += time
-        if proceed:
-            self.ctxsw_stats.module_succ += 1
-        else:
-            self.ctxsw_stats.module_fail += 1
+        time = self._calc_runtime(CTXSW_COST)
+        if time < CTXSW_COST:
+            self.time_slice = CTXSW_COST
+            self.stats.timer_delay += CTXSW_COST - time
+        self._update_time(CTXSW_COST)
+        assert time >= CTXSW_COST or self.time_slice == 0
 
-        return proceed, time
+        self.ctxsw_stats.module_time += CTXSW_COST
+
+        return CTXSW_COST
 
     def _switch_to_parent(self):
         """Return execution to the parent :class:`Thread`."""
@@ -204,13 +196,12 @@ class _Status:
             self.stats.idle_time += self.time_slice
             self._update_time(self.time_slice)
         else:
-            proceed, time = self._context_switch(self.contexts[-2].thread)
+            time = self._context_switch(self.contexts[-2].thread)
             #who should get this time?
             self.contexts[-1].thread.run_ctxsw(self.current_time, time)
             self._run_background(time)
-            if proceed:
-                self.contexts[-1].thread.finish(self.current_time)
-                self.contexts.pop()
+            self.contexts[-1].thread.finish(self.current_time)
+            self.contexts.pop()
 
     def _switch_thread(self, thread):
         """Continue execution of another :class:`Thread`.
@@ -220,13 +211,12 @@ class _Status:
         current_thread = self.contexts[-1].thread
         if not current_thread.module in [thread.module, thread.module.parent]:
             raise RuntimeError('Switching thread to unrelated module')
-        proceed, time = self._context_switch(thread)
+        time = self._context_switch(thread)
         #who should get this time?
         current_thread.run_ctxsw(self.current_time, time)
         self._run_background(time)
         current_thread.run_background(self.current_time, time)
-        if proceed:
-            self.contexts.append(_Context(thread))
+        self.contexts.append(_Context(thread))
 
     def execute(self):
         """Execute one step.
@@ -246,7 +236,7 @@ class _Status:
                 #no-op
                 continue
             elif next_step.rtype == RequestType.execute:
-                _, time = self._calc_runtime(next_step.thing)
+                time = self._calc_runtime(next_step.thing)
                 assert time > 0, time <= next_step
                 self.cpu.log.thread_execute(self.cpu, time)
                 self._update_time(time)

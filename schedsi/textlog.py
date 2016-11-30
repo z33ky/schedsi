@@ -10,13 +10,9 @@ def _timespan(cost):
     """Stringifies a timespan."""
     return "{} unit{}".format(cost, "" if cost == 1 else "s")
 
-def _ctxsw(module_to, time, required):
+def _ctxsw(module_to, time):
     """Stringifies a context switch."""
-    if time < required:
-        time = "{}/{} trying".format(time, _timespan(required))
-    else:
-        time = _timespan(time)
-    return "spends {} to switch to {}".format(time, module_to.name)
+    return "spends {} to switch to {}".format(_timespan(time), module_to.name)
 
 class TextLog:
     """Text logger.
@@ -57,15 +53,14 @@ class TextLog:
         """Register a :class:`Core`."""
         pass
 
-    def context_switch(self, cpu, thread_to, time, required):
+    def context_switch(self, cpu, thread_to, time):
         """Log an context switch event."""
         if thread_to.module == cpu.status.contexts[-1].thread.module:
             if thread_to.tid == 0:
                 return
             self.stream.write(self._ctm(cpu) + "selects {}.\n".format(thread_to.tid))
         else:
-            self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(thread_to.module, time,
-                                                                     required)))
+            self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(thread_to.module, time)))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""

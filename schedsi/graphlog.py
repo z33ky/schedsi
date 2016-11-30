@@ -207,17 +207,6 @@ class GraphLog:
 
         self._draw_slope(CTXSW_COLORS, time, -level_step)
 
-        partial_current = level_step % LEVEL
-        if partial_current != 0:
-            self._update_background_tasks(time)
-
-            #draw squashed block
-            self._move(-time, self.level - partial_current)
-            self._draw_block(INACTIVE_COLOR, self.background_tasks[-1].name, time, partial_current)
-            self._move(0, -self.level)
-
-            #don't update the partial context switch
-            return 0
         if level_step > LEVEL:
             #assume back to kernel - draw everything
             assert level_step == self.level
@@ -250,14 +239,7 @@ class GraphLog:
         self._draw_slope(CTXSW_COLORS, time, level_step)
 
         #always move up to the whole level for the next slope
-        partial_current = level_step % LEVEL
-        if partial_current != 0:
-            missing_level = LEVEL - partial_current
-            level_step += missing_level
-            #_draw_slope already moved partially, so just move up the missing part
-            self._move(0, missing_level)
-        else:
-            self.task_executed = False
+        self.task_executed = False
 
         self._update_background_tasks(time)
         self.background_tasks.append(_Background(name, time))
@@ -275,22 +257,17 @@ class GraphLog:
         """Register a :class:`Core`."""
         pass
 
-    def context_switch(self, cpu, thread_to, time, required):
+    def context_switch(self, cpu, thread_to, time):
         """Log an context switch event."""
-        assert required >= time
         if thread_to.module == cpu.status.contexts[-1].thread.module:
             return
 
         current_thread_name = name_current_thread(cpu)
 
-        if required == 0:
-            assert time == 0
-            ratio = 1
-        elif time == 0:
+        if time == 0:
             self._ctx_zero(current_thread_name)
             return
-        else:
-            ratio = time / required
+        levels = LEVEL
 
         module_to = thread_to.module
 
@@ -304,7 +281,7 @@ class GraphLog:
                 self._move(0, self.level)
             else:
                 #go down all the way
-                ratio *= self.level / LEVEL
+                levels = self.level
             ctx_func = self._ctx_down
         elif cpu.status.contexts[-1].thread.module.parent == module_to:
             #switch to parent
@@ -313,7 +290,7 @@ class GraphLog:
             #switch to child
             ctx_func = self._ctx_up
 
-        self.level += ctx_func(current_thread_name, time, ratio * LEVEL)
+        self.level += ctx_func(current_thread_name, time, levels)
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""

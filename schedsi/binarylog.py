@@ -46,7 +46,7 @@ def _encode_event(cpu, event, args=None):
         encoded.update(args)
     return encoded
 
-def _encode_ctxsw(cpu, thread_to, time, required):
+def _encode_ctxsw(cpu, thread_to, time):
     """Encode a context switching event to a :obj:`dict`."""
     module_to = thread_to.module
     module_from = cpu.status.contexts[-1].thread.module
@@ -66,7 +66,7 @@ def _encode_ctxsw(cpu, thread_to, time, required):
     return _encode_event(cpu, _Event.context_switch.name,
                          {
                              'direction': direction, 'thread_to': _encode_thread(thread_to),
-                             'time': time, 'required': required
+                             'time': time
                          })
 
 def _encode_coreinit(cpu):
@@ -95,9 +95,9 @@ class BinaryLog:
         """Register a :class:`Core`."""
         self._write(_encode_coreinit(cpu))
 
-    def context_switch(self, cpu, thread_to, time, required):
+    def context_switch(self, cpu, thread_to, time):
         """Log an context switch event."""
-        self._write(_encode_ctxsw(cpu, thread_to, time, required))
+        self._write(_encode_ctxsw(cpu, thread_to, time))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
@@ -212,7 +212,7 @@ def _decode_ctxsw(cpu, entry):
         #remove own prefix
         direction = direction[4:]
 
-    return (cpu, thread_to, entry['time'], entry['required']), direction
+    return (cpu, thread_to, entry['time']), direction
 
 def replay(binary, log):
     """Play a MessagePack file to another log."""
