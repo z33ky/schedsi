@@ -574,9 +574,6 @@ Core stats:
 Core 0
 	crunch_time: 260
 	idle_time: 0
-	module_fail: 0
-	module_succ: 141
 	module_time: 141
-	thread_fail: 0
-	thread_succ: 189
 	thread_time: 0
+	timer_delay: 30

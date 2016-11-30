@@ -74,9 +74,12 @@ class TextLog:
         """Log an CPU idle event."""
         self.stream.write(self._ct(cpu) + "idle for {}.\n".format(_timespan(idle_time)))
 
-    def timer_interrupt(self, cpu):
+    def timer_interrupt(self, cpu, delay):
         """Log an timer interrupt event."""
-        self.stream.write(self._ct(cpu) + "timer interrupt.\n")
+        self.stream.write(self._ct(cpu) + "timer interrupt")
+        if delay:
+            self.stream.write(" ({} delay)".format(_timespan(delay)))
+        self.stream.write(".\n")
 
     @classmethod
     def to_json(cls, stats, sep_indent="\n"):

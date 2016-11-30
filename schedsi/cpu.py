@@ -121,17 +121,17 @@ class _Status:
         Returns how long the current :attr:`time_slice` allows execution for.
         """
         if time > self.time_slice or time == -1:
-            time = self.time_slice
+            time = max(0, self.time_slice)
 
-        assert time > 0
+        assert time >= 0
         return time
 
     def _update_time(self, time):
         """Update the time and check if interrupt happens.
 
-        `time` must not be negative or greater than :attr:`time_slice`.
+        `time` must not be negative.
         """
-        assert time <= self.time_slice and time > 0
+        assert time > 0
 
         self.current_time += time
         self.time_slice -= time
@@ -148,10 +148,16 @@ class _Status:
 
         Sets up a new :attr:`time_slice` and jumps back to the kernel.
         """
-        assert self.time_slice == 0
-        self.cpu.log.timer_interrupt(self.cpu)
-        self.time_slice = self.cpu.timer_quantum
+        assert self.time_slice <= 0
+
+        self.cpu.log.timer_interrupt(self.cpu, -self.time_slice)
         time = self._context_switch(self.contexts[0].thread)
+        self.stats.timer_delay += -self.time_slice
+        #subtract overrun from next time slice
+        #note that self.time_slice is negative, so + is correct
+        self.time_slice = self.cpu.timer_quantum + self.time_slice
+        assert self.time_slice > 0, "CTXSW_COST is too big or timer_quantum too small"
+
         self.contexts[0].thread.run_ctxsw(self.current_time, time)
         for ctx in self.contexts[1:-1]:
             ctx.thread.finish(self.current_time)
@@ -173,15 +179,11 @@ class _Status:
             return 0
 
         self.cpu.log.context_switch(self.cpu, thread, CTXSW_COST)
+        self.ctxsw_stats.module_time += CTXSW_COST
 
         time = self._calc_runtime(CTXSW_COST)
-        if time < CTXSW_COST:
-            self.time_slice = CTXSW_COST
-            self.stats.timer_delay += CTXSW_COST - time
         self._update_time(CTXSW_COST)
-        assert time >= CTXSW_COST or self.time_slice == 0
-
-        self.ctxsw_stats.module_time += CTXSW_COST
+        assert time == CTXSW_COST or self.time_slice <= 0
 
         return CTXSW_COST
 
@@ -226,7 +228,7 @@ class _Status:
         #For multi-core emulation this should become a coroutine.
         #It should yield whenever current_time is updated.
 
-        if self.time_slice == 0:
+        if self.time_slice <= 0:
             self._timer_interrupt()
             return
 
@@ -239,8 +241,8 @@ class _Status:
                 time = self._calc_runtime(next_step.thing)
                 assert time > 0, time <= next_step
                 self.cpu.log.thread_execute(self.cpu, time)
-                self._update_time(time)
                 self.stats.crunch_time += time
+                self._update_time(time)
                 self._run_background(time)
                 self.contexts[-1].thread.run_crunch(self.current_time, time)
             elif next_step.rtype == RequestType.idle:

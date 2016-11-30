@@ -111,9 +111,9 @@ class BinaryLog:
         """Log an CPU idle event."""
         self._encode(cpu, _Event.cpu_idle, {'idle_time': idle_time})
 
-    def timer_interrupt(self, cpu):
+    def timer_interrupt(self, cpu, delay):
         """Log an timer interrupt event."""
-        self._encode(cpu, _Event.timer_interrupt)
+        self._encode(cpu, _Event.timer_interrupt, {'delay': delay})
 
     def thread_statistics(self, stats):
         """Log thread statistics."""
@@ -249,7 +249,7 @@ def replay(binary, log):
             elif event.event == _Event.cpu_idle.name:
                 log.cpu_idle(event.cpu, entry['idle_time'])
             elif event.event == _Event.timer_interrupt.name:
-                log.timer_interrupt(event.cpu)
+                log.timer_interrupt(event.cpu, entry['delay'])
             else:
                 print("Unknown event:", event)
         elif entry['type'] == _EntryType.thread_statistics.name:

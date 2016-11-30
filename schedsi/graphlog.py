@@ -307,11 +307,11 @@ class GraphLog:
         """Log an CPU idle event."""
         self._draw_line(IDLE_COLOR, idle_time, 0)
 
-    def timer_interrupt(self, _cpu):
+    def timer_interrupt(self, _cpu, delay):
         """Log an timer interrupt event."""
-        self._move(0, -self.level)
+        self._move(-delay, -self.level)
         self._draw_line(TIMER_COLOR, 0, 1, self.top)
-        self._move(0, self.level - 1)
+        self._move(delay, self.level - 1)
 
     def thread_statistics(self, stats):
         """Log thread statistics.
