@@ -71,6 +71,16 @@ class _Context: # pylint: disable=too-few-public-methods
             self.started = True
             return next(self.execution)
 
+    def restart(self, current_time):
+        """Restart the thread.
+
+        Calls :meth:`Thread.finish()` and then starts a new coroutine.
+        """
+        assert self.started
+        self.thread.finish(current_time)
+        self.execution = self.thread.execute()
+        self.started = False
+
 class _ContextSwitchStats: # pylint: disable=too-few-public-methods
     """Context switching statistics."""
 
@@ -164,6 +174,7 @@ class _Status:
         if self.contexts[-1].started and len(self.contexts) > 1:
             self.contexts[-1].thread.finish(self.current_time)
         del self.contexts[1:]
+        self.contexts[0].restart(self.current_time)
 
     def _context_switch(self, thread):
         """Perform a context switch.
@@ -192,9 +203,6 @@ class _Status:
         if len(self.contexts) == 1:
             #kernel yields
             self.cpu.log.cpu_idle(self.cpu, self.time_slice)
-            thread = self.contexts.pop().thread
-            thread.finish(self.current_time)
-            self.contexts.append(_Context(thread))
             self.stats.idle_time += self.time_slice
             self._update_time(self.time_slice)
         else:
