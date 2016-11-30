@@ -233,13 +233,17 @@ class SchedulerThread(_BGStatThread):
         locked = self.is_running.acquire(False)
         assert locked
 
-        scheduler = self._scheduler.schedule(self, self.last_bg_time)
+        #abusing a list as communication channel
+        bg_time = [self.last_bg_time]
+
+        scheduler = self._scheduler.schedule(bg_time)
         thing = next(scheduler)
         current_time = yield cpu.Request.current_time()
         self._get_ready(current_time)
         while True:
             self.last_bg_time = 0
             current_time = yield thing
+            bg_time[0] = self.last_bg_time
             thing = scheduler.send(current_time)
 
     def run_background(self, current_time, run_time):
