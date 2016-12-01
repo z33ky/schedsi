@@ -78,7 +78,7 @@ class RCU:
 class RCUCopy: # pylint: disable=too-few-public-methods
     """A copy of RCU data.
 
-    Uses :module:`copy` to do a *shallow copy* of the data,
+    Uses :mod:`copy` to do a *shallow copy* of the data,
     so take care that you do not accidentally modify shared references.
 
     Contained :attr:`data` can be freely modified

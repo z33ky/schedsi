@@ -18,7 +18,7 @@ class World:
         self.log = log
 
     def step(self):
-        """Executes one timer quantum for each :class:`Core <schedsi.cpu.Core>` in the
+        """Executes one timer quantum for each :class:`~schedsi.cpu.Core` in the
         :class:`World`."""
         assert len(self.cores) == 1
         core = self.cores[0]

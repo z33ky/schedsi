@@ -23,7 +23,7 @@ class Scheduler:
     Can schedule a single thread,
     raises an exception if more are in the queue.
 
-    Has a :obj:`list` of :class:`ContextChains <schedsi.cpu.ContextChain>`.
+    Has a :obj:`list` of :class:`context.Chains <schedsi.context.Chain>`.
     """
 
     def __init__(self, module, rcu_storage=None):
@@ -96,15 +96,17 @@ class Scheduler:
         and finished ones to the finished queue.
 
         Returns a tuple (
+
             * RCUCopy of :attr:`_rcu`
             * list where previously scheduled chain ended up
                 * (`rcu_copy_{ready,waiting,finished}_chains`)
             * index of previously scheduled chain
                 * as passed to :meth:`_schedule`
                 * *not* necessarily the index into the list where the chain ended up
+
         ).
 
-        Yields an idle or execute :class:`Request <schedsi.cpurequest.Request>`.
+        Yields an idle or execute :class:`~schedsi.cpurequest.Request`.
         Consumes the current time.
         """
         current_time = yield cpurequest.Request.current_time()
@@ -156,7 +158,7 @@ class Scheduler:
 
         If `idx` is -1, yield an idle request.
 
-        Yields a :class:`Request <schedsi.cpurequest.Request>`.
+        Yields a :class:`~schedsi.cpurequest.Request`.
         """
         rcu_copy.data.last_idx = idx
         #FIXME: we need to take it out of the ready_chains for multi-vcpu
@@ -175,12 +177,12 @@ class Scheduler:
             assert False, "Multi-vcpu synchronization not yet supported"
 
     def schedule(self, prev_run_time):
-        """Schedule the next :class:`ContextChain <schedsi.cpu.ContextChain>`.
+        """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
 
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
-        :meth:`_schedule_` in a loop, passing appropriate arguments.
+        :meth:`_schedule` in a loop, passing appropriate arguments.
 
-        Yields a :class:`Request <schedsi.cpurequest.Request>`.
+        Yields a :class:`~schedsi.cpurequest.Request`.
         Consumes the current time.
         """
         while True:
@@ -190,14 +192,14 @@ class Scheduler:
             yield from self._schedule(idx, rcu_copy)
 
     def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx): # pylint: disable=no-self-use
-        """Schedule the next :class:`ContextChain <schedsi.cpu.ContextChain>`.
+        """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
 
         This :class:`Scheduler` is a base class.
-        This function will only deal with a single :class:`ContextChain <schedsi.cpu.ContextChain>`.
+        This function will only deal with a single :class:`context.Chain <schedsi.context.Chain>`.
         If more are present, a :exc:`RuntimeError` is raised.
 
         Returns the selected chain index, or -1 if none.
-        Yields a :class:`Request <schedsi.cpurequest.Request>`.
+        Yields a :class:`~schedsi.cpurequest.Request`.
         Consumes the current time.
         """
         num_chains = len(rcu_copy.data.ready_chains)
@@ -233,6 +235,7 @@ class SchedulerAddonBase():
         if len(addon_data) == 0:
             return
         class AddonData(*addon_data): # pylint: disable=too-few-public-methods
+            """Joins all `addon_data` into one class."""
             pass
         original.__class__ = AddonData
         for data in addon_data:
@@ -281,7 +284,7 @@ class SchedulerAddon(Scheduler):
         """See :meth:`Scheduler._start_schedule`.
 
         This will also call the
-        :attr:`addon`'s :meth:`start_schedule <SchedulerAddonBase.schedule>` hook.
+        :attr:`addon`'s :meth:`~SchedulerAddonBase.start_schedule` hook.
         """
         rcu_copy, *rest = yield from super()._start_schedule(prev_run_time)
 
@@ -292,7 +295,7 @@ class SchedulerAddon(Scheduler):
     def _schedule(self, idx, rcu_copy):
         """See :meth:`Scheduler._schedule`.
 
-        This will also call the :attr:`addon`'s :meth:`schedule <SchedulerAddonBase.schedule>`.
+        This will also call the :attr:`addon`'s :meth:`~SchedulerAddonBase.schedule`.
         """
         schedule = super()._schedule(idx, rcu_copy)
         if self.addon.schedule(idx, rcu_copy.data):

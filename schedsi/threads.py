@@ -60,7 +60,7 @@ class Thread:
 
         The thread will run for as long as it can.
 
-        Yields a :class:`Request <schedsi.cpurequest.Request>`.
+        Yields a :class:`~schedsi.cpurequest.Request`.
         Consumes the current time.
         """
         locked = self.is_running.acquire(False)
@@ -89,7 +89,7 @@ class Thread:
         """Simulate execution.
 
         Update some state.
-        Yields an execute :class:`Request <schedsi.cpurequest.Request>`
+        Yields an execute :class:`~schedsi.cpurequest.Request`
         respecting :attr:`remaining`, so it won't yield more than that.
 
         Returns the next current time or None if :attr:`remaining` is 0.
@@ -309,6 +309,7 @@ class VCPUThread(_BGStatThread):
 
     @property
     def _thread(self):
+        """The :class:`Thread` the execution is forwarded to."""
         return self._chain.bottom
 
     def execute(self):

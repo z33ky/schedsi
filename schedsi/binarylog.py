@@ -5,8 +5,8 @@ import collections
 import enum
 import msgpack
 
-_EntryType = enum.Enum('EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
-_Event = enum.Enum('Event', [
+_EntryType = enum.Enum('_EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
+_Event = enum.Enum('_Event', [
     'init_core',
     'context_switch',
     'thread_execute',
@@ -18,22 +18,22 @@ _Event = enum.Enum('Event', [
 _GenericEvent = collections.namedtuple('_GenericEvent', 'cpu event')
 
 def _encode_cpu(cpu):
-    """Encode a :class:`Core` to a :obj:`dict`."""
+    """Encode a :class:`~schedsi.cpu.Core` to a :obj:`dict`."""
     return {
         'uid': cpu.uid,
         'status': {'current_time': cpu.status.current_time}
     }
 
 def _encode_contexts(contexts):
-    """Encode a :class:`Context` to a :obj:`dict`."""
+    """Encode a :class:`~schedsi.context.Context` to a :obj:`dict`."""
     return [{'thread': _encode_thread(c.thread)} for c in contexts]
 
 def _encode_module(module):
-    """Encode a :class:`Module` to a :obj:`dict`."""
+    """Encode a :class:`~schedsi.module.Module` to a :obj:`dict`."""
     return {'name': module.name}
 
 def _encode_thread(thread):
-    """Encode a :class:`Thread` to a :obj:`dict`."""
+    """Encode a :class:`~schedsi.threads.Thread` to a :obj:`dict`."""
     return {'module': _encode_module(thread.module), 'tid': thread.tid}
 
 def _encode_event(cpu, event, args=None):
@@ -130,33 +130,37 @@ _Core = collections.namedtuple('_Core', 'uid status')
 #namedtuples are immutable, but the following classes require mutable fields
 
 class _Module: # pylint: disable=too-few-public-methods
-    """A :class:`module.Module <schedsi.module.Module>` emulation class."""
+    """A :class:`~schedsi.module.Module` emulation class."""
     def __init__(self, name):
         """Create a :class:`_Module`."""
         self.name = name
         self.parent = None
 
 class _ContextChain:
+    """A :class:`~schedsi.context.Chain` emulation class."""
     def __init__(self):
+        """Create a :class:`_ContextChain`."""
         self.contexts = []
 
     @property
     def bottom(self):
+        """The bottom thread."""
         return self.contexts[0].thread
 
     @property
     def top(self):
+        """The top thread."""
         return self.contexts[-1].thread
 
 class _CPUStatus: # pylint: disable=too-few-public-methods
-    """A :class:`cpu._Status <schedsi.cpu._Status>` emulation class."""
+    """A :class:`~schedsi.cpu._Status` emulation class."""
     def __init__(self, current_time):
         """Create a :class:`_CPUStatus`."""
         self.current_time = current_time
         self.chain = _ContextChain()
 
 class _Thread: # pylint: disable=too-few-public-methods
-    """A :class:`threads.Thread <schedsi.threads.Thread>` emulation class."""
+    """A :class:`~schedsi.threads.Thread` emulation class."""
     def __init__(self, tid, module):
         """Create a :class:`_Thread`."""
         self.tid = tid
@@ -207,7 +211,7 @@ def _decode_ctxsw(cpu, entry):
 
     Returns a tuple (tuple for arguments, direction),
     where direction is a string specifying the kind of switch:
-        parent, child, kernel
+    parent, child, kernel
     """
     thread_to = _decode_thread(entry['thread_to'])
     direction = entry['direction']

@@ -340,3 +340,27 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
+
+autodoc_member_order = 'groupwise'
+
+autodoc_default_flags = ['show-inheritance', 'members', 'undoc-members', 'private-members']
+
+import enum
+
+def member_skip(app, what, name, obj, skip, options):
+    if skip:
+        return True
+
+    #remove _private, but not __special__ attributes of namedtuples and Enums
+    if isinstance(obj, type) and issubclass(obj, (tuple, enum.Enum)):
+        def is_special(key):
+            return key[:2] == '__' and key[-2:] == '__'
+        def is_private(key):
+            return key[0] == '_' and not is_special(key)
+        for k in [k for k in obj.__dict__.keys() if is_private(k)]:
+            delattr(obj, k)
+
+    return False
+
+def setup(app):
+    app.connect('autodoc-skip-member', member_skip)

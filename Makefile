@@ -17,6 +17,10 @@ test: .PHONY
 	PYTHONPATH=. tests/simple.py
 	PYTHONPATH=. tests/graph.py
 
+update-docs:
+	rm -f docs/source/schedsi.rst
+	sphinx-apidoc -o docs/source schedsi
+
 html: .PHONY
 	$(MAKE) -C docs html
 

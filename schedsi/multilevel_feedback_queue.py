@@ -230,9 +230,9 @@ class MLFQ(scheduler.Scheduler):
         return last_queue, last_idx
 
     def _sched_loop(self, rcu_copy, last_chain_queue, last_chain_idx):
-        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
+        """Schedule the next :class:`~schedsi.threads.Thread`.
 
-        See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler._sched_loop>`.
+        See :meth:`Scheduler._sched_loop() <schedsi.scheduler.Scheduler._sched_loop>`.
         """
         rcu_data = rcu_copy.data
 

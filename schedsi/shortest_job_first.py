@@ -50,9 +50,9 @@ class SJF(scheduler.Scheduler):
             count += 1
 
     def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx):
-        """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
+        """Schedule the next :class:`~schedsi.threads.Thread`.
 
-        See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler._sched_loop>`.
+        See :meth:`~schedsi.scheduler.Scheduler._sched_loop`.
         """
         idx = 0
         if not rcu_copy.data.ready_chains:

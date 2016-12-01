@@ -31,7 +31,7 @@ class Module:
     def register_vcpu(self, vcpu):
         """Register a VCPU.
 
-        This is called when a parent adds a :class:`VCPUThread <schedsi.threads.VCPUThread>`
+        This is called when a parent adds a :class:`~schedsi.threads.VCPUThread`
         to schedule this module.
 
         Returns the scheduler thread.
