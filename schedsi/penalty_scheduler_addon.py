@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Defines a base class for schedulers attempting to run
-threads for certain timeslices.
+"""Defines a base class for schedulers attempting to run threads for certain time-slices.
 
-Without a local timer, this is approximated by keeping track
-of the difference of the debit and credit ("penalty").
+Without a local timer, this is approximated by keeping track of the difference of the debit
+and credit ("niceness").
 """
 
 from schedsi import scheduler
@@ -15,16 +14,16 @@ class PenaltySchedulerAddonData(): # pylint: disable=too-few-public-methods
         """Create a :class:`PenaltySchedulerAddonData`."""
         self.sat_out_threads = []
         self.last_timeslice = None
-        self.penalties = {}
+        self.niceness = {}
 
 class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
     """Penalty tracking scheduler-addon.
 
-    :attr:`penalty` is always <= 0 and represents how much longer
-    the chain ran than the timeslice specified.
-    When a chain's :attr:`penalty` exceeds the :attr:`threshold`
-    and is selected by the scheduler, the chain with the lowest
-    :attr:`penalty` will be run instead.
+    `niceness` is always <= 0 and represents how much longer the chain ran
+    than the time-slice specified.  When a chain's `niceness` falls behind
+    the :attr:`threshold` and is selected by the scheduler, it is blocked
+    and the scheduler gets rerun until it either repeats a decision or
+    selects a chain that has a `niceness` above the :attr:`threshold`.
     """
 
     def __init__(self, addee, timeslice, threshold=None):
@@ -48,21 +47,21 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         last_thread = last_chain and last_chain.bottom
         last_id = id(last_thread)
 
-        penalty = 0
+        niceness = 0
         if not last_chain is None and not last_id in rcu_data.sat_out_threads:
             if last_thread.is_finished():
-                penalty = rcu_data.penalties.pop(last_id)
-                if penalty >= 0 and rcu_data.penalties:
-                    penalty = max(rcu_data.penalties.values())
+                niceness = rcu_data.niceness.pop(last_id)
+                if niceness >= 0 and rcu_data.niceness:
+                    niceness = max(rcu_data.niceness.values())
                 else:
-                    penalty = 0
+                    niceness = 0
             else:
                 if prev_run_time == 0:
                     #probably was blocked by another addon
                     rcu_data.sat_out_threads.append(last_id)
                 else:
-                    rcu_data.penalties[last_id] += rcu_data.last_timeslice - prev_run_time
-                    penalty = rcu_data.penalties[last_id]
+                    rcu_data.niceness[last_id] += rcu_data.last_timeslice - prev_run_time
+                    niceness = rcu_data.niceness[last_id]
                 rcu_data.last_timeslice = None
 
         if rcu_data.sat_out_threads:
@@ -70,23 +69,23 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
             if not last_id == rcu_data.sat_out_threads[-1]:
                 assert prev_run_time > 0
                 for tid in rcu_data.sat_out_threads:
-                    rcu_data.penalties[tid] += prev_run_time
-                    penalty = max(penalty, rcu_data.penalties[tid])
+                    rcu_data.niceness[tid] += prev_run_time
+                    niceness = max(niceness, rcu_data.niceness[tid])
                 rcu_data.sat_out_threads.clear()
 
-        if penalty > 0 or \
-           penalty < 0 and max(rcu_data.penalties.values()) == penalty:
+        if niceness > 0 or \
+           niceness < 0 and max(rcu_data.niceness.values()) == niceness:
             #shift back to 0
-            for k in rcu_data.penalties.keys():
-                rcu_data.penalties[k] -= penalty
-        assert not rcu_data.penalties or 0 in rcu_data.penalties.values()
+            for k in rcu_data.niceness.keys():
+                rcu_data.niceness[k] -= niceness
+        assert not rcu_data.niceness or 0 in rcu_data.niceness.values()
 
     #this differs only in optional arguments
     def schedule(self, idx, rcu_data, timeslice=None, threshold=None): # pylint: disable=arguments-differ
-        """Proxy for a :meth:`_schedule <schedsi.scheduler.Scheduler._schedule>` call.
+        """See :meth:`SchedulerAddonBase.schedule`.
 
-        Checks the penalty for the selected thread and may return a different index to choose
-        with the lowest penalty.
+        Checks the niceness for the selected chain and blocks it
+        if it's below the :attr:`threshold`.
         """
         if idx == -1:
             return True
@@ -101,18 +100,19 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
 
         tid = id(rcu_data.ready_chains[idx].bottom)
 
-        penalty = rcu_data.penalties.setdefault(tid, 0)
-        if penalty < threshold:
+        niceness = rcu_data.niceness.setdefault(tid, 0)
+        if niceness < threshold:
             if tid in rcu_data.sat_out_threads:
                 #scheduler selected a thread that we wanted to stall again
                 #allow it to run then
                 #TODO: retry & count retries to self.max_retries
                 rcu_data.sat_out_threads.clear()
             else:
-                min_pen_tid = max((id(c.bottom) for c in rcu_data.ready_chains),
-                                  key=lambda tid: rcu_data.penalties.get(tid, 0))
-                assert penalty <= rcu_data.penalties[min_pen_tid]
-                if tid != min_pen_tid:
+                #only nicest thread may run
+                nicest_tid = max((id(c.bottom) for c in rcu_data.ready_chains),
+                                 key=lambda tid: rcu_data.niceness.get(tid, 0))
+                assert niceness <= rcu_data.niceness[nicest_tid]
+                if tid != nicest_tid:
                     rcu_data.sat_out_threads.append(tid)
                     rcu_data.last_timeslice = None
                     return False
