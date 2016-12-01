@@ -6,7 +6,7 @@ almost, but not completely, running for a time-slice.
 Such a thread will not get a priority reduction.
 """
 
-from schedsi import cpu, scheduler
+from schedsi import cpurequest, scheduler
 
 class MLFQData(scheduler.SchedulerData): # pylint: disable=too-few-public-methods
     """Mutable data for the :class:`MLFQ` scheduler."""
@@ -106,7 +106,7 @@ class MLFQ(scheduler.Scheduler):
                                     if v is rcu_data.ready_threads)
 
         if prev_has_run:
-            current_time = (yield cpu.Request.current_time())
+            current_time = (yield cpurequest.Request.current_time())
             (last_queue,
              last_idx,
              prev_ready_queue_idx) = self._priority_boost(rcu_data, last_queue, last_idx,

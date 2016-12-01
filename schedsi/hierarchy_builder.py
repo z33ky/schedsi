@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Functionality to create a :class:`Module`-hierarchy."""
 
-from schedsi import cpu, module, threads
+from schedsi import cpurequest, module, threads
 
 class ModuleBuilder:
     """Build static hierarchies."""
@@ -143,7 +143,7 @@ class ModuleBuilderThread(threads.Thread):
             self.disable_spawning()
             if super().is_finished():
                 self._get_ready(current_time)
-                yield cpu.Request.idle()
+                yield cpurequest.Request.idle()
                 return
         elif run_time == -1 or current_time + run_time > self.time:
             run_time = self.time - current_time

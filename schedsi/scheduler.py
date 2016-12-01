@@ -2,7 +2,7 @@
 """Defines the base class for schedulers."""
 
 import itertools
-from schedsi import cpu, rcu
+from schedsi import cpurequest, rcu
 
 class SchedulerData: # pylint: disable=too-few-public-methods
     """Mutable data for the :class:`Scheduler`.
@@ -101,10 +101,10 @@ class Scheduler:
                 * *not* necessarily the index into the list where the thread ended up
         ).
 
-        Yields an idle or execute :class:`Request <schedsi.cpu.Request>`.
+        Yields an idle or execute :class:`Request <schedsi.cpurequest.Request>`.
         Consumes the current time.
         """
-        current_time = yield cpu.Request.current_time()
+        current_time = yield cpurequest.Request.current_time()
         while True:
             rcu_copy = self._rcu.copy()
             rcu_data = rcu_copy.data
@@ -131,7 +131,7 @@ class Scheduler:
                 else:
                     dest.append(rcu_data.ready_threads.pop(last_idx))
                     #if not self._rcu.update(rcu_copy):
-                    #    #current_time = yield cpu.Request.execute(1)
+                    #    #current_time = yield cpurequest.Request.execute(1)
                     #    continue
 
                 rcu_data.last_idx = -1
@@ -153,7 +153,7 @@ class Scheduler:
 
         If `idx` is -1, yield an idle request.
 
-        Yields a :class:`Request <schedsi.cpu.Request>`.
+        Yields a :class:`Request <schedsi.cpurequest.Request>`.
         """
         rcu_copy.data.last_idx = idx
         #FIXME: we need to take it out of the ready_threads for multi-vcpu
@@ -162,10 +162,10 @@ class Scheduler:
             return
 
         if idx == -1:
-            yield cpu.Request.idle()
+            yield cpurequest.Request.idle()
             return
 
-        yield cpu.Request.switch_thread(rcu_copy.data.ready_threads[idx])
+        yield cpurequest.Request.switch_thread(rcu_copy.data.ready_threads[idx])
 
     def schedule(self, prev_run_time):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
@@ -173,7 +173,7 @@ class Scheduler:
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
         :meth:`_schedule_` in a loop, passing appropriate arguments.
 
-        Yields a :class:`Request <schedsi.cpu.Request>`.
+        Yields a :class:`Request <schedsi.cpurequest.Request>`.
         Consumes the current time.
         """
         while True:
@@ -190,7 +190,7 @@ class Scheduler:
         If more are present, a :exc:`RuntimeError` is raised.
 
         Returns the selected thread index, or -1 if none.
-        Yields a :class:`Request <schedsi.cpu.Request>`.
+        Yields a :class:`Request <schedsi.cpurequest.Request>`.
         Consumes the current time.
         """
         num_threads = len(rcu_copy.data.ready_threads)
@@ -293,6 +293,6 @@ class SchedulerAddon(Scheduler):
         else:
             #TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
             for request in schedule:
-                if request.rtype != cpu.RequestType.switch_thread:
-                    assert request.rtype != cpu.RequestType.idle
+                if request.rtype != cpurequest.Type.switch_thread:
+                    assert request.rtype != cpurequest.Type.idle
                     yield request

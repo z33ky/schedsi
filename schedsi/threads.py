@@ -3,7 +3,7 @@
 
 import sys
 import threading
-from schedsi import cpu
+from schedsi import cpurequest
 
 class _ThreadStats:
     """Thread statistics."""
@@ -60,13 +60,13 @@ class Thread:
 
         The thread will run for as long as it can.
 
-        Yields a :class:`Request <schedsi.cpu.Request>`.
+        Yields a :class:`Request <schedsi.cpurequest.Request>`.
         Consumes the current time.
         """
         locked = self.is_running.acquire(False)
         assert locked
 
-        current_time = yield cpu.Request.current_time()
+        current_time = yield cpurequest.Request.current_time()
         while True:
             current_time = yield from self._execute(current_time, -1)
 
@@ -89,7 +89,7 @@ class Thread:
         """Simulate execution.
 
         Update some state.
-        Yields an execute :class:`Request <schedsi.cpu.Request>`
+        Yields an execute :class:`Request <schedsi.cpurequest.Request>`
         respecting :attr:`remaining`, so it won't yield more than that.
 
         Returns the next current time or None if :attr:`remaining` is 0.
@@ -104,10 +104,10 @@ class Thread:
             assert run_time > 0
             assert run_time <= self.remaining or self.remaining == -1
 
-        current_time = yield cpu.Request.execute(run_time)
+        current_time = yield cpurequest.Request.execute(run_time)
 
         if self.is_finished():
-            yield cpu.Request.idle()
+            yield cpurequest.Request.idle()
             return
 
         return current_time
@@ -238,7 +238,7 @@ class SchedulerThread(_BGStatThread):
 
         scheduler = self._scheduler.schedule(bg_time)
         thing = next(scheduler)
-        current_time = yield cpu.Request.current_time()
+        current_time = yield cpurequest.Request.current_time()
         self._get_ready(current_time)
         while True:
             self.last_bg_time = 0
@@ -317,12 +317,12 @@ class VCPUThread(_BGStatThread):
         locked = self.is_running.acquire(False)
         assert locked
 
-        current_time = yield cpu.Request.current_time()
+        current_time = yield cpurequest.Request.current_time()
         self._update_active = True
         self._get_ready(current_time)
         self._update_active = False
-        yield cpu.Request.switch_thread(self._thread)
-        yield cpu.Request.idle()
+        yield cpurequest.Request.switch_thread(self._thread)
+        yield cpurequest.Request.idle()
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.
@@ -404,7 +404,7 @@ class PeriodicWorkThread(Thread):
         locked = self.is_running.acquire(False)
         assert locked
 
-        current_time = yield cpu.Request.current_time()
+        current_time = yield cpurequest.Request.current_time()
         while True:
             quota_left = self._get_quota(current_time)
             if quota_left != 0:
@@ -421,7 +421,7 @@ class PeriodicWorkThread(Thread):
 
             current_time = yield from super()._execute(current_time, quota_left)
             if self.current_burst_left == 0:
-                yield cpu.Request.idle()
+                yield cpurequest.Request.idle()
                 return
 
     def run_crunch(self, current_time, run_time):
