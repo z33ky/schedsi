@@ -1,41 +1,9 @@
 #!/usr/bin/env python3
 """Defines a :class:`Core`."""
 
-from schedsi import cpurequest
+from schedsi import context, cpurequest
 
 CTXSW_COST = 1
-
-class _Context: # pylint: disable=too-few-public-methods
-    """An operation context for a CPU Core.
-
-    The context has
-        * the current :class:`Thread`
-        * the execution coroutine of the :class:`Thread`
-    """
-
-    def __init__(self, thread):
-        """Create a :class:`_Context`"""
-        self.thread = thread
-        self.execution = thread.execute()
-        self.started = False
-
-    def execute(self, current_time):
-        """Run the execution coroutine."""
-        if self.started:
-            return self.execution.send(current_time)
-        else:
-            self.started = True
-            return next(self.execution)
-
-    def restart(self, current_time):
-        """Restart the thread.
-
-        Calls :meth:`Thread.finish()` and then starts a new coroutine.
-        """
-        assert self.started
-        self.thread.finish(current_time)
-        self.execution = self.thread.execute()
-        self.started = False
 
 class _ContextSwitchStats: # pylint: disable=too-few-public-methods
     """Context switching statistics."""
@@ -58,7 +26,7 @@ class _Status:
 
     The Status consists of:
         * a reference to the :class:`Core` that owns it
-        * a stack of operation :class:`_Contexts <_Context>`
+        * a stack of operation :class:`Contexts <schedsi.context.Context>`
         * the current time slice (or what's left of it)
         * the current time
         * :class:`_TimeStats`
@@ -104,7 +72,7 @@ class _Status:
 
     def _run_background(self, time):
         """Call :meth:`Thread.run_background` on each :class:`Thread` in the
-        :class:`_Context` stack except the last (most recent).
+        :class:`~context.Context` stack except the last (most recent).
         """
         for ctx in self.contexts[0:-1]:
             ctx.thread.run_background(self.current_time, time)
@@ -182,7 +150,7 @@ class _Status:
         current_thread.run_ctxsw(self.current_time, time)
         self._run_background(time)
         current_thread.run_background(self.current_time, time)
-        self.contexts.append(_Context(thread))
+        self.contexts.append(context.Context(thread))
 
     def execute(self):
         """Execute one step.
@@ -238,14 +206,14 @@ class Core:
 
         self.log = log
 
-        self.status = _Status(self, _Context(init_thread))
+        self.status = _Status(self, context.Context(init_thread))
 
         log.init_core(self)
 
     def execute(self):
         """Execute one step.
 
-        See :meth:`_Context.execute`.
+        See :meth:`_Status.execute`.
         """
         self.status.execute()
 

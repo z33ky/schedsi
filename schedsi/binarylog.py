@@ -25,7 +25,7 @@ def _encode_cpu(cpu):
     }
 
 def _encode_contexts(contexts):
-    """Encode a :class:`_Context` to a :obj:`dict`."""
+    """Encode a :class:`Context` to a :obj:`dict`."""
     return [{'thread': _encode_thread(c.thread)} for c in contexts]
 
 def _encode_module(module):
