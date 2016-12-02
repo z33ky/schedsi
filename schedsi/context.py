@@ -155,7 +155,6 @@ class Chain:
             #no time to count down then
             return
         assert self.contexts
-        assert self.next_timeout is None or self.next_timeout >= time
 
         for ctx in self.contexts:
             if not ctx.timeout is None:

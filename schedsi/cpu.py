@@ -37,7 +37,6 @@ class _Status:
         """Create a :class:`_Status`."""
         self.cpu = cpu
         self.chain = chain
-        self.chain.set_timer(cpu.timer_quantum)
         self.prev_chain = None
         self.current_time = 0
         self.stats = _TimeStats()
@@ -62,7 +61,7 @@ class _Status:
         elif time > timeout or time == -1:
             time = max(0, timeout)
 
-        assert time > 0
+        assert time > 0 or time == 0 and timeout <= 0
         return time
 
     def _update_time(self, time):
@@ -73,7 +72,7 @@ class _Status:
         assert time > 0
         timeout = self.chain.next_timeout
         if not timeout is None:
-            assert time <= timeout
+            assert time <= timeout or timeout <= 0
 
         self.current_time += time
         self.chain.elapse(time)
@@ -87,7 +86,7 @@ class _Status:
     def _timer_interrupt(self):
         """Call when :attr:`chain.next_timeout` arrives.
 
-        Sets up a new timer and jumps back to the kernel.
+        Resets the timer and jumps back to the kernel.
         """
         assert self.chain.next_timeout <= 0
 
@@ -96,17 +95,16 @@ class _Status:
 
         idx = self.chain.find_elapsed_timer()
         assert idx == 0
-        self.chain.set_timer(self.cpu.timer_quantum, idx)
         new_top = self.chain.thread_at(idx)
 
         time = self._context_switch(new_top)
-        assert self.chain.next_timeout > 0, "CTXSW_COST is too big or timer_quantum too small"
         self.stats.timer_delay += time
         new_top.run_ctxsw(self.current_time, time)
 
         prev_chain = self.chain.split(idx + 1)
         prev_chain.finish(self.current_time)
 
+        self.chain.set_timer(None)
         assert len(self.chain) == 1
         self.chain.current_context.restart(self.current_time)
 
@@ -175,7 +173,7 @@ class _Status:
         #For multi-core emulation this should become a coroutine.
         #It should yield whenever current_time is updated.
 
-        if self.chain.next_timeout <= 0:
+        if not self.chain.next_timeout is None and self.chain.next_timeout <= 0:
             self._timer_interrupt()
             return
 
@@ -186,7 +184,7 @@ class _Status:
                 continue
             elif next_step.rtype == cpurequest.Type.execute:
                 time = self._calc_runtime(next_step.thing)
-                assert time > 0, time <= next_step
+                assert time > 0 and time <= next_step.thing
                 self.cpu.log.thread_execute(self.cpu, time)
                 self._update_time(time)
                 self.stats.crunch_time += time
@@ -200,6 +198,10 @@ class _Status:
                 assert len(next_step.thing) == 1
                 chain = context.Chain.from_thread(next_step.thing.bottom)
                 self._append_chain(chain)
+            elif next_step.rtype == cpurequest.Type.timer:
+                if self.chain.top.module != self.cpu.kernel:
+                    raise RuntimeError('Received timer request from non-kernel scheduler.')
+                self.chain.set_timer(next_step.thing)
             else:
                 assert False
             break
@@ -216,10 +218,9 @@ class Core:
     The values are not expected to change much during operation.
     """
 
-    def __init__(self, uid, timer_quantum, init_thread, log):
+    def __init__(self, uid, init_thread, log):
         """Create a :class:`Core`."""
         self.uid = uid
-        self.timer_quantum = timer_quantum
 
         self.log = log
 
@@ -239,3 +240,8 @@ class Core:
         stats = self.status.stats.__dict__.copy()
         stats.update(self.status.ctxsw_stats.__dict__)
         return stats
+
+    @property
+    def kernel(self):
+        """The Kernel module."""
+        return self.status.chain.bottom.module

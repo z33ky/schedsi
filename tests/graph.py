@@ -18,7 +18,7 @@ class TestExample(unittest.TestCase):
         """Test that the simple hierarchy produces the expected graph SVG."""
         graph_log = graphlog.GraphLog()
 
-        the_world = world.World(1, 10, simple_hierarchy.KERNEL, graph_log)
+        the_world = world.World(1, simple_hierarchy.KERNEL, graph_log)
         while the_world.step() <= 400:
             pass
 

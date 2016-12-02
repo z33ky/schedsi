@@ -7,11 +7,11 @@ from schedsi import binarylog, cpu
 class World:
     """The world keeps data to enable execution."""
 
-    def __init__(self, cores, timer_quantum, kernel, log=binarylog.BinaryLog(io.BytesIO())):
+    def __init__(self, cores, kernel, log=binarylog.BinaryLog(io.BytesIO())):
         """Creates a :class:`World`."""
         if cores > 1:
             raise RuntimeError("Does not support more than 1 core yet.")
-        self.cores = [cpu.Core(idx, timer_quantum, kernel._scheduler_thread, log)
+        self.cores = [cpu.Core(idx, kernel._scheduler_thread, log)
                       for idx in range(0, cores)]
         for core in self.cores:
             kernel.register_vcpu(core)
@@ -28,8 +28,8 @@ class World:
 
     def log_statistics(self):
         """Log statistics."""
-        kernel = self.cores[0].status.chain.bottom.module
+        kernel = self.cores[0].kernel
         #there should be only one kernel?
-        assert all(c.status.chain.bottom.module == kernel for c in self.cores)
+        assert all(c.kernel == kernel for c in self.cores)
         self.log.thread_statistics(kernel.get_thread_statistics())
         self.log.cpu_statistics(core.get_statistics() for core in self.cores)

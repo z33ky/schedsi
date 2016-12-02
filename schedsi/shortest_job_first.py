@@ -7,9 +7,9 @@ from schedsi import scheduler
 class SJF(scheduler.Scheduler):
     """Shortest job first scheduler."""
 
-    def __init__(self, module):
+    def __init__(self, module, **kwargs):
         """Create a :class:`SJF` scheduler."""
-        super().__init__(module)
+        super().__init__(module, **kwargs)
 
     def _update_ready_chains(self, time, rcu_data):
         """See :meth:`Scheduler._update_ready_chains`.

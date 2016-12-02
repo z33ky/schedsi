@@ -4,7 +4,7 @@
 import enum
 from schedsi import context
 
-Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute'])
+Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute', 'timer'])
 
 class Request:
     """A request to the CPU."""
@@ -19,6 +19,8 @@ class Request:
             assert thing is None
         elif rtype == Type.execute:
             assert thing > 0 or thing == -1
+        elif rtype == Type.timer:
+            assert thing > 0
         else:
             assert False, "Unknown Type"
         self.rtype = rtype
@@ -46,3 +48,11 @@ class Request:
     def execute(cls, amount):
         """Create a :class:`Request` to spend some time executing."""
         return cls(Type.execute, amount)
+
+    @classmethod
+    def timer(cls, time):
+        """Create a :class:`Request` to set a timer for the current context."""
+        #TODO: allow to specify how much sooner a timer may elapse
+        #      this is to reduce frequent ctxswes if resumed chains have
+        #      timers that will elapse very soon
+        return cls(Type.timer, time)

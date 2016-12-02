@@ -26,16 +26,34 @@ class Scheduler:
     Has a :obj:`list` of :class:`context.Chains <schedsi.context.Chain>`.
     """
 
-    def __init__(self, module, rcu_storage=None):
+    def __init__(self, module, rcu_storage=None, *, time_slice=None):
         """Create a :class:`Scheduler`.
 
         Optionally takes a `rcu_storage` for which to create the :attr:`_rcu` for.
         It should be a subclass of :class:`SchedulerData`.
+
+        The `time_slice` is for the kernel scheduler to set.
         """
         if rcu_storage is None:
             rcu_storage = SchedulerData()
         self._rcu = rcu.RCU(rcu_storage)
         self.module = module
+        self.time_slice = time_slice
+        #kernel and only kernel must set time_slice
+        assert (self.module.parent is None) != (self.time_slice is None)
+
+    @classmethod
+    def builder(cls, *args, **kwargs):
+        """Make a creator of :class:`Scheduler`.
+
+        Returns a function taking a single argument:
+        the :class:`Module` of the scheduler to create.
+        `args` and `kwargs` are then also forwarded to :meth:`__init__`.
+        """
+        def make(module):
+            """The creator function to be returned."""
+            return cls(module, *args, **kwargs)
+        return make
 
     def num_threads(self):
         """Return total number of threads.
@@ -169,6 +187,9 @@ class Scheduler:
         if idx == -1:
             yield cpurequest.Request.idle()
             return
+
+        if not self.time_slice is None:
+            yield cpurequest.Request.timer(self.time_slice)
 
         rcu_copy.data.ready_chains[idx] = \
             yield cpurequest.Request.resume_chain(rcu_copy.data.ready_chains[idx])

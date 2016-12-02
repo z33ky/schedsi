@@ -38,14 +38,14 @@ class MLFQData(scheduler.SchedulerData): # pylint: disable=too-few-public-method
 class MLFQ(scheduler.Scheduler):
     """Multi-level feedback queue scheduler."""
 
-    def __init__(self, module, *, levels=8, priority_boost_time):
+    def __init__(self, module, *, levels=8, priority_boost_time, **kwargs):
         """Create a class:`MLFQ`."""
         assert levels > 0
         if not priority_boost_time is None:
             #priority boost has no effect with 1 queue
             assert levels != 1
             assert priority_boost_time >= 0
-        super().__init__(module, MLFQData(levels, priority_boost_time))
+        super().__init__(module, MLFQData(levels, priority_boost_time), **kwargs)
         self.prio_boost_time = priority_boost_time
         if priority_boost_time is None:
             self._priority_boost = self._no_priority_boost

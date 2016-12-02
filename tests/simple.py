@@ -18,7 +18,7 @@ class TestExample(unittest.TestCase):
         text_log = textlog.TextLog(text_buf,
                                    textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1))
 
-        the_world = world.World(1, 10, simple_hierarchy.KERNEL, text_log)
+        the_world = world.World(1, simple_hierarchy.KERNEL, text_log)
         while the_world.step() <= 400:
             pass
 

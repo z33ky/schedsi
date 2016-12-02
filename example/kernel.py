@@ -12,7 +12,7 @@ from schedsi import binarylog, hierarchy_builder, schedulers, threads, world
 #Create a hierarchy of a kernel, a child module and two grand-children.
 #this is the same as tests/simple_hierarchy.py
 #pylint: disable=duplicate-code
-KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin)
+KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))
 TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin)
 BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin)
 BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
@@ -42,7 +42,7 @@ def main():
         binary_log = binarylog.BinaryLog(log_file)
 
         #Create and run the world.
-        the_world = world.World(1, 10, KERNEL.module, binary_log)
+        the_world = world.World(1, KERNEL.module, binary_log)
         while the_world.step() <= 400:
             pass
 

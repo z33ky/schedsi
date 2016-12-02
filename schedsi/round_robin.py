@@ -10,6 +10,6 @@ class RoundRobin(multilevel_feedback_queue.MLFQ):
     this scheduler is simply implemented as MLFQ with 1 queue.
     """
 
-    def __init__(self, module):
+    def __init__(self, module, **kwargs):
         """Create a :class:`RoundRobin` scheduler."""
-        super().__init__(module, levels=1, priority_boost_time=None)
+        super().__init__(module, levels=1, priority_boost_time=None, **kwargs)

@@ -11,7 +11,7 @@ Scheduling is done via :class:`RoundRobin` and :class:`SJF`.
 
 from schedsi import hierarchy_builder, schedulers, threads
 
-KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin)
+KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))
 TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin)
 BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin)
 BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
