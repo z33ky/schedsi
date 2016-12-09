@@ -188,10 +188,8 @@ class Chain:
         """Call :meth:`Thread.finish <schedsi.threads.Thread.finish>`
         on every :class:`~schedsi.threads.Thread` in the :class:`Chain`.
         """
-        for ctx in self.contexts[:-1]:
+        for ctx in self.contexts:
             ctx.thread.finish(current_time)
-        if self.current_context and self.current_context.started:
-            self.top.finish(current_time)
 
     def run_background(self, current_time, time):
         """Call :meth:`Thread.run_background <schedsi.threads.Thread.run_background>`

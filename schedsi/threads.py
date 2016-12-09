@@ -128,7 +128,11 @@ class Thread:
         whether the context switch was successful or not.
         `current_time` refers to the time just after the context switch.
         """
-        assert self.is_running.locked()
+        if not self.is_running.locked():
+            #this can happen if the thread was just switched to when the timer elapsed
+            #and we now switch away from this thread
+            locked = self.is_running.acquire(False)
+            assert locked
         self.stats.ctxsw.append(run_time)
 
     def run_background(self, current_time, _run_time):

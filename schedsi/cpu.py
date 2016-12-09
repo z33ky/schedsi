@@ -99,7 +99,7 @@ class _Status:
 
         time = self._context_switch(new_top)
         self.stats.timer_delay += time
-        new_top.run_ctxsw(self.current_time, time)
+        self.chain.top.run_ctxsw(self.current_time, time)
 
         prev_chain = self.chain.split(idx + 1)
         prev_chain.finish(self.current_time)
@@ -142,8 +142,8 @@ class _Status:
             time = self._context_switch(self.chain.parent)
             #who should get this time?
             self.chain.top.run_ctxsw(self.current_time, time)
-            self._run_background(time)
             prev_chain = self.chain.split(-1)
+            self._run_background(time)
             assert len(prev_chain) == 1
             prev_chain.finish(self.current_time)
             self.chain.current_context.reply(context.Chain.from_thread(prev_chain.bottom))
@@ -161,8 +161,6 @@ class _Status:
         #who should get this time?
         current_thread.run_ctxsw(self.current_time, time)
         self._run_background(time)
-        #FIXME: run_ctxsw and run_background?
-        current_thread.run_background(self.current_time, time)
         self.chain.append_chain(tail)
 
     def execute(self):
