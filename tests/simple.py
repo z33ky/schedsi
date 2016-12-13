@@ -7,10 +7,12 @@ import unittest
 from schedsi import textlog, world
 from tests import common, simple_hierarchy
 
+
 class TestExample(unittest.TestCase):
     """Test that the simple hierarchy executes as expected.
 
-    Comparison is done via the text log, so that divergences can easily be checked."""
+    Comparison is done via the text log, so that divergences can easily be checked.
+    """
 
     def test_example(self):
         """Test that the simple hierarchy executes as expected."""
@@ -24,16 +26,17 @@ class TestExample(unittest.TestCase):
 
         the_world.log_statistics()
 
-        expected = open("tests/simple_hierarchy.log", 'r')
+        expected = open('tests/simple_hierarchy.log', 'r')
         text_buf.seek(0)
         diff = difflib.unified_diff(text_buf.readlines(), expected.readlines(),
-                                    "result", "expected")
+                                    'result', 'expected')
         has_diff = False
         for line in common.color_diff(diff):
             has_diff = True
             print(line, end='')
         expected.close()
         self.assertFalse(has_diff)
+
 
 if __name__ == '__main__':
     unittest.main()

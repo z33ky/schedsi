@@ -5,7 +5,8 @@ from schedsi import context, cpurequest
 
 CTXSW_COST = 1
 
-class _ContextSwitchStats: # pylint: disable=too-few-public-methods
+
+class _ContextSwitchStats:  # pylint: disable=too-few-public-methods
     """Context switching statistics."""
 
     def __init__(self):
@@ -13,13 +14,16 @@ class _ContextSwitchStats: # pylint: disable=too-few-public-methods
         self.thread_time = 0
         self.module_time = 0
 
-class _TimeStats: # pylint: disable=too-few-public-methods
+
+class _TimeStats:  # pylint: disable=too-few-public-methods
     """CPU Time statistics."""
+
     def __init__(self):
         """Create a :class:`_TimeStats`."""
         self.crunch_time = 0
         self.idle_time = 0
         self.timer_delay = 0
+
 
 class _Status:
     """Status of a CPU Core.
@@ -74,14 +78,14 @@ class _Status:
         """
         assert time >= 0
         timeout = self.chain.next_timeout
-        if not timeout is None:
+        if timeout is not None:
             assert time <= timeout or timeout <= 0
 
         self.current_time += time
         self.chain.elapse(time)
 
     def _run_background(self, time):
-        """Call :meth:`context.Chain.run_background <schedsi.context.Chain.run_background>`
+        """Call :meth:`context.Chain.run_background <schedsi.context.Chain.run_background>` \
         on :attr:`chain`.
         """
         self.chain.run_background(self.current_time, time)
@@ -116,11 +120,11 @@ class _Status:
         The previous chain is the tail of the context :attr:`chain` that is cut off
         when `split_index` is set. It is `None` if `split_index` is `None`.
         """
-        if not split_index is None:
+        if split_index is not None:
             assert appendix is None
             assert split_index != -1
         else:
-            assert not appendix is None
+            assert appendix is not None
             assert len(appendix) != 0
 
         thread_from = self.chain.current_context.thread
@@ -136,18 +140,18 @@ class _Status:
         self.cpu.log.context_switch(self.cpu, split_index, appendix, cost)
 
         prev_chain = None
-        if not split_index is None:
+        if split_index is not None:
             prev_chain = self.chain.split(split_index + 1)
             self.chain.current_context.reply(prev_chain)
 
-        #update for cost regardless of the time-slice, because context switching is atomic
+        # update for cost regardless of the time-slice, because context switching is atomic
         self._update_time(cost)
         assert self._calc_runtime(cost) == cost or self.chain.next_timeout <= 0
 
         thread_from.run_ctxsw(self.current_time, cost)
         self._run_background(cost)
 
-        if not appendix is None:
+        if appendix is not None:
             self.chain.append_chain(appendix)
 
         assert thread_from != self.chain.top
@@ -157,7 +161,7 @@ class _Status:
     def _switch_to_parent(self):
         """Return execution to the parent :class:`Thread`."""
         if len(self.chain) == 1:
-            #kernel yields
+            # kernel yields
             slice_left = self.chian.next_timeout
             if slice_left <= 0:
                 raise RuntimeError('Kernel cannot yield without timeout.')
@@ -174,7 +178,7 @@ class _Status:
         The thread must be of either the same :class:`Module` or a child :class:`Module`.
         """
         prev_thread = self.chain.top
-        if not prev_thread.module in (tail.bottom.module, tail.bottom.module.parent):
+        if prev_thread.module not in (tail.bottom.module, tail.bottom.module.parent):
             raise RuntimeError('Switching thread to unrelated module')
         prev_chain, _ = self._context_switch(appendix=tail)
         assert prev_chain is None
@@ -185,7 +189,7 @@ class _Status:
         Returns whether time was spent handling the request..
         """
         if request.rtype == cpurequest.Type.current_time:
-            #no-op
+            # no-op
             return False
         elif request.rtype == cpurequest.Type.execute:
             time = self._calc_runtime(request.thing)
@@ -212,15 +216,16 @@ class _Status:
 
         One step is anything that takes time or switching context.
         """
-        #For multi-core emulation this should become a coroutine.
-        #It should yield whenever current_time is updated.
+        # For multi-core emulation this should become a coroutine.
+        # It should yield whenever current_time is updated.
 
-        if not self.chain.next_timeout is None and self.chain.next_timeout <= 0:
+        if self.chain.next_timeout is not None and self.chain.next_timeout <= 0:
             self._timer_interrupt()
             return
 
         while not self._handle_request(self.chain.current_context.execute(self.current_time)):
             pass
+
 
 class _KernelTimerOnlyStatus(_Status):
     """Status of a CPU Core allowing only the kernel to have timers."""
@@ -233,10 +238,10 @@ class _KernelTimerOnlyStatus(_Status):
         """
         super()._timer_interrupt()
 
-        #only kernel timer may interrupt
+        # only kernel timer may interrupt
         assert len(self.chain) == 1
 
-        #kernel scheduler gets restarted
+        # kernel scheduler gets restarted
         current_context = self.chain.current_context
         current_context.buffer.finish(self.current_time)
         current_context.reply(None)
@@ -251,7 +256,7 @@ class _KernelTimerOnlyStatus(_Status):
         super()._switch_to_parent()
         current_context = self.chain.current_context
         prev_chain = current_context.buffer
-        if not prev_chain is None:
+        if prev_chain is not None:
             prev_chain.finish(self.current_time)
             current_context.reply(None)
             current_context.reply(context.Chain.from_thread(prev_chain.bottom))
@@ -276,8 +281,9 @@ class _KernelTimerOnlyStatus(_Status):
                 if request.thing is None:
                     return False
                 raise RuntimeError('Received timer request from non-kernel scheduler.')
-            #let super() handle the rest of this request
+            # let super() handle the rest of this request
         return super()._handle_request(request)
+
 
 class Core:
     """A CPU Core.

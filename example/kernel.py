@@ -9,9 +9,9 @@ one with periodic bursts.
 import sys
 from schedsi import binarylog, hierarchy_builder, schedulers, threads, world
 
-#Create a hierarchy of a kernel, a child module and two grand-children.
-#this is the same as tests/simple_hierarchy.py
-#pylint: disable=duplicate-code
+# Create a hierarchy of a kernel, a child module and two grand-children.
+# this is the same as tests/simple_hierarchy.py
+# pylint: disable=duplicate-code
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))
 TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin)
 BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin)
@@ -32,21 +32,22 @@ BOTTOM_MODULE_B.add_thread(threads.PeriodicWorkThread, units=10, period=10, burs
                .add_thread(threads.Thread, ready_time=10, units=10) \
                .add_vcpus()
 
+
 def main():
     """Run the test."""
-
-    #Create the logger.
-    log_file_name = sys.argv[1] if len(sys.argv) > 1 else "-"
-    log_to_file = log_file_name != "-"
+    # Create the logger.
+    log_file_name = sys.argv[1] if len(sys.argv) > 1 else '-'
+    log_to_file = log_file_name != '-'
     with open(log_file_name, 'xb') if log_to_file else sys.stdout.buffer as log_file:
         binary_log = binarylog.BinaryLog(log_file)
 
-        #Create and run the world.
+        # Create and run the world.
         the_world = world.World(1, KERNEL.module, binary_log, local_timer_scheduling=False)
         while the_world.step() <= 400:
             pass
 
         the_world.log_statistics()
+
 
 if __name__ == '__main__':
     main()

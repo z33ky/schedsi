@@ -10,6 +10,7 @@ a different time-slice for each priority can be defined.
 
 from schedsi import multilevel_feedback_queue, penalty_scheduler_addon, scheduler
 
+
 class PenaltyMLFQ(scheduler.SchedulerAddon, multilevel_feedback_queue.MLFQ):
     """A :class:`multilevel_feedback_queue` variant with per-queue time-slices."""
 
@@ -20,14 +21,14 @@ class PenaltyMLFQ(scheduler.SchedulerAddon, multilevel_feedback_queue.MLFQ):
         self.timeslices = timeslices
 
         self.addon.threshold = None
-        #we overwrite self.addon.schedule in _schedule
+        # we overwrite self.addon.schedule in _schedule
         self.addon_schedule = self.addon.schedule
-        #this is just to make sure we do overwrite it before it's called
+        # this is just to make sure we do overwrite it before it's called
         self.addon.schedule = None
 
     def _start_schedule(self, prev_run_time):
         """See :meth:`Scheduler._start_schedule`."""
-        #this is just to make sure we do overwrite it before it's called
+        # this is just to make sure we do overwrite it before it's called
         self.addon.schedule = None
         return (yield from super()._start_schedule(prev_run_time))
 

@@ -4,6 +4,7 @@
 import bisect
 from schedsi import scheduler
 
+
 class SJF(scheduler.Scheduler):
     """Shortest job first scheduler."""
 
@@ -26,14 +27,14 @@ class SJF(scheduler.Scheduler):
         new_chains = ready_chains[new_idx:]
         del ready_chains[new_idx:]
 
-        #we sort the list to make insertion easier
+        # we sort the list to make insertion easier
         new_chains = sorted(new_chains, key=lambda c: c.bottom.remaining)
 
-        #remaining_list should contain the remaining times of all non-infinitly threads
+        # remaining_list should contain the remaining times of all non-infinitly threads
         inf_idx = next((i for i, c in enumerate(ready_chains) if c.bottom.remaining == -1), None)
         remaining_list = list(c.bottom.remaining for c in ready_chains[:inf_idx])
 
-        #filter out the infinitly executing ones from new_chains
+        # filter out the infinitly executing ones from new_chains
         inf_idx = next((i for i, c in enumerate(new_chains) if c.bottom.remaining != -1),
                        len(new_chains))
         ready_chains += new_chains[:inf_idx]
@@ -58,5 +59,5 @@ class SJF(scheduler.Scheduler):
         if not rcu_copy.data.ready_chains:
             idx = -1
         return idx
-        #needs to be a coroutine
-        yield # pylint: disable=unreachable
+        # needs to be a coroutine
+        yield  # pylint: disable=unreachable

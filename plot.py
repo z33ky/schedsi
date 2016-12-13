@@ -10,10 +10,11 @@ import string
 import sys
 import tempfile
 
-from schedsi import binarylog
-
 import matplotlib
 import matplotlib.pyplot
+
+from schedsi import binarylog
+
 
 class ThreadFigures:
     """Management of pyplot figures for thread-timing statistics."""
@@ -43,9 +44,9 @@ class ThreadFigures:
             max_time = max(times, default=0)
             subplot.hist(times, max_time + 1, range=(-0.5, max_time + 0.5))
             subplot.set_title(title)
-            subplot.set_xlabel("time")
-            subplot.set_ylabel("count")
-            #add some spacing to the top
+            subplot.set_xlabel('time')
+            subplot.set_ylabel('count')
+            # add some spacing to the top
             ylim = list(subplot.axes.get_ylim())
             if ylim[1] == 1:
                 ylim[1] += 0.1
@@ -61,24 +62,26 @@ class ThreadFigures:
         """
         for (name, fig) in self.figures.items():
             fig = fig[0]
-            fig.savefig(prefix + name + ".svg")
+            fig.savefig(prefix + name + '.svg')
             fig.clf()
+
 
 def plot_scheduler(name, stats):
     """Process scheduler stats."""
     figures = ThreadFigures(len(stats['children']) + 1)
 
-    print("Plotting thread {}...".format(name))
+    print('Plotting thread {}...'.format(name))
     figures.plot_thread(name, stats)
 
     for (key, values) in stats['children'].items():
-        print("Plotting thread {}...".format(key))
+        print('Plotting thread {}...'.format(key))
         figures.plot_thread(key, values)
 
-    #strip the thread-id from the name
+    # strip the thread-id from the name
     figures.save(name[:name.rindex('-') + 1])
 
-    print("Scheduler {} plotted.".format(name))
+    print('Scheduler {} plotted.'.format(name))
+
 
 def get_scheduler_keyslist(scheduler_threads):
     """Get a list of keys to all scheduler threads contained in `scheduler_threads`.
@@ -98,6 +101,7 @@ def get_scheduler_keyslist(scheduler_threads):
             keyslist += (prefix + keys for keys in get_scheduler_keyslist(scheduler))
     return keyslist
 
+
 def do_scheduler(stats, keys):
     """Call :func:`plot_scheduler` on the stats available through `keys`.
 
@@ -105,12 +109,13 @@ def do_scheduler(stats, keys):
     """
     plot_scheduler(keys[-1], functools.reduce(operator.getitem, keys, stats))
 
+
 def get_text_stats(log):
     """Return thread stats from a text file."""
     thread_stats = log
     if log.readline() != '{\n':
-        #not just plain JSON
-        #hopefully a schedsi log
+        # not just plain JSON
+        # hopefully a schedsi log
         thread_stats = tempfile.TemporaryFile('w+')
 
         for line in log:
@@ -125,9 +130,11 @@ def get_text_stats(log):
 
     return json.load(thread_stats)
 
+
 def get_binary_stats(log):
     """Return thread stats from a binary log."""
     return fix_keys(binarylog.get_thread_statistics(log))
+
 
 def fix_keys(stats):
     """Fix tuple-keys from thread stats.
@@ -139,18 +146,19 @@ def fix_keys(stats):
 
     new = {}
     for key, value in stats.items():
-        #thread keys are (module-name, thread-id) tuples
-        #convert to string
+        # thread keys are (module-name, thread-id) tuples
+        # convert to string
         if isinstance(key, tuple):
             key = '{}-{}'.format(key[0], key[1])
         new[key] = fix_keys(value)
 
     return new
 
+
 def get_stats(filename):
     """Read thread stats from the file specified by `filename`."""
     with open(filename, 'rb') as log:
-        #check if were dealing with a text log or a binary log
+        # check if were dealing with a text log or a binary log
         testbuf = log.read(64)
         if not all((c in string.printable.encode('utf-8')) for c in testbuf):
             log.seek(0)
@@ -159,12 +167,13 @@ def get_stats(filename):
     with open(filename) as log:
         return get_text_stats(log)
 
+
 def main():
     """Plot the statistics in `sys.argv[1]`."""
     matplotlib.rcParams.update({'figure.max_open_warning': 0})
 
     if len(sys.argv) != 2:
-        print("Usage: {0} stats.json or {0} schedsi.log".format(sys.argv[0]), file=sys.stderr)
+        print('Usage: {0} stats.json or {0} schedsi.log'.format(sys.argv[0]), file=sys.stderr)
         sys.exit(1)
 
     stats = get_stats(sys.argv[1])
@@ -172,6 +181,7 @@ def main():
     keyslist = get_scheduler_keyslist(stats)
     with multiprocessing.Pool() as pool:
         pool.map(functools.partial(do_scheduler, stats), keyslist)
+
 
 if __name__ == '__main__':
     main()

@@ -3,10 +3,11 @@
 
 from schedsi import cpurequest, module, threads
 
+
 class ModuleBuilder:
     """Build static hierarchies."""
 
-    def __init__(self, name="0", parent=None, *, scheduler):
+    def __init__(self, name='0', parent=None, *, scheduler):
         """Create a :class:`ModuleBuilder`."""
         self.module = module.Module(name, parent, scheduler)
         self.vcpus = []
@@ -20,7 +21,7 @@ class ModuleBuilder:
         Returns the child-:class:`Module`.
         """
         if name is None:
-            name = self.module.name + "." + str(self.module.num_children())
+            name = self.module.name + '.' + str(self.module.num_children())
         madder = ModuleBuilder(name, self.module, scheduler=scheduler)
         self.vcpus.append((madder.module, vcpus))
         return madder
@@ -49,6 +50,7 @@ class ModuleBuilder:
         self.vcpus.clear()
         return self
 
+
 class ModuleBuilderThread(threads.Thread):
     """A :class:`Thread` that creates (and attaches) a :class:`Module`.
 
@@ -66,11 +68,11 @@ class ModuleBuilderThread(threads.Thread):
         `time` must be >= `ready_time` and <= `ready_time` + `units` if `units` != -1.
         """
         if units is None:
-            assert ready_time is None, "If units is None, ready_time must be None."
+            assert ready_time is None, 'If units is None, ready_time must be None.'
             units = 0
             self.destroy_after_spawn = True
         else:
-            assert not ready_time is None, "If units is not None, ready_time must not be None."
+            assert ready_time is not None, 'If units is not None, ready_time must not be None.'
             self.destroy_after_spawn = False
 
         if ready_time is None:
@@ -81,14 +83,14 @@ class ModuleBuilderThread(threads.Thread):
             super().__init__(parent, *args, ready_time=ready_time, units=units, **kwargs)
             self.module.add_thread(self)
         else:
-            #self._late_init() will be called by the parent
-            #see documentation of _late_init()
+            # self._late_init() will be called by the parent
+            # see documentation of _late_init()
             self.init_args = (args, kwargs)
             self.init_args[1].update({'ready_time': ready_time, 'units': units})
 
-        assert time >= ready_time, "Spawn time must not come before ready_time."
+        assert time >= ready_time, 'Spawn time must not come before ready_time.'
         assert units == -1 or time <= ready_time + units, \
-            "Spawn time must not exceed execution time."
+            'Spawn time must not exceed execution time.'
 
         self.time = time
         self.name = name
@@ -105,7 +107,8 @@ class ModuleBuilderThread(threads.Thread):
         :class:`ModuleBuilderThread`, since :class:`Thread` expects
         a proper :class:`Module`.
         """
-        assert not self.init_args is None, "_late_init called after super() as already initialized."
+        assert self.init_args is not None, \
+            '_late_init called after super() as already initialized.'
         super().__init__(parent, *self.init_args[0], **self.init_kwargs[1])
         self.init_args = None
 
@@ -129,8 +132,8 @@ class ModuleBuilderThread(threads.Thread):
         """
         return self.is_spawning_disabled() and super().is_finished()
 
-    #this gets overwritten in disable_spawning()
-    def _execute(self, current_time, run_time): # pylint: disable=method-hidden
+    # this gets overwritten in disable_spawning()
+    def _execute(self, current_time, run_time):  # pylint: disable=method-hidden
         """Simulate execution.
 
         See :meth:`Thread._execute`.
@@ -149,7 +152,7 @@ class ModuleBuilderThread(threads.Thread):
             run_time = self.time - current_time
         return (yield from super()._execute(current_time, run_time))
 
-    def finish(self, current_time): # pylint: disable=method-hidden
+    def finish(self, current_time):  # pylint: disable=method-hidden
         """Become inactive.
 
         See :meth:`Thread.finish`.
@@ -160,36 +163,36 @@ class ModuleBuilderThread(threads.Thread):
             self._spawn_module(current_time)
             self.disable_spawning()
         else:
-            assert self.time > current_time, "Ran over spawn time."
+            assert self.time > current_time, 'Ran over spawn time.'
         super().finish(current_time)
 
-    def end(self): # pylint: disable=method-hidden
+    def end(self):  # pylint: disable=method-hidden
         """End execution.
 
         See :meth:`Thread.end`.
 
         This should not be called before disabling spawning.
         """
-        assert self.is_spawning_disabled(), "Execution ended before spawning was disabled."
-        assert False, "This function should have been replaced in disable_spawning()."
+        assert self.is_spawning_disabled(), 'Execution ended before spawning was disabled.'
+        assert False, 'This function should have been replaced in disable_spawning().'
         super().end()
 
     def _spawn_module(self, current_time):
         """Spawn the :class:`Module`."""
-        assert not self.is_spawning_disabled(), "Spawning is disabled."
+        assert not self.is_spawning_disabled(), 'Spawning is disabled.'
 
         name = self.name
         if name is None:
-            name = self.module.name + "." + str(self.module.num_children())
+            name = self.module.name + '.' + str(self.module.num_children())
 
         child = module.Module(name, self.module, scheduler=self.scheduler)
 
         for (thread, args, kwargs) in self.threads:
             if isinstance(thread, ModuleBuilderThread):
                 assert args is None, \
-                       "A ModuleBuilderThread is already created and should not get any arguments."
+                    'A ModuleBuilderThread is already created and should not get any arguments.'
                 assert kwargs is None
-                thread._late_init(child) # pylint: disable=protected-access
+                thread._late_init(child)  # pylint: disable=protected-access
             else:
                 if kwargs.get('ready_time', -1) == -1:
                     kwargs['ready_time'] = self.time
@@ -216,7 +219,7 @@ class ModuleBuilderThread(threads.Thread):
 
         Returns `self`.
         """
-        assert not self.is_spawning_disabled(), "Spawning was disabled."
+        assert not self.is_spawning_disabled(), 'Spawning was disabled.'
 
         self.threads.append((thread, args, kwargs))
 
@@ -233,7 +236,7 @@ class ModuleBuilderThread(threads.Thread):
 
         Returns the :class:`ModuleBuilderThread` for the child-:class:`Module`.
         """
-        assert not self.is_spawning_disabled(), "Spawning was disabled."
+        assert not self.is_spawning_disabled(), 'Spawning was disabled.'
 
         if time is None:
             time = self.time

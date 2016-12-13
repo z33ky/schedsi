@@ -5,10 +5,12 @@ import copy
 import sys
 import threading
 
+
 class RCU:
     """RCU storage emulation.
 
-    Thread-safe."""
+    Thread-safe.
+    """
 
     def __init__(self, data):
         """Create a :class:`RCU`.
@@ -23,14 +25,14 @@ class RCU:
 
     def _changed(self):
         """Update :attr:`uid:`."""
-        #prevent uid getting big
+        # prevent uid getting big
         if self._uid == sys.maxsize:
             self._uid = -sys.maxsize
         else:
             self._uid += 1
 
     def read(self):
-        """Return the contained data.
+        """Return the contained data. \
         Do not modify.
         """
         return self.copy().data
@@ -48,7 +50,7 @@ class RCU:
         and reapply your modifications to try again.
         """
         # pylint: disable=protected-access
-        #see if we can fail quick
+        # see if we can fail quick
         if self._uid != new._uid:
             return False
 
@@ -75,7 +77,8 @@ class RCU:
         with self._lock:
             return looker(self._data)
 
-class RCUCopy: # pylint: disable=too-few-public-methods
+
+class RCUCopy:  # pylint: disable=too-few-public-methods
     """A copy of RCU data.
 
     Uses :mod:`copy` to do a *shallow copy* of the data,
@@ -86,7 +89,7 @@ class RCUCopy: # pylint: disable=too-few-public-methods
     """
 
     def __init__(self, rcu):
-        """Create a :class:`RCUCopy.`"""
+        """Create a :class:`RCUCopy`."""
         # pylint: disable=protected-access
         assert rcu._lock.locked
         self._uid = rcu._uid

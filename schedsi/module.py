@@ -4,6 +4,7 @@
 import sys
 from schedsi import cpu, threads
 
+
 class Module:
     """A module is more or less a process.
 
@@ -20,12 +21,12 @@ class Module:
         self.parent = parent
         self._scheduler_thread = threads.SchedulerThread(0, scheduler=scheduler(self))
         self._vcpus = []
-        #HACK: VCPUs are usually added after other threads, but we need it sooner
-        #      to get a num_threads count for naming threads.
-        #      In particular, this is a problem for Cores, which are added in World.
+        # HACK: VCPUs are usually added after other threads, but we need it sooner
+        #       to get a num_threads count for naming threads.
+        #       In particular, this is a problem for Cores, which are added in World.
         self._vcpus = [(None, self._scheduler_thread)]
         self._children = []
-        if not parent is None:
+        if parent is not None:
             parent.attach_module(self)
 
     def register_vcpu(self, vcpu):
@@ -36,13 +37,13 @@ class Module:
 
         Returns the scheduler thread.
         """
-        #HACK: see __init__ for self._vcpus
+        # HACK: see __init__ for self._vcpus
         if self._vcpus == [(None, self._scheduler_thread)]:
             self._vcpus = []
         if len(self._vcpus) == 1:
-            raise RuntimeError("Does not support more than 1 vcpu yet.")
+            raise RuntimeError('Does not support more than 1 vcpu yet.')
         if not isinstance(vcpu, (threads.VCPUThread, cpu.Core)):
-            print(self.name, "expected a VCPU, got", type(vcpu).__name__, ".", file=sys.stderr)
+            print(self.name, 'expected a VCPU, got', type(vcpu).__name__, '.', file=sys.stderr)
         self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread
 

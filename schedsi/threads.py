@@ -5,6 +5,7 @@ import sys
 import threading
 from schedsi import context, cpurequest
 
+
 class _ThreadStats:
     """Thread statistics."""
 
@@ -28,8 +29,9 @@ class _ThreadStats:
         """Append `other`'s statistics to `self`."""
         assert self.finished_time == -1
         self.finished_time = other.finished_time
-        for (mine, theirs) in zip(self._all_times(), other._all_times()): #pylint: disable=protected-access
+        for (mine, theirs) in zip(self._all_times(), other._all_times()):  # pylint: disable=protected-access
             mine += theirs
+
 
 class Thread:
     """The basic thread class.
@@ -83,7 +85,7 @@ class Thread:
         self.stats.wait.append(current_time - self.ready_time)
         self.ready_time = current_time
 
-        #self.run_crunch(current_time, 0)
+        # self.run_crunch(current_time, 0)
 
     def _execute(self, current_time, run_time):
         """Simulate execution.
@@ -129,8 +131,8 @@ class Thread:
         `current_time` refers to the time just after the context switch.
         """
         if not self.is_running.locked():
-            #this can happen if the thread was just switched to when the timer elapsed
-            #and we now switch away from this thread
+            # this can happen if the thread was just switched to when the timer elapsed
+            # and we now switch away from this thread
             locked = self.is_running.acquire(False)
             assert locked
         self.stats.ctxsw.append(run_time)
@@ -163,7 +165,7 @@ class Thread:
             self.remaining -= run_time
 
             if self.is_finished():
-                #the job was completed within the slice
+                # the job was completed within the slice
                 self.end()
                 return
 
@@ -171,7 +173,7 @@ class Thread:
         """End execution."""
         assert self.is_finished()
         self.stats.finished_time = self.ready_time
-        #never start again
+        # never start again
         self.ready_time = -1
 
     def finish(self, _current_time):
@@ -189,6 +191,7 @@ class Thread:
         stats = self.completed_stats.__dict__.copy()
         stats['remaining'] = self.remaining
         return stats
+
 
 class _BGStatThread(Thread):
     """Base class for threads recording background time."""
@@ -215,6 +218,7 @@ class _BGStatThread(Thread):
         stats['bg'] = self.bg_times
         return stats
 
+
 class SchedulerThread(_BGStatThread):
     """A thread representing a VCPU for a child.
 
@@ -237,7 +241,7 @@ class SchedulerThread(_BGStatThread):
         locked = self.is_running.acquire(False)
         assert locked
 
-        #abusing a list as communication channel
+        # abusing a list as communication channel
         bg_time = [self.last_bg_time]
 
         scheduler = self._scheduler.schedule(bg_time)
@@ -263,13 +267,13 @@ class SchedulerThread(_BGStatThread):
 
         See :meth:`Thread.run_ctxsw`.
         """
-        #HACK: Also count switching to the kernel.
-        #      for other modules, context switching time
-        #      is attributed to them.
-        #      However, for the kernel there is no single module
-        #      that we're switching from, since it can come from
-        #      deep down the hierarchy.
-        #      So run_ctxsw is invoked on the kernel thread.
+        # HACK: Also count switching to the kernel.
+        #       for other modules, context switching time
+        #       is attributed to them.
+        #       However, for the kernel there is no single module
+        #       that we're switching from, since it can come from
+        #       deep down the hierarchy.
+        #       So run_ctxsw is invoked on the kernel thread.
         if self.module.parent is None:
             self.last_bg_time += run_time
         super().run_ctxsw(current_time, run_time)
@@ -291,6 +295,7 @@ class SchedulerThread(_BGStatThread):
         stats['children'] = self._scheduler.get_thread_statistics()
         return stats
 
+
 class VCPUThread(_BGStatThread):
     """A thread representing a VCPU from the perspective of a parent.
 
@@ -300,11 +305,11 @@ class VCPUThread(_BGStatThread):
     def __init__(self, module, *args, child, **kwargs):
         """Create a :class:`VCPUThread`."""
         if child.parent != module:
-            print(module.name, "is adding a VCPUThread for", child.name,
-                  "although it is not a direct descendant.", file=sys.stderr)
+            print(module.name, 'is adding a VCPUThread for', child.name,
+                  'although it is not a direct descendant.', file=sys.stderr)
         self._chain = context.Chain.from_thread(child.register_vcpu(self))
         if not isinstance(self._chain.bottom, SchedulerThread):
-            print("VCPUThread expected a SchedulerThread, got", type(self._thread).__name__, ".",
+            print('VCPUThread expected a SchedulerThread, got', type(self._thread).__name__, '.',
                   file=sys.stderr)
 
         super().__init__(module, *args, **kwargs, ready_time=self._thread.ready_time, units=None)
@@ -354,7 +359,7 @@ class VCPUThread(_BGStatThread):
         return stats
 
     def __getattribute__(self, key):
-        """:attr:`ready_time` and :attr:`remaining` should be taken from the
+        """:attr:`ready_time` and :attr:`remaining` should be taken from the \
         :class:`SchedulerThread`.
 
         Except for ready_time when we're calculating this thread's statistics,
@@ -364,6 +369,7 @@ class VCPUThread(_BGStatThread):
                                   not object.__getattribute__(self, '_update_active')):
             return object.__getattribute__(self, '_thread').__getattribute__(key)
         return object.__getattribute__(self, key)
+
 
 class PeriodicWorkThread(Thread):
     """A thread needing periodic bursts of CPU."""
@@ -400,12 +406,12 @@ class PeriodicWorkThread(Thread):
 
         Requires :attr:`current_burst_left` to be up-to-date.
         """
-        assert not self.current_burst_left is None
+        assert self.current_burst_left is not None
         if self.current_burst_left == 0:
             self.ready_time = self._calc_activations(current_time) * self.period \
                             + self.original_ready_time
 
-    #will run as long as the summed up bursts require
+    # will run as long as the summed up bursts require
     def execute(self):
         """Simulate execution.
 
@@ -421,7 +427,7 @@ class PeriodicWorkThread(Thread):
                 if quota_left < 0:
                     raise RuntimeError('Executed too much')
                 quota_plus = self._get_quota(current_time + quota_left)
-                #TODO: be smarter
+                # TODO: be smarter
                 while quota_plus > quota_left:
                     quota_left = quota_plus
                     quota_plus = self._get_quota(current_time + quota_left)

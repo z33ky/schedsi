@@ -3,12 +3,14 @@
 
 import pyx
 
+
 def _outlined_fill(color, amount):
     """Create an outlined, filled pyx attribute.
 
     Outline is full color (1.0), fill is graded.
     """
     return [pyx.deco.stroked([color.getcolor(1.0)]), pyx.deco.filled([color.getcolor(amount)])]
+
 
 CTXSW_COLORS = _outlined_fill(pyx.color.gradient.WhiteRed, 0.5)
 CTXSW_ZERO_COLOR = [pyx.style.linewidth.Thick, pyx.deco.stroked([pyx.color.rgb.red])]
@@ -18,10 +20,11 @@ INACTIVE_COLOR = _outlined_fill(pyx.color.gradient.WhiteBlue, 0.3)
 TIMER_COLOR = [pyx.style.linewidth.Thick, pyx.deco.stroked([pyx.color.gray(0.0)])]
 TEXT_ATTR = [pyx.text.halign.boxcenter, pyx.color.rgb.black]
 
-#height in graph for context switch
+# height in graph for context switch
 LEVEL = 3
 
-class _Background: #pylint: disable=too-few-public-methods
+
+class _Background:  # pylint: disable=too-few-public-methods
     """An active background task.
 
     Simply accumulates the time spent waiting while children are executing.
@@ -32,9 +35,11 @@ class _Background: #pylint: disable=too-few-public-methods
         self.name = name
         self.time = time
 
+
 def _name_thread(thread):
     """Return a string identifying the thread."""
     return thread.module.name + '-' + str(thread.tid)
+
 
 class GraphLog:
     """Graphical logger.
@@ -63,22 +68,21 @@ class GraphLog:
 
     def write(self, stream):
         """Generate SVG output of the current graph."""
-
-        #since we draw additional things (like axes), let's do this on a temporary canvas
+        # since we draw additional things (like axes), let's do this on a temporary canvas
         canvas = pyx.canvas.canvas()
         canvas.insert(self.canvas)
 
-        #draw the yet undrawn background tasks
-        #TODO: we should leverage _draw_background_tasks
+        # draw the yet undrawn background tasks
+        # TODO: we should leverage _draw_background_tasks
         for idx in reversed(range(0, len(self.background_tasks))):
             self._move(0, -LEVEL)
             self._draw_recent(idx, canvas)
         self._move(0, LEVEL * len(self.background_tasks))
 
-        #insert the top layer
+        # insert the top layer
         canvas.insert(self.top)
 
-        #draw axes
+        # draw axes
         path = pyx.path.path(pyx.path.moveto(0, 0), pyx.path.rlineto(self.cursor[0], 0))
         canvas.stroke(path, [pyx.color.rgb.black])
         for point in range(0, int(self.cursor[0] + 1), 5):
@@ -86,7 +90,7 @@ class GraphLog:
             canvas.stroke(line, [pyx.color.rgb.black])
             canvas.text(point, -1, point, TEXT_ATTR)
 
-        #and done
+        # and done
         canvas.writeSVGfile(stream)
 
     def _move(self, dx, dy):
@@ -120,13 +124,13 @@ class GraphLog:
         path = pyx.path.rect(*self.cursor, length, height)
         canvas.draw(path, color)
 
-        #center the text
+        # center the text
         textpos = self.cursor.copy()
         textpos[0] += length / 2
         if length >= 1:
             textpos[1] += height / 2
         else:
-            #if the block is really small, put the text above and draw a line to it
+            # if the block is really small, put the text above and draw a line to it
             linepos = textpos.copy()
             linepos[1] += height
             textpos[1] = linepos[1] + 0.5
@@ -150,12 +154,12 @@ class GraphLog:
             canvas = self.canvas
 
         cursor = self.cursor.copy()
-        #the context switch is drawn on top of the current block
+        # the context switch is drawn on top of the current block
         cursor[1] += LEVEL
         lineright = pyx.path.rlineto(dx, 0)
         lineup = pyx.path.rlineto(0, dy)
         if dy < 0:
-            #create a downwards slope
+            # create a downwards slope
             lineup, lineright = lineright, lineup
 
         path = pyx.path.path(pyx.path.moveto(*cursor), lineright, lineup, pyx.path.closepath())
@@ -174,7 +178,7 @@ class GraphLog:
         Otherwise `idx` is used for indexing and the stack is not modified.
         `canvas` is passed along to the drawing functions.
         """
-        if not idx is None:
+        if idx is not None:
             task = self.background_tasks[idx]
         else:
             task = self.background_tasks.pop()
@@ -189,20 +193,20 @@ class GraphLog:
         if amount is None:
             amount = len(self.background_tasks)
 
-        #background tasks are not active during the switch,
-        #so we move back for that amount of time
+        # background tasks are not active during the switch,
+        # so we move back for that amount of time
         self._move(-time, 0)
         for _ in range(0, amount):
             self._move(0, -LEVEL)
             self._draw_recent()
-        #kernel was active during the switch, so it has the switch time added
+        # kernel was active during the switch, so it has the switch time added
         self._move(time, -LEVEL)
         self._draw_recent()
 
     def _ctx_down(self, names, time, level_step):
         """Step down a level."""
         assert self.level % LEVEL == 0
-        #we can't be at the bottom and step down
+        # we can't be at the bottom and step down
         assert self.level > 0
 
         if not self.task_executed:
@@ -212,9 +216,9 @@ class GraphLog:
         self._draw_slope(CTXSW_COLORS, time, -level_step)
 
         if level_step > LEVEL:
-            #kernel is active during the switch
+            # kernel is active during the switch
             self.background_tasks[0].time += time
-            #move back up to the level we just were to draw the tasks processes
+            # move back up to the level we just were to draw the tasks processes
             self._move(0, level_step)
             self._draw_background_tasks(time, int(level_step / LEVEL) - 1)
         else:
@@ -233,7 +237,7 @@ class GraphLog:
         self._update_background_tasks(time)
         assert len(names) > 0
         self.background_tasks.extend(_Background(name, 0) for name in names)
-        #the thread on the bottom records context switching as background execution
+        # the thread on the bottom records context switching as background execution
         self.background_tasks[-len(names)].time = time
 
         return level_step
@@ -258,7 +262,7 @@ class GraphLog:
             thread_diff = (ctx.thread for ctx in appendix.contexts)
         else:
             ctx_func = self._ctx_down
-            #reversed because we go from the top to the bottom
+            # reversed because we go from the top to the bottom
             thread_diff = (ctx.thread for ctx in reversed(cpu.status.chain.contexts[split_index:]))
 
         if time == 0:
@@ -270,10 +274,10 @@ class GraphLog:
                 self._ctx_zero(_name_thread(cpu.status.chain.top))
             return
 
-        #calculate depth of the hierarchy that is appended/removed
+        # calculate depth of the hierarchy that is appended/removed
         current = cpu.status.chain.top
         levels = 0
-        #names of the threads at module-border
+        # names of the threads at module-border
         names = []
         for thread in thread_diff:
             if thread.module is not current.module:
@@ -300,7 +304,7 @@ class GraphLog:
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
-        #calculate depth of the module at idx from the top
+        # calculate depth of the module at idx from the top
         current = cpu.status.chain.top
         thread_diff = (ctx.thread for ctx in reversed(cpu.status.chain.contexts[idx:]))
         idx = 0
@@ -317,11 +321,13 @@ class GraphLog:
     def thread_statistics(self, stats):
         """Log thread statistics.
 
-        A no-op for this logger."""
+        A no-op for this logger.
+        """
         pass
 
     def cpu_statistics(self, stats):
         """Log CPU statistics.
 
-        A no-op for this logger."""
+        A no-op for this logger.
+        """
         pass

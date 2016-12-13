@@ -31,7 +31,7 @@ BOTTOM_MODULE_B.add_thread(threads.PeriodicWorkThread, units=10, period=10, burs
                .add_thread(threads.Thread, ready_time=10, units=10) \
                .add_vcpus()
 
-KERNEL = KERNEL.module # pylint: disable=redefined-variable-type
-TOP_MODULE = TOP_MODULE.module # pylint: disable=redefined-variable-type
-BOTTOM_MODULE_A = BOTTOM_MODULE_A.module # pylint: disable=redefined-variable-type
-BOTTOM_MODULE_B = BOTTOM_MODULE_B.module # pylint: disable=redefined-variable-type
+KERNEL = KERNEL.module  # pylint: disable=redefined-variable-type
+TOP_MODULE = TOP_MODULE.module  # pylint: disable=redefined-variable-type
+BOTTOM_MODULE_A = BOTTOM_MODULE_A.module  # pylint: disable=redefined-variable-type
+BOTTOM_MODULE_B = BOTTOM_MODULE_B.module  # pylint: disable=redefined-variable-type

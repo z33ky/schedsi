@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Defines a :class:`Context` and :class:`Chain` thereof."""
 
+
 class Context:
     """An operation context for a CPU Core.
 
@@ -11,7 +12,7 @@ class Context:
     """
 
     def __init__(self, thread):
-        """Create a :class:`Context`"""
+        """Create a :class:`Context`."""
         self.thread = thread
         self.execution = thread.execute()
         self.started = False
@@ -24,7 +25,7 @@ class Context:
         `current_time` is sent to the coroutine,
         unless a different reply is injected (see :meth:`reply`).
         """
-        if not self.buffer is None:
+        if self.buffer is not None:
             value = self.execution.send(self.buffer)
             self.buffer = None
             return value
@@ -40,8 +41,8 @@ class Context:
         Normally, the `current_time` as passed to :meth:`execute` is sent.
         This method can be used to inject a different argument.
         """
-        assert self.started, "Can't reply to a just-started context."
-        assert self.buffer is None or arg is None, "Cannot overwrite reply."
+        assert self.started, 'Can\'t reply to a just-started context.'
+        assert self.buffer is None or arg is None, 'Cannot overwrite reply.'
         assert arg is None or isinstance(arg, Chain)
         self.buffer = arg
 
@@ -55,6 +56,7 @@ class Context:
         self.thread.finish(current_time)
         self.execution = self.thread.execute()
         self.started = False
+
 
 class Chain:
     """The contexts for a scheduling-chain.
@@ -117,14 +119,14 @@ class Chain:
 
         This traverses the whole chain.
         """
-        valid_timeouts = (ctx.timeout for ctx in self.contexts if not ctx.timeout is None)
+        valid_timeouts = (ctx.timeout for ctx in self.contexts if ctx.timeout is not None)
         self.next_timeout = min(valid_timeouts, default=None)
 
     def append_chain(self, tail):
         """Append a :class:`Chain`."""
         self.contexts += tail.contexts
-        #update self.next_timeout
-        if not tail.next_timeout is None \
+        # update self.next_timeout
+        if tail.next_timeout is not None \
            and (self.next_timeout is None or tail.next_timeout < self.next_timeout):
             self.next_timeout = tail.next_timeout
 
@@ -136,14 +138,14 @@ class Chain:
         prev_time = self.contexts[idx].timeout
         self.contexts[idx].timeout = timeout
 
-        #update self.next_timeout
-        #check if we can avoid calling _update_timeout()
+        # update self.next_timeout
+        # check if we can avoid calling _update_timeout()
         if self.next_timeout is None:
             self.next_timeout = timeout
         else:
-            if not timeout is None and self.next_timeout >= timeout:
+            if timeout is not None and self.next_timeout >= timeout:
                 self.next_timeout = timeout
-            elif not prev_time is None and prev_time == self.next_timeout:
+            elif prev_time is not None and prev_time == self.next_timeout:
                 self._update_timeout()
 
     def elapse(self, time):
@@ -151,27 +153,26 @@ class Chain:
 
         Must not be called if a timeout in the chain has elapsed.
         """
-
         if self.next_timeout is None:
-            #no time to count down then
+            # no time to count down then
             return
         assert self.contexts
 
         for ctx in self.contexts:
-            if not ctx.timeout is None:
-                #don't elapse contexts further than the next_timeout
+            if ctx.timeout is not None:
+                # don't elapse contexts further than the next_timeout
                 done = ctx.timeout <= 0
                 assert not done or ctx.timeout == self.next_timeout
                 ctx.timeout -= time
                 if done:
                     break
-        if not self.next_timeout is None:
+        if self.next_timeout is not None:
             self.next_timeout -= time
 
     def find_elapsed_timer(self):
         """Return the index of the first elapsed timer in the :class:`Chain`."""
         return next(i for i, t in enumerate(ctx.timeout for ctx in self.contexts)
-                    if not t is None and t <= 0)
+                    if t is not None and t <= 0)
 
     def split(self, idx):
         """Split the :class:`Chain` in two at `idx`.
@@ -182,7 +183,7 @@ class Chain:
         """
         if idx < 0:
             idx = len(self) + idx
-        assert idx > 0, "Index for split is out of bounds."
+        assert idx > 0, 'Index for split is out of bounds.'
 
         tail = Chain(chain=self.contexts[idx:])
         del self.contexts[idx:]
@@ -192,15 +193,15 @@ class Chain:
         return tail
 
     def finish(self, current_time):
-        """Call :meth:`Thread.finish <schedsi.threads.Thread.finish>`
+        """Call :meth:`Thread.finish <schedsi.threads.Thread.finish>` \
         on every :class:`~schedsi.threads.Thread` in the :class:`Chain`.
         """
         for ctx in self.contexts:
             ctx.thread.finish(current_time)
 
     def run_background(self, current_time, time):
-        """Call :meth:`Thread.run_background <schedsi.threads.Thread.run_background>`
-        on every :class:`~schedsi.threads.Thread` in the :class:`Chain`
+        """Call :meth:`Thread.run_background <schedsi.threads.Thread.run_background>` \
+        on every :class:`~schedsi.threads.Thread` in the :class:`Chain` \
         except :attr:`current_context`.
         """
         for ctx in self.contexts[:-1]:

@@ -11,6 +11,7 @@ from tests import simple_hierarchy
 
 COMPARE = ['compare', '-', 'simple_hierarchy.svg', '-metric', 'AE', os.devnull]
 
+
 class TestExample(unittest.TestCase):
     """Test that the simple hierarchy produces the expected graph SVG."""
 
@@ -26,11 +27,12 @@ class TestExample(unittest.TestCase):
         graph_log.write(svg_buf)
         compare = subprocess.Popen(COMPARE, stdin=subprocess.PIPE, stderr=subprocess.PIPE,
                                    bufsize=0, cwd=os.path.dirname(sys.argv[0]))
-        #graph_log.write(compare.stdin)
+        # graph_log.write(compare.stdin)
         _, out = compare.communicate(svg_buf.getvalue())
         compare.wait()
         self.assertEqual(compare.returncode, 0)
-        self.assertEqual(out, b"0")
+        self.assertEqual(out, b'0')
+
 
 if __name__ == '__main__':
     unittest.main()
