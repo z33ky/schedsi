@@ -39,8 +39,6 @@ class Scheduler:
         self._rcu = rcu.RCU(rcu_storage)
         self.module = module
         self.time_slice = time_slice
-        #kernel and only kernel must set time_slice
-        assert (self.module.parent is None) != (self.time_slice is None)
 
     @classmethod
     def builder(cls, *args, **kwargs):
@@ -188,8 +186,7 @@ class Scheduler:
             yield cpurequest.Request.idle()
             return
 
-        if not self.time_slice is None:
-            yield cpurequest.Request.timer(self.time_slice)
+        yield cpurequest.Request.timer(self.time_slice)
 
         rcu_copy.data.ready_chains[idx] = \
             yield cpurequest.Request.resume_chain(rcu_copy.data.ready_chains[idx])

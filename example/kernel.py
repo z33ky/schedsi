@@ -42,7 +42,7 @@ def main():
         binary_log = binarylog.BinaryLog(log_file)
 
         #Create and run the world.
-        the_world = world.World(1, KERNEL.module, binary_log)
+        the_world = world.World(1, KERNEL.module, binary_log, local_timer_scheduling=False)
         while the_world.step() <= 400:
             pass
 

@@ -327,11 +327,12 @@ class VCPUThread(_BGStatThread):
         assert locked
 
         current_time = yield cpurequest.Request.current_time()
-        self._update_active = True
-        self._get_ready(current_time)
-        self._update_active = False
-        self._chain = yield cpurequest.Request.resume_chain(self._chain)
-        yield cpurequest.Request.idle()
+        while True:
+            self._update_active = True
+            self._get_ready(current_time)
+            self._update_active = False
+            self._chain = yield cpurequest.Request.resume_chain(self._chain)
+            current_time = yield cpurequest.Request.idle()
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.
@@ -430,8 +431,7 @@ class PeriodicWorkThread(Thread):
 
             current_time = yield from super()._execute(current_time, quota_left)
             if self.current_burst_left == 0:
-                yield cpurequest.Request.idle()
-                return
+                current_time = yield cpurequest.Request.idle()
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.

@@ -20,7 +20,7 @@ class Request:
         elif rtype == Type.execute:
             assert thing > 0 or thing == -1
         elif rtype == Type.timer:
-            assert thing > 0
+            assert thing is None or thing > 0
         else:
             assert False, "Unknown Type"
         self.rtype = rtype

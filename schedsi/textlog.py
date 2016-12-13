@@ -42,10 +42,14 @@ class TextLog:
         return self._ct(cpu) + "thread {}-{:<{thread_align}} ".format(module.name, thread.tid,
                                                                       thread_align=align)
 
-    def _ctm(self, cpu):
-        """Stringifies CPU, time and the current module."""
+    def _ctm(self, cpu, module=None):
+        """Stringifies CPU, time and the TODO module."""
         #we add alignment to align with _ctt output
-        module = cpu.status.chain.top.module.name
+        if module is None:
+            module = cpu.status.chain.top.module
+        else:
+            module = cpu.status.chain.thread_at(module).module
+        module = module.name
         align = self.align.module + self.align.thread + 1
         return self._ct(cpu) + "module {:<{module_align}} ".format(module, module_align=align)
 
@@ -53,13 +57,14 @@ class TextLog:
         """Register a :class:`Core`."""
         pass
 
-    def context_switch(self, cpu, thread_to, time):
+    def context_switch(self, cpu, split_index, appendix, time):
         """Log an context switch event."""
-        if thread_to.module == cpu.status.chain.top.module:
-            if thread_to.tid == 0:
-                return
-            self.stream.write(self._ctm(cpu) + "selects {}.\n".format(thread_to.tid))
-        else:
+        if not appendix is None and appendix.bottom.module == cpu.status.chain.top.module:
+            self.stream.write(self._ctm(cpu) + "selects {}.\n".format(appendix.bottom.tid))
+
+        if time != 0:
+            thread_to = appendix and appendix.top or cpu.status.chain.thread_at(split_index)
+
             self.stream.write(self._ctm(cpu) + "{}.\n".format(_ctxsw(thread_to.module, time)))
 
     def thread_execute(self, cpu, runtime):
@@ -74,9 +79,9 @@ class TextLog:
         """Log an CPU idle event."""
         self.stream.write(self._ct(cpu) + "idle for {}.\n".format(_timespan(idle_time)))
 
-    def timer_interrupt(self, cpu, delay):
+    def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
-        self.stream.write(self._ct(cpu) + "timer interrupt")
+        self.stream.write(self._ctm(cpu, idx) + "timer elapsed")
         if delay:
             self.stream.write(" ({} delay)".format(_timespan(delay)))
         self.stream.write(".\n")

@@ -41,7 +41,8 @@ class Context:
         This method can be used to inject a different argument.
         """
         assert self.started, "Can't reply to a just-started context."
-        assert self.buffer is None, "Cannot overwrite reply."
+        assert self.buffer is None or arg is None, "Cannot overwrite reply."
+        assert arg is None or isinstance(arg, Chain)
         self.buffer = arg
 
     def restart(self, current_time):
@@ -158,13 +159,19 @@ class Chain:
 
         for ctx in self.contexts:
             if not ctx.timeout is None:
+                #don't elapse contexts further than the next_timeout
+                done = ctx.timeout <= 0
+                assert not done or ctx.timeout == self.next_timeout
                 ctx.timeout -= time
+                if done:
+                    break
         if not self.next_timeout is None:
             self.next_timeout -= time
 
     def find_elapsed_timer(self):
         """Return the index of the first elapsed timer in the :class:`Chain`."""
-        return next(i for i, t in enumerate(ctx.timeout for ctx in self.contexts) if t <= 0)
+        return next(i for i, t in enumerate(ctx.timeout for ctx in self.contexts)
+                    if not t is None and t <= 0)
 
     def split(self, idx):
         """Split the :class:`Chain` in two at `idx`.

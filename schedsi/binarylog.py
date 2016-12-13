@@ -24,9 +24,36 @@ def _encode_cpu(cpu):
         'status': {'current_time': cpu.status.current_time}
     }
 
-def _encode_contexts(contexts):
-    """Encode a :class:`~schedsi.context.Context` to a :obj:`dict`."""
-    return [{'thread': _encode_thread(c.thread)} for c in contexts]
+def _encode_contexts(contexts, current_context):
+    """Encode a :class:`~schedsi.context.Context` to a :obj:`dict`.
+
+    `current_context` is the top context of the current
+    :class:`context.chain <schedsi.context.Chain>.
+    """
+    def stringify_relationship(top, bottom):
+        """Stringify the relationship between the :class:`Modules <schedsi.module.Module>`
+        `top` and `bottom`.
+
+        `top` and `bottom` should refer to :class:`Modules <schedsi.module.Module>`
+        following each other in the :class:`context.Chain <schedsi.context.Chain>`.
+        """
+        is_child = top.module.parent == bottom.module
+        if not is_child:
+            assert top.module == bottom.module
+        return 'child' if is_child else 'sibling'
+
+    first = contexts[0].thread
+    chain = [{'thread': _encode_thread(first)}]
+    if not current_context is None:
+        chain[0].update({'relationship': stringify_relationship(first, current_context.thread)})
+
+    for cur, prev in zip(contexts[1:], contexts):
+        chain.append({
+            'thread': _encode_thread(cur.thread),
+            'relationship': stringify_relationship(cur.thread, prev.thread)
+        })
+
+    return chain
 
 def _encode_module(module):
     """Encode a :class:`~schedsi.module.Module` to a :obj:`dict`."""
@@ -46,33 +73,23 @@ def _encode_event(cpu, event, args=None):
         encoded.update(args)
     return encoded
 
-def _encode_ctxsw(cpu, thread_to, time):
+def _encode_ctxsw(cpu, split_index, appendix, time):
     """Encode a context switching event to a :obj:`dict`."""
-    module_to = thread_to.module
-    module_from = cpu.status.chain.contexts[-1].thread.module
-    if module_to == module_from:
-        direction = 'own child'
-        if len(cpu.status.chain.contexts) >= 2:
-            if cpu.status.chain.contexts[-2].thread == thread_to:
-                direction = 'own parent'
-    elif cpu.status.chain.contexts[0].thread == thread_to:
-        direction = 'kernel'
-    elif module_from.parent == module_to:
-        direction = 'parent'
-    elif module_to.parent == module_from:
-        direction = 'child'
+    if appendix is None:
+        assert not split_index is None
+        param = {'split_index': split_index}
     else:
-        raise RuntimeError('Unable to determine context switch direction')
-    return _encode_event(cpu, _Event.context_switch.name,
-                         {
-                             'direction': direction, 'thread_to': _encode_thread(thread_to),
-                             'time': time
-                         })
+        assert split_index is None
+        param = {'appendix': _encode_contexts(appendix.contexts, cpu.status.chain.current_context)}
+
+    param['time'] = time
+
+    return _encode_event(cpu, _Event.context_switch.name, param)
 
 def _encode_coreinit(cpu):
     """Encode a init_core event to a :obj:`dict`."""
     return _encode_event(cpu, _Event.init_core.name,
-                         {'context': _encode_contexts(cpu.status.chain.contexts)})
+                         {'context': _encode_contexts(cpu.status.chain.contexts, None)})
 
 class BinaryLog:
     """Binary logger using MessagePack."""
@@ -95,9 +112,9 @@ class BinaryLog:
         """Register a :class:`Core`."""
         self._write(_encode_coreinit(cpu))
 
-    def context_switch(self, cpu, thread_to, time):
+    def context_switch(self, cpu, split_index, appendix, time):
         """Log an context switch event."""
-        self._write(_encode_ctxsw(cpu, thread_to, time))
+        self._write(_encode_ctxsw(cpu, split_index, appendix, time))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
@@ -111,9 +128,9 @@ class BinaryLog:
         """Log an CPU idle event."""
         self._encode(cpu, _Event.cpu_idle, {'idle_time': idle_time})
 
-    def timer_interrupt(self, cpu, delay):
+    def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
-        self._encode(cpu, _Event.timer_interrupt, {'delay': delay})
+        self._encode(cpu, _Event.timer_interrupt, {'idx': idx, 'delay': delay})
 
     def thread_statistics(self, stats):
         """Log thread statistics."""
@@ -137,20 +154,50 @@ class _Module: # pylint: disable=too-few-public-methods
         self.parent = None
 
 class _ContextChain:
-    """A :class:`~schedsi.context.Chain` emulation class."""
-    def __init__(self):
+    """A :class:`context.Chain <schedsi.context.Chain>` emulation class."""
+    def __init__(self, contexts=None):
         """Create a :class:`_ContextChain`."""
-        self.contexts = []
+        self.contexts = contexts or []
+
+    def __len__(self):
+        """Return the length of the :class:`_ContextChain`.
+
+        See :meth:`context.Chain.__len__ <schedsi.context.Chain.__len__>`.
+        """
+        return len(self.contexts)
 
     @property
     def bottom(self):
-        """The bottom thread."""
+        """The bottom thread.
+
+        See :py:attr:`context.Chain.thread_at <schedsi.context.Chain.bottom>`.
+        """
         return self.contexts[0].thread
 
     @property
     def top(self):
-        """The top thread."""
+        """The top thread.
+
+        See :py:attr:`context.Chain.top <schedsi.context.Chain.top>`.
+        """
         return self.contexts[-1].thread
+
+    @property
+    def current_context(self):
+        """The current (top) context.
+
+        See :py:attr:`context.Chain.current_context <schedsi.context.Chain.current_context>`.
+        """
+        return self.contexts[-1]
+
+    def thread_at(self, idx):
+        """Return the thread at index `idx` in the chain.
+
+        Negative values are treated as an offset from the back.
+
+        See :meth:`context.Chain.thread_at <schedsi.context.Chain.thread_at>`.
+        """
+        return self.contexts[idx].thread
 
 class _CPUStatus: # pylint: disable=too-few-public-methods
     """A :class:`~schedsi.cpu._Status` emulation class."""
@@ -166,9 +213,25 @@ class _Thread: # pylint: disable=too-few-public-methods
         self.tid = tid
         self.module = module
 
-def _decode_contexts(entries):
-    """Extract :class:`_CPUContexts <_CPUContext>` from a :obj:`dict`-entry."""
-    return [_CPUContext(_decode_thread(entry['thread'])) for entry in entries]
+def _decode_contexts(entries, current_context):
+    """Extract :class:`_CPUContexts <_CPUContext>` from a :obj:`dict`-entry.
+
+    `current_context` is the top context of the current
+    :class:`context.chain <schedsi.context.Chain>.
+    """
+    contexts = [_CPUContext(_decode_thread(entry['thread'])) for entry in entries]
+    if current_context is None:
+        assert not 'relationship' in entries[0]
+        return contexts
+    for prev, cur, ent in zip([current_context] + contexts, contexts, entries):
+        rel = ent.get('relationship', None)
+        if rel == 'child':
+            cur.thread.module.parent = prev.thread.module
+        elif rel == 'sibling':
+            cur.thread.module = prev.thread.module
+        else:
+            assert False
+    return contexts
 
 def _decode_generic_event(entry):
     """Convert a :obj:`dict-entry` to a :class:`_GenericEvent`.
@@ -209,26 +272,19 @@ def _decode_module(entry):
 def _decode_ctxsw(cpu, entry):
     """Extract context switch arguments from a :obj:`dict`-entry.
 
-    Returns a tuple (tuple for arguments, direction),
-    where direction is a string specifying the kind of switch:
-    parent, child, kernel
+    Returns a tuple (split_index, appendix) corresponding to the
+    `split_index` and `appendix` parameters to :meth:`BinaryLog.context_switch`.
     """
-    thread_to = _decode_thread(entry['thread_to'])
-    direction = entry['direction']
-    module_from = cpu.status.chain.top.module
+    split_index = entry.get('split_index', None)
+    appendix = entry.get('appendix', None)
 
-    if direction == 'child':
-        thread_to.module.parent = module_from
-    elif direction == 'parent':
-        thread_to = cpu.status.chain.contexts[-2].thread
-    elif direction.startswith('own '):
-        if thread_to.module.name != module_from.name:
-            raise RuntimeError('Context switch to ' + direction + ' failed verification')
-        thread_to.module = module_from
-        #remove own prefix
-        direction = direction[4:]
+    if not split_index is None:
+        assert appendix is None
+    else:
+        assert not appendix is None
+        appendix = _ContextChain(_decode_contexts(appendix, cpu.status.chain.current_context))
 
-    return (cpu, thread_to, entry['time']), direction
+    return (split_index, appendix)
 
 def replay(binary, log):
     """Play a MessagePack file to another log."""
@@ -239,25 +295,20 @@ def replay(binary, log):
             if event.event == _Event.init_core.name:
                 if event.cpu.uid in contexts:
                     raise RuntimeError('init_core found twice for same core')
-                contexts[event.cpu.uid] = _decode_contexts(entry['context'])
+                contexts[event.cpu.uid] = _decode_contexts(entry['context'], None)
 
             event.cpu.status.chain.contexts = contexts[event.cpu.uid]
 
             if event.event == _Event.init_core.name:
                 log.init_core(event.cpu)
             elif event.event == _Event.context_switch.name:
-                event_args, direction = _decode_ctxsw(event.cpu, entry)
-                log.context_switch(*event_args)
-                core_contexts = event.cpu.status.chain.contexts
-                if direction == 'parent':
-                    if len(core_contexts) > 1:
-                        core_contexts.pop()
-                elif direction == 'child':
-                    core_contexts.append(_CPUContext(event_args[1]))
-                elif direction == 'kernel':
-                    del core_contexts[1:]
+                split_index, appendix = _decode_ctxsw(event.cpu, entry)
+                log.context_switch(event.cpu, split_index, appendix, entry['time'])
+                chain = event.cpu.status.chain
+                if not split_index is None:
+                    del chain.contexts[split_index + 1:]
                 else:
-                    raise RuntimeError('Invalid context switch direction ' + direction)
+                    chain.contexts += appendix.contexts
             elif event.event == _Event.thread_execute.name:
                 log.thread_execute(event.cpu, entry['runtime'])
             elif event.event == _Event.thread_yield.name:
@@ -265,7 +316,7 @@ def replay(binary, log):
             elif event.event == _Event.cpu_idle.name:
                 log.cpu_idle(event.cpu, entry['idle_time'])
             elif event.event == _Event.timer_interrupt.name:
-                log.timer_interrupt(event.cpu, entry['delay'])
+                log.timer_interrupt(event.cpu, entry['idx'], entry['delay'])
             else:
                 print("Unknown event:", event)
         elif entry['type'] == _EntryType.thread_statistics.name:

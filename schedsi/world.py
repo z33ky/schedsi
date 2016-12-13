@@ -7,11 +7,13 @@ from schedsi import binarylog, cpu
 class World:
     """The world keeps data to enable execution."""
 
-    def __init__(self, cores, kernel, log=binarylog.BinaryLog(io.BytesIO())):
+    def __init__(self, cores, kernel, log=binarylog.BinaryLog(io.BytesIO()), *,
+                 local_timer_scheduling):
         """Creates a :class:`World`."""
         if cores > 1:
             raise RuntimeError("Does not support more than 1 core yet.")
-        self.cores = [cpu.Core(idx, kernel._scheduler_thread, log)
+        self.cores = [cpu.Core(idx, kernel._scheduler_thread, log,
+                               local_timer_scheduling=local_timer_scheduling)
                       for idx in range(0, cores)]
         for core in self.cores:
             kernel.register_vcpu(core)

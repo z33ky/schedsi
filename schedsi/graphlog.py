@@ -32,10 +32,9 @@ class _Background: #pylint: disable=too-few-public-methods
         self.name = name
         self.time = time
 
-def name_current_thread(cpu):
-    """Return a string identifying the current thread."""
-    thread = cpu.status.chain.top
-    return thread.module.name + "-" + str(thread.tid)
+def _name_thread(thread):
+    """Return a string identifying the thread."""
+    return thread.module.name + '-' + str(thread.tid)
 
 class GraphLog:
     """Graphical logger.
@@ -196,13 +195,13 @@ class GraphLog:
         self._move(time, -LEVEL)
         self._draw_recent()
 
-    def _ctx_down(self, name, time, level_step):
+    def _ctx_down(self, names, time, level_step):
         """Step down a level."""
         #we can't be at the bottom and step down
         assert self.level > 0
 
         if not self.task_executed:
-            self._draw_block(EXEC_COLORS, name, 0)
+            self._draw_block(EXEC_COLORS, names[0], 0)
             self.task_executed = True
 
         self._draw_slope(CTXSW_COLORS, time, -level_step)
@@ -231,7 +230,7 @@ class GraphLog:
                 self._draw_recent()
         return -level_step
 
-    def _ctx_up(self, name, time, level_step):
+    def _ctx_up(self, names, time, level_step):
         """Step up a level."""
         #we can't go up after an unsuccessful switch
         assert self.level % LEVEL == 0
@@ -242,7 +241,10 @@ class GraphLog:
         self.task_executed = False
 
         self._update_background_tasks(time)
-        self.background_tasks.append(_Background(name, time))
+        assert len(names) > 0
+        self.background_tasks.extend(_Background(name, 0) for name in names)
+        #the thread on the bottom records context switching as background execution
+        self.background_tasks[-len(names)].time = time
 
         return level_step
 
@@ -257,46 +259,44 @@ class GraphLog:
         """Register a :class:`Core`."""
         pass
 
-    def context_switch(self, cpu, thread_to, time):
+    def context_switch(self, cpu, split_index, appendix, time):
         """Log an context switch event."""
-        if thread_to.module == cpu.status.chain.top.module:
-            return
+        thread_diff = None
 
-        current_thread_name = name_current_thread(cpu)
+        if appendix:
+            ctx_func = self._ctx_up
+            thread_diff = (ctx.thread for ctx in appendix.contexts)
+        else:
+            ctx_func = self._ctx_down
+            #reversed because we go from the top to the bottom
+            thread_diff = (ctx.thread for ctx in reversed(cpu.status.chain.contexts[split_index:]))
 
         if time == 0:
-            self._ctx_zero(current_thread_name)
+            top = next(thread_diff)
+            bottom = top
+            for bottom in thread_diff:
+                pass
+            if top.module is not bottom.module:
+                self._ctx_zero(_name_thread(cpu.status.chain.top))
             return
-        levels = LEVEL
 
-        module_to = thread_to.module
+        #calculate depth of the hierarchy that is appended/removed
+        current = cpu.status.chain.top
+        levels = 0
+        #names of the threads at module-border
+        names = []
+        for thread in thread_diff:
+            if thread.module is not current.module:
+                levels += LEVEL
+                names.append(_name_thread(current))
+                current = thread
 
-        #find out direction of context switch (up or down)
-        if module_to.parent is None:
-            #switch to kernel
-            if self.level == 0:
-                #we just had an unsuccessful switch from the kernel
-                #pretend to be on the previous level for the graph
-                self.level = LEVEL \
-                           * (len(set(c.thread.module for c in cpu.status.chain.contexts)) - 1)
-                self._move(0, self.level)
-            else:
-                #go down all the way
-                levels = self.level
-            ctx_func = self._ctx_down
-        elif cpu.status.chain.top.module.parent == module_to:
-            #switch to parent
-            ctx_func = self._ctx_down
-        else:
-            #switch to child
-            ctx_func = self._ctx_up
-
-        self.level += ctx_func(current_thread_name, time, levels)
+        self.level += ctx_func(names, time, levels)
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
         self._update_background_tasks(runtime)
-        current_thread_name = name_current_thread(cpu)
+        current_thread_name = _name_thread(cpu.status.chain.top)
         self._draw_block(EXEC_COLORS, current_thread_name, runtime)
         self.task_executed = True
 
@@ -308,11 +308,21 @@ class GraphLog:
         """Log an CPU idle event."""
         self._draw_line(IDLE_COLOR, idle_time, 0)
 
-    def timer_interrupt(self, _cpu, delay):
+    def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
-        self._move(-delay, -self.level)
+        #calculate depth of the module at idx from the top
+        current = cpu.status.chain.top
+        thread_diff = (ctx.thread for ctx in reversed(cpu.status.chain.contexts[idx:]))
+        idx = 0
+        for thread in thread_diff:
+            if thread.module is not current.module:
+                idx += 1
+                current = thread
+        timer_level_offset = idx * LEVEL
+
+        self._move(-delay, -timer_level_offset)
         self._draw_line(TIMER_COLOR, 0, 1, self.top)
-        self._move(delay, self.level - 1)
+        self._move(delay, timer_level_offset - 1)
 
     def thread_statistics(self, stats):
         """Log thread statistics.

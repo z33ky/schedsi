@@ -54,6 +54,9 @@ class _Status:
 
         Returns how long the current :attr:`chain.next_timeout` allows execution for.
         """
+        if time == 0:
+            return 0
+
         timeout = self.chain.next_timeout
         if timeout is None:
             if time == -1:
@@ -69,7 +72,7 @@ class _Status:
 
         `time` must not be negative.
         """
-        assert time > 0
+        assert time >= 0
         timeout = self.chain.next_timeout
         if not timeout is None:
             assert time <= timeout or timeout <= 0
@@ -90,78 +93,119 @@ class _Status:
         """
         assert self.chain.next_timeout <= 0
 
-        self.cpu.log.timer_interrupt(self.cpu, -self.chain.next_timeout)
+        idx = self.chain.find_elapsed_timer()
+        self.cpu.log.timer_interrupt(self.cpu, idx, -self.chain.next_timeout)
         self.stats.timer_delay += -self.chain.next_timeout
 
-        idx = self.chain.find_elapsed_timer()
-        assert idx == 0
-        new_top = self.chain.thread_at(idx)
-
-        time = self._context_switch(new_top)
+        _, time = self._context_switch(split_index=idx)
         self.stats.timer_delay += time
-        self.chain.top.run_ctxsw(self.current_time, time)
-
-        prev_chain = self.chain.split(idx + 1)
-        prev_chain.finish(self.current_time)
 
         self.chain.set_timer(None)
-        assert len(self.chain) == 1
-        self.chain.current_context.restart(self.current_time)
 
-    def _context_switch(self, thread):
+    def _context_switch(self, *, split_index=None, appendix=None):
         """Perform a context switch.
 
-        The caller is responsible for modifying the context :attr:`chain`
-        and call :meth:`Thread.run_ctxsw` on the appropriate :class:`Thread`.
+        The destination is specified by `split_index`, an index into the context :attr:`chain`,
+        or by `appendix`, a :class:`context.Chain <schedsi.context.Chain>` to append.
+        Specifying both is an error.
 
-        Returns the context switching time.
+        If `split_index` is set, also send the previous chain to the switched-to context via
+        :meth:`Context.reply <schedsi.context.Context.reply>`.
+
+        Returns a tuple (previous chain, context switch cost).
+        The previous chain is the tail of the context :attr:`chain` that is cut off
+        when `split_index` is set. It is `None` if `split_index` is `None`.
         """
-        if thread.module == self.chain.top.module:
-            self.cpu.log.context_switch(self.cpu, thread, 0)
-            #self.ctxsw_stats.thread_time += 0
-            return 0
+        if not split_index is None:
+            assert appendix is None
+            assert split_index != -1
+        else:
+            assert not appendix is None
+            assert len(appendix) != 0
 
-        self.cpu.log.context_switch(self.cpu, thread, CTXSW_COST)
-        self.ctxsw_stats.module_time += CTXSW_COST
+        thread_from = self.chain.current_context.thread
+        thread_to = appendix and appendix.top or self.chain.thread_at(split_index)
 
-        time = self._calc_runtime(CTXSW_COST)
-        self._update_time(CTXSW_COST)
-        assert time == CTXSW_COST or self.chain.next_timeout <= 0
+        if thread_to.module == thread_from.module:
+            cost = 0
+            self.ctxsw_stats.thread_time += cost
+        else:
+            cost = CTXSW_COST
+            self.ctxsw_stats.module_time += cost
 
-        return CTXSW_COST
+        self.cpu.log.context_switch(self.cpu, split_index, appendix, cost)
+
+        prev_chain = None
+        if not split_index is None:
+            prev_chain = self.chain.split(split_index + 1)
+            self.chain.current_context.reply(prev_chain)
+
+        #update for cost regardless of the time-slice, because context switching is atomic
+        self._update_time(cost)
+        assert self._calc_runtime(cost) == cost or self.chain.next_timeout <= 0
+
+        thread_from.run_ctxsw(self.current_time, cost)
+        self._run_background(cost)
+
+        if not appendix is None:
+            self.chain.append_chain(appendix)
+
+        assert thread_from != self.chain.top
+
+        return prev_chain, cost
 
     def _switch_to_parent(self):
         """Return execution to the parent :class:`Thread`."""
         if len(self.chain) == 1:
             #kernel yields
             slice_left = self.chian.next_timeout
+            if slice_left <= 0:
+                raise RuntimeError('Kernel cannot yield without timeout.')
             self.cpu.log.cpu_idle(self.cpu, slice_left)
             self.stats.idle_time += slice_left
             self._update_time(slice_left)
         else:
-            time = self._context_switch(self.chain.parent)
-            #who should get this time?
-            self.chain.top.run_ctxsw(self.current_time, time)
-            prev_chain = self.chain.split(-1)
-            self._run_background(time)
+            prev_chain, _ = self._context_switch(split_index=-2)
             assert len(prev_chain) == 1
-            prev_chain.finish(self.current_time)
-            self.chain.current_context.reply(context.Chain.from_thread(prev_chain.bottom))
 
     def _append_chain(self, tail):
         """Continue execution of another :class:`Thread`.
 
         The thread must be of either the same :class:`Module` or a child :class:`Module`.
         """
-        current_thread = self.chain.top
-        tail_bottom = tail.bottom
-        if not current_thread.module in [tail_bottom.module, tail_bottom.module.parent]:
+        prev_thread = self.chain.top
+        if not prev_thread.module in (tail.bottom.module, tail.bottom.module.parent):
             raise RuntimeError('Switching thread to unrelated module')
-        time = self._context_switch(tail.top)
-        #who should get this time?
-        current_thread.run_ctxsw(self.current_time, time)
-        self._run_background(time)
-        self.chain.append_chain(tail)
+        prev_chain, _ = self._context_switch(appendix=tail)
+        assert prev_chain is None
+
+    def _handle_request(self, request):
+        """Handle a :class:`~schedsi.cpurequest.Request`.
+
+        Returns whether time was spent handling the request..
+        """
+        if request.rtype == cpurequest.Type.current_time:
+            #no-op
+            return False
+        elif request.rtype == cpurequest.Type.execute:
+            time = self._calc_runtime(request.thing)
+            assert time > 0 and time <= request.thing
+            self.cpu.log.thread_execute(self.cpu, time)
+            self._update_time(time)
+            self.stats.crunch_time += time
+            self._run_background(time)
+            self.chain.top.run_crunch(self.current_time, time)
+        elif request.rtype == cpurequest.Type.idle:
+            self.cpu.log.thread_yield(self.cpu)
+            self._switch_to_parent()
+        elif request.rtype == cpurequest.Type.resume_chain:
+            self._append_chain(request.thing)
+        elif request.rtype == cpurequest.Type.timer:
+            self.chain.set_timer(request.thing)
+            return False
+        else:
+            assert False
+        return True
 
     def execute(self):
         """Execute one step.
@@ -175,34 +219,65 @@ class _Status:
             self._timer_interrupt()
             return
 
-        while True:
-            next_step = self.chain.current_context.execute(self.current_time)
-            if next_step.rtype == cpurequest.Type.current_time:
-                #no-op
-                continue
-            elif next_step.rtype == cpurequest.Type.execute:
-                time = self._calc_runtime(next_step.thing)
-                assert time > 0 and time <= next_step.thing
-                self.cpu.log.thread_execute(self.cpu, time)
-                self._update_time(time)
-                self.stats.crunch_time += time
-                self._run_background(time)
-                self.chain.top.run_crunch(self.current_time, time)
-            elif next_step.rtype == cpurequest.Type.idle:
-                self.cpu.log.thread_yield(self.cpu)
-                self._switch_to_parent()
-                break
-            elif next_step.rtype == cpurequest.Type.resume_chain:
-                assert len(next_step.thing) == 1
-                chain = context.Chain.from_thread(next_step.thing.bottom)
-                self._append_chain(chain)
-            elif next_step.rtype == cpurequest.Type.timer:
-                if self.chain.top.module != self.cpu.kernel:
-                    raise RuntimeError('Received timer request from non-kernel scheduler.')
-                self.chain.set_timer(next_step.thing)
-            else:
-                assert False
-            break
+        while not self._handle_request(self.chain.current_context.execute(self.current_time)):
+            pass
+
+class _KernelTimerOnlyStatus(_Status):
+    """Status of a CPU Core allowing only the kernel to have timers."""
+
+    def _timer_interrupt(self):
+        """See :meth:`_Status._timer_interrupt`.
+
+        Ensures only the kernel receives the interrupt
+        and restarts the kernel scheduler.
+        """
+        super()._timer_interrupt()
+
+        #only kernel timer may interrupt
+        assert len(self.chain) == 1
+
+        #kernel scheduler gets restarted
+        current_context = self.chain.current_context
+        current_context.buffer.finish(self.current_time)
+        current_context.reply(None)
+        current_context.restart(self.current_time)
+
+    def _switch_to_parent(self):
+        """See :meth:`_Status._switch_to_parent`.
+
+        Breaks the previous :class:`context.Chain <schedsi.context.Chain>`
+        to let it be rebuild.
+        """
+        super()._switch_to_parent()
+        current_context = self.chain.current_context
+        prev_chain = current_context.buffer
+        if not prev_chain is None:
+            prev_chain.finish(self.current_time)
+            current_context.reply(None)
+            current_context.reply(context.Chain.from_thread(prev_chain.bottom))
+
+    def _handle_request(self, request):
+        """See :meth:`_Status._handle_request`.
+
+        Ensures that
+
+            * only :class:`context.Chains <schedsi.context.Chain>` of length 1
+              can be resumed and restarts that one thread
+            * only the kernel can set a timer.
+
+        """
+        if request.rtype == cpurequest.Type.resume_chain:
+            assert len(request.thing) == 1
+            chain = context.Chain.from_thread(request.thing.bottom)
+            self._append_chain(chain)
+            return True
+        if request.rtype == cpurequest.Type.timer:
+            if self.chain.top.module != self.cpu.kernel:
+                if request.thing is None:
+                    return False
+                raise RuntimeError('Received timer request from non-kernel scheduler.')
+            #let super() handle the rest of this request
+        return super()._handle_request(request)
 
 class Core:
     """A CPU Core.
@@ -216,13 +291,14 @@ class Core:
     The values are not expected to change much during operation.
     """
 
-    def __init__(self, uid, init_thread, log):
+    def __init__(self, uid, init_thread, log, *, local_timer_scheduling):
         """Create a :class:`Core`."""
         self.uid = uid
 
         self.log = log
 
-        self.status = _Status(self, context.Chain.from_thread(init_thread))
+        status_class = _Status if local_timer_scheduling else _KernelTimerOnlyStatus
+        self.status = status_class(self, context.Chain.from_thread(init_thread))
 
         log.init_core(self)
 
