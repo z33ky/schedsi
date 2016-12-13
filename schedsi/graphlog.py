@@ -181,14 +181,18 @@ class GraphLog:
         self._move(-task.time, 0)
         self._draw_block(INACTIVE_COLOR, task.name, task.time, canvas=canvas)
 
-    def _draw_background_tasks(self, time):
+    def _draw_background_tasks(self, time, amount=None):
         """Draw all active background tasks."""
         if not self.background_tasks:
             return
+
+        if amount is None:
+            amount = len(self.background_tasks)
+
         #background tasks are not active during the switch,
         #so we move back for that amount of time
         self._move(-time, 0)
-        while len(self.background_tasks) != 1:
+        for _ in range(0, amount):
             self._move(0, -LEVEL)
             self._draw_recent()
         #kernel was active during the switch, so it has the switch time added
@@ -197,6 +201,7 @@ class GraphLog:
 
     def _ctx_down(self, names, time, level_step):
         """Step down a level."""
+        assert self.level % LEVEL == 0
         #we can't be at the bottom and step down
         assert self.level > 0
 
@@ -207,38 +212,23 @@ class GraphLog:
         self._draw_slope(CTXSW_COLORS, time, -level_step)
 
         if level_step > LEVEL:
-            #assume back to kernel - draw everything
-            assert level_step == self.level
             #kernel is active during the switch
             self.background_tasks[0].time += time
             #move back up to the level we just were to draw the tasks processes
             self._move(0, level_step)
-            self._draw_background_tasks(time)
+            self._draw_background_tasks(time, int(level_step / LEVEL) - 1)
         else:
-            if len(self.background_tasks) == 0:
-                #the kernel was unsuccessful in switching to itself (since no other tasks exist)
-                if level_step != LEVEL:
-                    #it failed again
-                    #so we must still be on the first level
-                    assert self.level == LEVEL
-                    #FIXME: accumulate time
-                    #       we can't use background_tasks,
-                    #       because the kernel is not in the background
-            else:
-                #FIXME: if level_step < LEVEL: assert self.level == LEVEL ?
-                self._update_background_tasks(time)
-                self._draw_recent()
+            self._update_background_tasks(time)
+            self._draw_recent()
         return -level_step
 
     def _ctx_up(self, names, time, level_step):
         """Step up a level."""
-        #we can't go up after an unsuccessful switch
         assert self.level % LEVEL == 0
 
-        self._draw_slope(CTXSW_COLORS, time, level_step)
-
-        #always move up to the whole level for the next slope
         self.task_executed = False
+
+        self._draw_slope(CTXSW_COLORS, time, level_step)
 
         self._update_background_tasks(time)
         assert len(names) > 0
