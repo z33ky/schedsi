@@ -1,38 +1,68 @@
 #!/usr/bin/env python3
 """Defines the :class:`BinaryLog` and the :func:`replay` function."""
 
+from schedsi import types
 import collections
 import enum
 import msgpack
+import typing
 
-_EntryType = enum.Enum('_EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
-_Event = enum.Enum('_Event', [
-    'init_core',
-    'context_switch',
-    'thread_execute',
-    'thread_yield',
-    'cpu_idle',
-    'timer_interrupt'
-])
+if typing.TYPE_CHECKING:
+    from schedsi import context, cpu, module, threads
+
+# https://github.com/python/mypy/issues/2306
+#_EntryType = enum.Enum('_EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
+#_Event = enum.Enum('_Event', [
+#    'init_core',
+#    'context_switch',
+#    'thread_execute',
+#    'thread_yield',
+#    'cpu_idle',
+#    'timer_interrupt'
+#])
+class _EntryType(enum.Enum):
+    event = 1
+    thread_statistics = 2
+    cpu_statistics = 3
+
+class _Event(enum.Enum):
+    init_core = 1
+    context_switch = 2
+    thread_execute = 3
+    thread_yield = 4
+    cpu_idle = 5
+    timer_interrupt = 6
 
 _GenericEvent = collections.namedtuple('_GenericEvent', 'cpu event')
 
 
-def _encode_cpu(cpu):
+# _LogValues = typing.Union[float, str, '_LogDict', typing.List[_LogValues]]
+# https://github.com/python/mypy/issues/1561
+# instead manually unroll '_LogValues' two levels
+_LogValues2 = typing.Union[float, str, typing.Dict[str, typing.Any],
+                           typing.List[typing.Union[float, str, typing.Dict[str, typing.Any]]]]
+_LogValues1 = typing.Union[_LogValues2, typing.Dict[str, _LogValues2], typing.List[_LogValues2]]
+_LogValues0 = typing.Union[_LogValues1, typing.Dict[str, _LogValues1], typing.List[_LogValues1]]
+_LogDict = typing.Dict[str, _LogValues0]
+
+
+def _encode_cpu(cpu: 'cpu.Core') -> _LogDict:
     """Encode a :class:`~schedsi.cpu.Core` to a :obj:`dict`."""
+    assert cpu.uid == int(cpu.uid)
     return {
-        'uid': cpu.uid,
+        'uid': int(cpu.uid),
         'status': {'current_time': cpu.status.current_time}
     }
 
 
-def _encode_contexts(contexts, current_context):
+def _encode_contexts(contexts: typing.List['context.Context'],
+                     current_context: typing.Optional['context.Context']) -> typing.List[_LogDict]:
     """Encode a :class:`~schedsi.context.Context` to a :obj:`dict`.
 
     `current_context` is the top context of the current
     :class:`context.chain <schedsi.context.Chain>.
     """
-    def stringify_relationship(top, bottom):
+    def stringify_relationship(top: 'threads.Thread', bottom: 'threads.Thread') -> str:
         """Stringify the relationship between the :class:`Modules <schedsi.module.Module>` \
         `top` and `bottom`.
 
@@ -45,7 +75,7 @@ def _encode_contexts(contexts, current_context):
         return 'child' if is_child else 'sibling'
 
     first = contexts[0].thread
-    chain = [{'thread': _encode_thread(first)}]
+    chain = [_LogDict({'thread': _encode_thread(first)})]
     if current_context is not None:
         chain[0].update({'relationship': stringify_relationship(first, current_context.thread)})
 
@@ -58,42 +88,45 @@ def _encode_contexts(contexts, current_context):
     return chain
 
 
-def _encode_module(module):
+def _encode_module(module: 'module.Module') -> _LogDict:
     """Encode a :class:`~schedsi.module.Module` to a :obj:`dict`."""
     return {'name': module.name}
 
 
-def _encode_thread(thread):
+def _encode_thread(thread: 'threads.Thread') -> _LogDict:
     """Encode a :class:`~schedsi.threads.Thread` to a :obj:`dict`."""
-    return {'module': _encode_module(thread.module), 'tid': thread.tid}
+    assert thread.tid == int(thread.tid)
+    return {'module': _encode_module(thread.module), 'tid': int(thread.tid)}
 
 
-def _encode_event(cpu, event, args=None):
+def _encode_event(cpu: 'cpu.Core', event: str, args: _LogDict = None) -> _LogDict:
     """Create a :class:`_GenericEvent`.
 
     `args` can contain additional parameters to put in the :obj:`dict`.
     """
-    encoded = {'cpu': _encode_cpu(cpu), 'event': event, 'type': _EntryType.event.name}
+    encoded = _LogDict({'cpu': _encode_cpu(cpu), 'event': event, 'type': _EntryType.event.name})
     if args is not None:
         encoded.update(args)
     return encoded
 
 
-def _encode_ctxsw(cpu, split_index, appendix, time):
+def _encode_ctxsw(cpu: 'cpu.Core', split_index: typing.Optional[int],
+        appendix: typing.Optional['context.Chain'], time: types.Time) -> _LogDict:
     """Encode a context switching event to a :obj:`dict`."""
     if appendix is None:
         assert split_index is not None
-        param = {'split_index': split_index}
+        param = _LogDict({'split_index': split_index})
     else:
         assert split_index is None
-        param = {'appendix': _encode_contexts(appendix.contexts, cpu.status.chain.current_context)}
+        param = _LogDict({'appendix': _encode_contexts(appendix.contexts,
+                                                       cpu.status.chain.current_context)})
 
     param['time'] = time
 
     return _encode_event(cpu, _Event.context_switch.name, param)
 
 
-def _encode_coreinit(cpu):
+def _encode_coreinit(cpu: 'cpu.Core') -> _LogDict:
     """Encode a init_core event to a :obj:`dict`."""
     return _encode_event(cpu, _Event.init_core.name,
                          {'context': _encode_contexts(cpu.status.chain.contexts, None)})
@@ -102,51 +135,55 @@ def _encode_coreinit(cpu):
 class BinaryLog:
     """Binary logger using MessagePack."""
 
-    def __init__(self, stream):
+    stream: typing.BinaryIO
+    packer: msgpack.Packer
+
+    def __init__(self, stream: typing.BinaryIO) -> None:
         """Create a :class:`BinaryLog`."""
         self.stream = stream
         self.packer = msgpack.Packer()
 
-    def _write(self, data):
+    def _write(self, data: _LogDict) -> None:
         """Write data to the MessagePack file."""
         self.stream.write(self.packer.pack(data))
 
-    def _encode(self, cpu, event, args=None):
+    def _encode(self, cpu: 'cpu.Core', event: _Event, args: _LogDict = None) -> None:
         """Encode an event and write data to the MessagePack file.
 
         See :func:`_encode_event`.
         """
         self._write(_encode_event(cpu, event.name, args))
 
-    def init_core(self, cpu):
+    def init_core(self, cpu: 'cpu.Core') -> None:
         """Register a :class:`Core`."""
         self._write(_encode_coreinit(cpu))
 
-    def context_switch(self, cpu, split_index, appendix, time):
+    def context_switch(self, cpu: 'cpu.Core', split_index: typing.Optional[int],
+                       appendix: typing.Optional['context.Chain'], time: types.Time) -> None:
         """Log an context switch event."""
         self._write(_encode_ctxsw(cpu, split_index, appendix, time))
 
-    def thread_execute(self, cpu, runtime):
+    def thread_execute(self, cpu: 'cpu.Core', runtime: types.Time) -> None:
         """Log an thread execution event."""
         self._encode(cpu, _Event.thread_execute, {'runtime': runtime})
 
-    def thread_yield(self, cpu):
+    def thread_yield(self, cpu: 'cpu.Core') -> None:
         """Log an thread yielded event."""
         self._encode(cpu, _Event.thread_yield)
 
-    def cpu_idle(self, cpu, idle_time):
+    def cpu_idle(self, cpu: 'cpu.Core', idle_time: types.Time) -> None:
         """Log an CPU idle event."""
         self._encode(cpu, _Event.cpu_idle, {'idle_time': idle_time})
 
-    def timer_interrupt(self, cpu, idx, delay):
+    def timer_interrupt(self, cpu: 'cpu.Core', idx: int, delay: types.Time) -> None:
         """Log an timer interrupt event."""
         self._encode(cpu, _Event.timer_interrupt, {'idx': idx, 'delay': delay})
 
-    def thread_statistics(self, stats):
+    def thread_statistics(self, stats: 'threads.ThreadStatsDict') -> None:
         """Log thread statistics."""
         self._write({'type': _EntryType.thread_statistics.name, 'stats': stats})
 
-    def cpu_statistics(self, stats):
+    def cpu_statistics(self, stats: typing.Iterable['cpu.CoreStatsDict']) -> None:
         """Log CPU statistics."""
         self._write({'type': _EntryType.cpu_statistics.name, 'stats': list(stats)})
 
@@ -161,20 +198,24 @@ _Core = collections.namedtuple('_Core', 'uid status')
 class _Module:  # pylint: disable=too-few-public-methods
     """A :class:`~schedsi.module.Module` emulation class."""
 
-    def __init__(self, name):
+    name: str
+    parent: typing.Optional[_Module] = None
+
+    def __init__(self, name: str) -> None:
         """Create a :class:`_Module`."""
         self.name = name
-        self.parent = None
 
 
-class _ContextChain:
+class _ContextChain(typing.Sized):
     """A :class:`context.Chain <schedsi.context.Chain>` emulation class."""
 
-    def __init__(self, contexts=None):
+    contexts: typing.List[_CPUContext]
+
+    def __init__(self, contexts: typing.List[_CPUContext] = None) -> None:
         """Create a :class:`_ContextChain`."""
         self.contexts = contexts or []
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Return the length of the :class:`_ContextChain`.
 
         See :meth:`context.Chain.__len__ <schedsi.context.Chain.__len__>`.
@@ -182,7 +223,7 @@ class _ContextChain:
         return len(self.contexts)
 
     @property
-    def bottom(self):
+    def bottom(self) -> '_Thread':
         """The bottom thread.
 
         See :py:attr:`context.Chain.thread_at <schedsi.context.Chain.bottom>`.
@@ -190,7 +231,7 @@ class _ContextChain:
         return self.contexts[0].thread
 
     @property
-    def top(self):
+    def top(self) -> '_Thread':
         """The top thread.
 
         See :py:attr:`context.Chain.top <schedsi.context.Chain.top>`.
@@ -198,14 +239,14 @@ class _ContextChain:
         return self.contexts[-1].thread
 
     @property
-    def current_context(self):
+    def current_context(self) -> _CPUContext:
         """The current (top) context.
 
         See :py:attr:`context.Chain.current_context <schedsi.context.Chain.current_context>`.
         """
         return self.contexts[-1]
 
-    def thread_at(self, idx):
+    def thread_at(self, idx: int) -> '_Thread':
         """Return the thread at index `idx` in the chain.
 
         Negative values are treated as an offset from the back.
@@ -218,7 +259,10 @@ class _ContextChain:
 class _CPUStatus:  # pylint: disable=too-few-public-methods
     """A :class:`~schedsi.cpu._Status` emulation class."""
 
-    def __init__(self, current_time):
+    current_time: types.Time
+    chain: _ContextChain
+
+    def __init__(self, current_time: types.Time) -> None:
         """Create a :class:`_CPUStatus`."""
         self.current_time = current_time
         self.chain = _ContextChain()
@@ -227,7 +271,10 @@ class _CPUStatus:  # pylint: disable=too-few-public-methods
 class _Thread:  # pylint: disable=too-few-public-methods
     """A :class:`~schedsi.threads.Thread` emulation class."""
 
-    def __init__(self, tid, module):
+    tid: int
+    module: '_Module'
+
+    def __init__(self, tid: int, module: '_Module') -> None:
         """Create a :class:`_Thread`."""
         self.tid = tid
         self.module = module
@@ -313,9 +360,9 @@ def _decode_ctxsw(cpu, entry):
     return (split_index, appendix)
 
 
-def replay(binary, log):
+def replay(binary: typing.BinaryIO, log: types.Log) -> None:
     """Play a MessagePack file to another log."""
-    contexts = {}
+    contexts: typing.Dict[int, _CPUContext] = {}
     for entry in msgpack.Unpacker(binary, read_size=16 * 1024, encoding='utf-8', use_list=False):
         event = _decode_generic_event(entry)
         if event is not None:
@@ -354,8 +401,9 @@ def replay(binary, log):
             print('Unknown entry:', entry)
 
 
-def get_thread_statistics(binary):
+def get_thread_statistics(binary: typing.BinaryIO) -> str:
     """Read thread statistics from a MessagePack file."""
     for entry in msgpack.Unpacker(binary, read_size=16 * 1024, encoding='utf-8', use_list=False):
         if entry['type'] == _EntryType.thread_statistics.name:
             return entry['stats']
+    raise RuntimeError('Thread statistics not found.')

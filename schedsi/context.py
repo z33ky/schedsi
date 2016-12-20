@@ -2,6 +2,19 @@
 """Defines a :class:`Context` and :class:`Chain` thereof."""
 
 
+import typing
+
+
+if typing.TYPE_CHECKING:
+    from schedsi import cpu, cpurequest
+
+
+cpuTime = float  # https://github.com/python/mypy/issues/1701
+
+
+Executor = typing.Generator['cpurequest.Request', typing.Union['cpuTime', 'Chain'], None]
+
+
 class Context:
     """An operation context for a CPU Core.
 
@@ -11,13 +24,14 @@ class Context:
         * timeout of the local timer
     """
 
+    started = False
+    timeout: typing.Optional['cpuTime'] = None
+    buffer: typing.Optional['Chain'] = None
+
     def __init__(self, thread):
         """Create a :class:`Context`."""
         self.thread = thread
         self.execution = thread.execute()
-        self.started = False
-        self.timeout = None
-        self.buffer = None
 
     def execute(self, current_time):
         """Run the execution coroutine.
@@ -58,7 +72,7 @@ class Context:
         self.started = False
 
 
-class Chain:
+class Chain(typing.Sized):
     """The contexts for a scheduling-chain.
 
     The context chain represents the stack of contexts for a scheduling-chain.

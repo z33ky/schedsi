@@ -1,28 +1,33 @@
 #!/usr/bin/env python3
 """Defines a :class:`Core`."""
 
-from schedsi import context, cpurequest
+import typing
+from schedsi import context, cpurequest, types
+
+if typing.TYPE_CHECKING:
+    from schedsi import module, threads
+
 
 CTXSW_COST = 1
+
+
+Uid = typing.NewType('Uid', int)
+CoreStatsDict = typing.Dict[str, types.Time]
 
 
 class _ContextSwitchStats:  # pylint: disable=too-few-public-methods
     """Context switching statistics."""
 
-    def __init__(self):
-        """Create a :class:`_ContextSwitchStats`."""
-        self.thread_time = 0
-        self.module_time = 0
+    thread_time = types.Time(0)
+    module_time = types.Time(0)
 
 
 class _TimeStats:  # pylint: disable=too-few-public-methods
     """CPU Time statistics."""
 
-    def __init__(self):
-        """Create a :class:`_TimeStats`."""
-        self.crunch_time = 0
-        self.idle_time = 0
-        self.timer_delay = 0
+    crunch_time = types.Time(0)
+    idle_time = types.Time(0)
+    timer_delay = types.Time(0)
 
 
 class _Status:
@@ -37,16 +42,18 @@ class _Status:
         * :class:`_ContextSwitchStats`
     """
 
-    def __init__(self, cpu, chain):
+    cpu: Core
+    chain: context.Chain
+    current_time = types.Time(0)
+    stats = _TimeStats()
+    ctxsw_stats = _ContextSwitchStats()
+
+    def __init__(self, cpu: Core, chain: context.Chain) -> None:
         """Create a :class:`_Status`."""
         self.cpu = cpu
         self.chain = chain
-        self.prev_chain = None
-        self.current_time = 0
-        self.stats = _TimeStats()
-        self.ctxsw_stats = _ContextSwitchStats()
 
-    def _calc_runtime(self, time):
+    def _calc_runtime(self, time: types.Time) -> types.Time:
         """Calculate the execution time available.
 
         If :attr:`chain.next_timeout` is sooner, then the operation
@@ -71,7 +78,7 @@ class _Status:
         assert time > 0 or time == 0 and timeout <= 0
         return time
 
-    def _update_time(self, time):
+    def _update_time(self, time: types.Time) -> None:
         """Update the time and check if interrupt happens.
 
         `time` must not be negative.
@@ -84,13 +91,13 @@ class _Status:
         self.current_time += time
         self.chain.elapse(time)
 
-    def _run_background(self, time):
+    def _run_background(self, time: types.Time) -> None:
         """Call :meth:`context.Chain.run_background <schedsi.context.Chain.run_background>` \
         on :attr:`chain`.
         """
         self.chain.run_background(self.current_time, time)
 
-    def _timer_interrupt(self):
+    def _timer_interrupt(self) -> None:
         """Call when :attr:`chain.next_timeout` arrives.
 
         Resets the timer and jumps back to the kernel.
@@ -106,7 +113,8 @@ class _Status:
 
         self.chain.set_timer(None)
 
-    def _context_switch(self, *, split_index=None, appendix=None):
+    def _context_switch(self, *, split_index: int = None, appendix: context.Chain = None) \
+                       -> typing.Tuple[context.Chain, types.Time]:
         """Perform a context switch.
 
         The destination is specified by `split_index`, an index into the context :attr:`chain`,
@@ -158,11 +166,11 @@ class _Status:
 
         return prev_chain, cost
 
-    def _switch_to_parent(self):
+    def _switch_to_parent(self) -> None:
         """Return execution to the parent :class:`Thread`."""
         if len(self.chain) == 1:
             # kernel yields
-            slice_left = self.chian.next_timeout
+            slice_left = self.chain.next_timeout
             if slice_left <= 0:
                 raise RuntimeError('Kernel cannot yield without timeout.')
             self.cpu.log.cpu_idle(self.cpu, slice_left)
@@ -172,7 +180,7 @@ class _Status:
             prev_chain, _ = self._context_switch(split_index=-2)
             assert len(prev_chain) == 1
 
-    def _append_chain(self, tail):
+    def _append_chain(self, tail: context.Chain) -> None:
         """Continue execution of another :class:`Thread`.
 
         The thread must be of either the same :class:`Module` or a child :class:`Module`.
@@ -183,7 +191,7 @@ class _Status:
         prev_chain, _ = self._context_switch(appendix=tail)
         assert prev_chain is None
 
-    def _handle_request(self, request):
+    def _handle_request(self, request: cpurequest.Request) -> bool:
         """Handle a :class:`~schedsi.cpurequest.Request`.
 
         Returns whether time was spent handling the request..
@@ -211,7 +219,7 @@ class _Status:
             assert False
         return True
 
-    def execute(self):
+    def execute(self) -> None:
         """Execute one step.
 
         One step is anything that takes time or switching context.
@@ -230,7 +238,7 @@ class _Status:
 class _KernelTimerOnlyStatus(_Status):
     """Status of a CPU Core allowing only the kernel to have timers."""
 
-    def _timer_interrupt(self):
+    def _timer_interrupt(self) -> None:
         """See :meth:`_Status._timer_interrupt`.
 
         Ensures only the kernel receives the interrupt
@@ -247,7 +255,7 @@ class _KernelTimerOnlyStatus(_Status):
         current_context.reply(None)
         current_context.restart(self.current_time)
 
-    def _switch_to_parent(self):
+    def _switch_to_parent(self) -> None:
         """See :meth:`_Status._switch_to_parent`.
 
         Breaks the previous :class:`context.Chain <schedsi.context.Chain>`
@@ -261,7 +269,7 @@ class _KernelTimerOnlyStatus(_Status):
             current_context.reply(None)
             current_context.reply(context.Chain.from_thread(prev_chain.bottom))
 
-    def _handle_request(self, request):
+    def _handle_request(self, request: cpurequest.Request) -> bool:
         """See :meth:`_Status._handle_request`.
 
         Ensures that
@@ -297,7 +305,11 @@ class Core:
     The values are not expected to change much during operation.
     """
 
-    def __init__(self, uid, init_thread, log, *, local_timer_scheduling):
+    uid: Uid
+    log: types.Log
+    status: _Status
+
+    def __init__(self, uid: Uid, init_thread: 'threads.Thread', log: types.Log, *, local_timer_scheduling: bool) -> None:
         """Create a :class:`Core`."""
         self.uid = uid
 
@@ -308,20 +320,20 @@ class Core:
 
         log.init_core(self)
 
-    def execute(self):
+    def execute(self) -> None:
         """Execute one step.
 
         See :meth:`_Status.execute`.
         """
         self.status.execute()
 
-    def get_statistics(self):
+    def get_statistics(self) -> CoreStats:
         """Obtain statistics."""
         stats = self.status.stats.__dict__.copy()
         stats.update(self.status.ctxsw_stats.__dict__)
         return stats
 
     @property
-    def kernel(self):
+    def kernel(self) -> 'module.Module':
         """The Kernel module."""
         return self.status.chain.bottom.module

@@ -2,7 +2,30 @@
 """Defines the base class for schedulers."""
 
 import itertools
-from schedsi import context, cpurequest, rcu
+import typing
+from schedsi import context, cpurequest, rcu, types
+
+
+if typing.TYPE_CHECKING:
+    from schedsi import threads
+    from schedsi.module import Module
+
+
+ChainQueue = List['context.Chain']
+
+SchedulingStarter = typing.Generator[cpurequest.Request,
+                                     typing.Union[types.Time, context.Chain],
+                                     typing.Tuple[rcu.RCUCopy, ChainQueue, int]]
+
+SchedulingLooper = typing.Generator[cpurequest.Request,
+                                    typing.Union[types.Time, context.Chain],
+                                    int]
+
+
+# this is just for typing
+def rcu_extract(tup: typing.Tuple[rcu.RCUCopy, ChainQueue, int]) \
+               -> typing.Tuple[rcu.RCUCopy, typing.Tuple[ChainQueue, int]]:
+    return tup[0], (tup[1:])
 
 
 class SchedulerData:  # pylint: disable=too-few-public-methods
@@ -12,12 +35,10 @@ class SchedulerData:  # pylint: disable=too-few-public-methods
     To enable RCU this is kept in one class.
     """
 
-    def __init__(self):
-        """Create a :class:`SchedulerRCU`."""
-        self.ready_chains = []
-        self.waiting_chains = []
-        self.finished_chains = []
-        self.last_idx = -1
+    ready_chains: ChainQueue = []
+    waiting_chains: ChainQueue = []
+    finished_chains: ChainQueue = []
+    last_idx = -1
 
 
 class Scheduler:
@@ -29,7 +50,12 @@ class Scheduler:
     Has a :obj:`list` of :class:`context.Chains <schedsi.context.Chain>`.
     """
 
-    def __init__(self, module, rcu_storage=None, *, time_slice=None):
+    _rcu: rcu.RCU
+    module: 'Module'
+    time_slice: typing.Optional[types.Time]
+
+    def __init__(self, module: 'Module', rcu_storage: SchedulerData = None, *,
+                 time_slice: types.Time = None) -> None:
         """Create a :class:`Scheduler`.
 
         Optionally takes a `rcu_storage` for which to create the :attr:`_rcu` for.
@@ -44,19 +70,19 @@ class Scheduler:
         self.time_slice = time_slice
 
     @classmethod
-    def builder(cls, *args, **kwargs):
+    def builder(cls, *args, **kwargs) -> typing.Callable[['Module'], Scheduler]:
         """Make a creator of :class:`Scheduler`.
 
         Returns a function taking a single argument:
         the :class:`Module` of the scheduler to create.
         `args` and `kwargs` are then also forwarded to :meth:`__init__`.
         """
-        def make(module):
+        def make(module: 'Module') -> Scheduler:
             """The creator function to be returned."""
             return cls(module, *args, **kwargs)
         return make
 
-    def num_threads(self):
+    def num_threads(self) -> int:
         """Return total number of threads.
 
         Includes both running and finished threads.
@@ -65,9 +91,9 @@ class Scheduler:
                               sum(len(x) for x in
                                   [d.ready_chains, d.waiting_chains, d.finished_chains]))
 
-    def add_thread(self, thread, rcu_data=None):
+    def add_thread(self, thread: 'threads.Thread', rcu_data: SchedulerData = None) -> None:
         """Add threads to schedule."""
-        def appliance(data):
+        def appliance(data: SchedulerData) -> None:
             """Append new threads to the waiting and finished queue."""
             chain = context.Chain.from_thread(thread)
             if thread.is_finished():
@@ -80,7 +106,7 @@ class Scheduler:
             appliance(rcu_data)
 
     @classmethod
-    def _update_ready_chains(cls, time, rcu_data):
+    def _update_ready_chains(cls, time: types.Time, rcu_data: SchedulerData) -> None:
         """Move threads becoming ready to the ready chains list."""
         cls._update_ready_chain_queues(time, rcu_data.ready_chains, rcu_data.waiting_chains)
 
@@ -90,7 +116,7 @@ class Scheduler:
         assert all(ctx.bottom.is_finished() for ctx in rcu_data.finished_chains)
 
     @staticmethod
-    def _update_ready_chain_queues(time, ready_queue, waiting_queue):
+    def _update_ready_chain_queues(time, ready_queue: ChainQueue, waiting_queue: ChainQueue) -> None:
         """Move threads becoming ready to the respective queues.
 
         See :meth:`Scheduler._update_ready_chains`.
@@ -99,7 +125,9 @@ class Scheduler:
             if waiting_queue[i].bottom.ready_time <= time:
                 ready_queue.append(waiting_queue.pop(i))
 
-    def get_thread_statistics(self, current_time):
+    # https://github.com/python/mypy/issues/1007
+    # def get_thread_statistics(self, current_time: types.Time) -> typing.Dict['threads.FullTid', 'threads.ThreadStatsDict']:
+    def get_thread_statistics(self, current_time: types.Time) -> typing.Dict[typing.Any, typing.Any]:
         """Obtain statistics of all threads."""
         rcu_data = self._rcu.read()
         all_threads = (ctx.bottom for ctx in
@@ -108,7 +136,7 @@ class Scheduler:
         return {tid: stats for tid, stats in
                 (((t.module.name, t.tid), t.get_statistics(current_time)) for t in all_threads)}
 
-    def _start_schedule(self, _prev_run_time):
+    def _start_schedule(self, _prev_run_time: types.Time) -> SchedulingStarter:
         """Prepare making a scheduling decision.
 
         Moves ready threads to the ready queue
@@ -129,6 +157,8 @@ class Scheduler:
         Consumes the current time.
         """
         current_time = yield cpurequest.Request.current_time()
+        assert isinstance(current_time, types.Time), \
+            'cpurequest.Request.current_time did not return cpu.Time.'
         while True:
             rcu_copy = self._rcu.copy()
             rcu_data = rcu_copy.data
@@ -164,7 +194,8 @@ class Scheduler:
 
             return rcu_copy, dest, last_idx
 
-    def _get_last_chain(self, rcu_data, last_chain_queue, last_chain_idx):  # pylint: disable=no-self-use
+    def _get_last_chain(self, rcu_data: SchedulerData, last_chain_queue: ChainQueue,
+                        last_chain_idx: int) -> typing.Optional[context.Chain]:  # pylint: disable=no-self-use
         """Return the last scheduled chain."""
         if last_chain_queue is rcu_data.ready_chains:
             return rcu_data.ready_chains[last_chain_idx]
@@ -172,7 +203,7 @@ class Scheduler:
             return last_chain_queue[-1]
         return None
 
-    def _schedule(self, idx, rcu_copy):
+    def _schedule(self, idx: int, rcu_copy: rcu.RCUCopy) -> context.Executor:
         """Update :attr:`_rcu` and schedule the chain at `idx`.
 
         If `idx` is -1, yield an idle request.
@@ -191,13 +222,15 @@ class Scheduler:
 
         yield cpurequest.Request.timer(self.time_slice)
 
-        rcu_copy.data.ready_chains[idx] = \
-            yield cpurequest.Request.resume_chain(rcu_copy.data.ready_chains[idx])
+        chain = yield cpurequest.Request.resume_chain(rcu_copy.data.ready_chains[idx])
+        assert isinstance(chain, context.Chain), \
+            'cpurequest.Request.idle did not return context.Chain.'
+        rcu_copy.data.ready_chains[idx] = chain
         # FIXME: this can fail on multi-vcpu
         if not self._rcu.update(rcu_copy):
             assert False, 'Multi-vcpu synchronization not yet supported'
 
-    def schedule(self, prev_run_time):
+    def schedule(self, prev_run_time: typing.List[types.Time]) -> context.Executor:
         """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
 
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
@@ -207,12 +240,13 @@ class Scheduler:
         Consumes the current time.
         """
         while True:
-            rcu_copy, *rest = yield from self._start_schedule(*prev_run_time)
+            rcu_copy, rest = rcu_extract((yield from self._start_schedule(*prev_run_time)))
             idx = yield from self._sched_loop(rcu_copy, *rest)
 
             yield from self._schedule(idx, rcu_copy)
 
-    def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx):  # pylint: disable=no-self-use
+    def _sched_loop(self, rcu_copy: rcu.RCUCopy, _last_chain_queue: ChainQueue,
+                    _last_chain_idx: int) -> SchedulingLooper:  # pylint: disable=no-self-use
         """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
 
         This :class:`Scheduler` is a base class.
@@ -242,11 +276,13 @@ class SchedulerAddonBase():
     like hooks.
     """
 
-    def __init__(self, scheduler):
+    scheduler: Scheduler
+
+    def __init__(self, scheduler: Scheduler) -> None:
         """Create a :class:`SchedulerAddonBase`."""
         self.scheduler = scheduler
 
-    def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
+    def transmute_rcu_data(self, original: SchedulerAddon, *addon_data: typing.Type) -> None:  # pylint: disable=no-self-use
         """Transmute a :class:`SchedulerData`.
 
         This should be called like `super().transmute_rcu_data(original, MyAddonData, *addon_data)`.
@@ -257,26 +293,28 @@ class SchedulerAddonBase():
         if len(addon_data) == 0:
             return
 
-        class AddonData(*addon_data):  # pylint: disable=too-few-public-methods
+        class AddonData(*addon_data):  # type: ignore  # pylint: disable=too-few-public-methods
             """Joins all `addon_data` into one class."""
 
             pass
+
         original.__class__ = AddonData
         for data in addon_data:
-            data.__init__(original)
+            data.__init__(original)  # type: ignore
 
-    def _get_last_chain(self, rcu_data, last_chain_queue, last_chain_idx):
+    def _get_last_chain(self, rcu_data: SchedulerData, last_chain_queue: ChainQueue, last_chain_idx: int) -> typing.Optional[context.Chain]:
         """Return the last scheduled thread of :attr:`scheduler`.
 
         See :meth:`Scheduler._get_last_chain`.
         """
         return self.scheduler._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)  # pylint: disable=protected-access
 
-    def start_schedule(self, _prev_run_time, _rcu_data, _last_chain_queue, _last_chain_idx):  # pylint: disable=no-self-use
+    def start_schedule(self, _prev_run_time: types.Time, _rcu_data: SchedulerData,
+                       _last_chain_queue: ChainQueue, _last_chain_idx: int) -> None:  # pylint: disable=no-self-use
         """Hook for :meth:`_start_schedule`."""
         pass
 
-    def schedule(self, _idx, _rcu_data):  # pylint: disable=no-self-use
+    def schedule(self, _idx: int, _rcu_data: rcu.RCUCopy) -> bool:  # pylint: disable=no-self-use
         """Hook for :meth:`_schedule`.
 
         Return True to proceed or False to schedule another chain.
@@ -299,25 +337,27 @@ class SchedulerAddon(Scheduler):
 
     """
 
-    def __init__(self, module, addon, *args, **kwargs):
+    addon: SchedulerAddonBase
+
+    def __init__(self, module: 'Module', addon: SchedulerAddonBase, *args, **kwargs) -> None:
         """Create a :class:`SchedulerAddon`."""
         super().__init__(module, *args, **kwargs)
         self.addon = addon
         addon.transmute_rcu_data(self._rcu._data)
 
-    def _start_schedule(self, prev_run_time):
+    def _start_schedule(self, prev_run_time: types.Time) -> SchedulingStarter:
         """See :meth:`Scheduler._start_schedule`.
 
         This will also call the
         :attr:`addon`'s :meth:`~SchedulerAddonBase.start_schedule` hook.
         """
-        rcu_copy, *rest = yield from super()._start_schedule(prev_run_time)
+        rcu_copy, rest = rcu_extract((yield from super()._start_schedule(prev_run_time)))
 
         self.addon.start_schedule(prev_run_time, rcu_copy.data, *rest)
 
         return (rcu_copy, *rest)
 
-    def _schedule(self, idx, rcu_copy):
+    def _schedule(self, idx: int, rcu_copy: rcu.RCUCopy) -> context.Executor:
         """See :meth:`Scheduler._schedule`.
 
         This will also call the :attr:`addon`'s :meth:`~SchedulerAddonBase.schedule`.

@@ -70,17 +70,17 @@ def plot_scheduler(name, stats):
     """Process scheduler stats."""
     figures = ThreadFigures(len(stats['children']) + 1)
 
-    print('Plotting thread {}...'.format(name))
+    print(f'Plotting thread {name}...')
     figures.plot_thread(name, stats)
 
     for (key, values) in stats['children'].items():
-        print('Plotting thread {}...'.format(key))
+        print(f'Plotting thread {key}...')
         figures.plot_thread(key, values)
 
     # strip the thread-id from the name
     figures.save(name[:name.rindex('-') + 1])
 
-    print('Scheduler {} plotted.'.format(name))
+    print(f'Scheduler {name} plotted.')
 
 
 def get_scheduler_keyslist(scheduler_threads):
@@ -149,7 +149,7 @@ def fix_keys(stats):
         # thread keys are (module-name, thread-id) tuples
         # convert to string
         if isinstance(key, tuple):
-            key = '{}-{}'.format(key[0], key[1])
+            key = f'{key[0]}-{key[1]}' #'-'.join(key)
         new[key] = fix_keys(value)
 
     return new
@@ -173,7 +173,7 @@ def main():
     matplotlib.rcParams.update({'figure.max_open_warning': 0})
 
     if len(sys.argv) != 2:
-        print('Usage: {0} stats.json or {0} schedsi.log'.format(sys.argv[0]), file=sys.stderr)
+        print(f'Usage: {sys.argv[0]} (stats.json|schedsi.log)', file=sys.stderr)
         sys.exit(1)
 
     stats = get_stats(sys.argv[1])

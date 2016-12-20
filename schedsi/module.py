@@ -2,7 +2,15 @@
 """Defines :class:`Module`."""
 
 import sys
-from schedsi import cpu, threads
+import typing
+from schedsi import cpu, threads, types
+
+
+if typing.TYPE_CHECKING:
+    from schedsi import scheduler
+
+
+_VCPU = typing.Union[cpu.Core, threads.VCPUThread]
 
 
 class Module:
@@ -15,7 +23,13 @@ class Module:
         * an array of (VCPU, scheduler thread)
     """
 
-    def __init__(self, name, parent, scheduler):
+    name: str
+    parent: typing.Optional[Module]
+    _scheduler_thread: threads.SchedulerThread
+    _vcpus: typing.List[typing.Tuple[_VCPU, threads.SchedulerThread]]
+    _children: typing.List[Module] = []
+
+    def __init__(self, name: str, parent: typing.Optional[Module], scheduler: typing.Type[scheduler.Scheduler]) -> None:
         """Create a :class:`Module`."""
         self.name = name
         self.parent = parent
@@ -24,12 +38,11 @@ class Module:
         # HACK: VCPUs are usually added after other threads, but we need it sooner
         #       to get a num_threads count for naming threads.
         #       In particular, this is a problem for Cores, which are added in World.
-        self._vcpus = [(None, self._scheduler_thread)]
-        self._children = []
+        self._vcpus = [(typing.cast(_VCPU, None), self._scheduler_thread)]
         if parent is not None:
             parent.attach_module(self)
 
-    def register_vcpu(self, vcpu):
+    def register_vcpu(self, vcpu: _VCPU) -> threads.SchedulerThread:
         """Register a VCPU.
 
         This is called when a parent adds a :class:`~schedsi.threads.VCPUThread`
@@ -47,27 +60,28 @@ class Module:
         self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread
 
-    def attach_module(self, child):
+    def attach_module(self, child: Module) -> None:
         """Attach a child module."""
         assert isinstance(child, Module)
         self._children.append(child)
 
-    def num_children(self):
+    def num_children(self) -> int:
         """Return the number of children."""
         return len(self._children)
 
-    def num_threads(self):
+    def num_threads(self) -> int:
         """Return number of threads managed by this module."""
         return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
 
-    def add_thread(self, thread):
+    def add_thread(self, thread: threads.Thread) -> None:
         """Add threads.
 
         See :meth:`SchedulerThread.add_threads() <schedsi.threads.SchedulerThread.add_threads>`.
         """
         self._scheduler_thread.add_thread(thread)
 
-    def get_thread_statistics(self, current_time):
+    #TODO: more specific value type
+    def get_thread_statistics(self, current_time: types.Time) -> typing.Dict[threads.FullTid, typing.Dict] :
         """Obtain statistics of threads managed by this module."""
         return {(self.name, vcpu[1].tid): vcpu[1].get_statistics(current_time)
                 for vcpu in self._vcpus}

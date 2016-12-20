@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """Defines the :class:`GraphLog`."""
 
+from schedsi import types
+import typing
+import typing.io
 import pyx
 
+if typing.TYPE_CHECKING:
+    from schedsi import context, cpu, threads
 
-def _outlined_fill(color, amount):
+
+def _outlined_fill(color: pyx.color.gradient, amount: float) -> typing.List[pyx.deco.deco]:
     """Create an outlined, filled pyx attribute.
 
     Outline is full color (1.0), fill is graded.
@@ -24,19 +30,27 @@ TEXT_ATTR = [pyx.text.halign.boxcenter, pyx.color.rgb.black]
 LEVEL = 3
 
 
+# https://github.com/python/mypy/issues/1007
+#_Length = types.Time
+_Length = float
+
+
 class _Background:  # pylint: disable=too-few-public-methods
     """An active background task.
 
     Simply accumulates the time spent waiting while children are executing.
     """
 
-    def __init__(self, name, time):
+    name: str
+    time: types.Time
+
+    def __init__(self, name: str, time: types.Time) -> None:
         """Create a :class:`_Background`."""
         self.name = name
         self.time = time
 
 
-def _name_thread(thread):
+def _name_thread(thread: 'threads.Thread'):
     """Return a string identifying the thread."""
     return thread.module.name + '-' + str(thread.tid)
 
@@ -57,16 +71,19 @@ class GraphLog:
     so that we can draw a single contiguous block when the children finish.
     """
 
-    def __init__(self):
+    canvas: pyx.canvas.canvas
+    top: pyx.canvas.canvas
+    cursor = [_Length(0), 0]
+    level = 0
+    background_tasks: typing.List[_Background] = []
+    task_executed = False
+
+    def __init__(self) -> None:
         """Create a :class:`GraphLog`."""
         self.canvas = pyx.canvas.canvas()
         self.top = pyx.canvas.canvas()
-        self.cursor = [0, 0]
-        self.level = 0
-        self.background_tasks = []
-        self.task_executed = False
 
-    def write(self, stream):
+    def write(self, stream: typing.TextIO) -> None:
         """Generate SVG output of the current graph."""
         # since we draw additional things (like axes), let's do this on a temporary canvas
         canvas = pyx.canvas.canvas()
@@ -93,12 +110,13 @@ class GraphLog:
         # and done
         canvas.writeSVGfile(stream)
 
-    def _move(self, dx, dy):
+    def _move(self, dx: _Length, dy: float) -> None:
         """Move the cursor."""
         self.cursor[0] += dx
         self.cursor[1] += dy
 
-    def _draw_line(self, color, dx, dy, canvas=None):
+    def _draw_line(self, color: pyx.color.color, dx: _Length, dy: int,
+                   canvas: pyx.canvas.canvas = None) -> None:
         """Draw a line.
 
         If `canvas` is :obj:`None`, :attr:`self.canvas` is used.
@@ -111,7 +129,8 @@ class GraphLog:
         path = pyx.path.line(*begin, *self.cursor)
         canvas.stroke(path, color)
 
-    def _draw_block(self, color, text, length, height=LEVEL, canvas=None):
+    def _draw_block(self, color: pyx.color.color, text: str, length: _Length,
+                    height: int = LEVEL, canvas: pyx.canvas.canvas = None) -> None:
         """Draw a solid block.
 
         Usually we want to draw a process, so `height` defaults to :const:`LEVEL`.
@@ -139,7 +158,8 @@ class GraphLog:
 
         self._move(length, 0)
 
-    def _draw_slope(self, color, dx, dy, canvas=None):
+    def _draw_slope(self, color: pyx.color.color, dx: _Length, dy: int,
+                    canvas: pyx.canvas.canvas = None) -> None:
         """Draw a trinangle.
 
         This represents a context switch.
@@ -166,12 +186,12 @@ class GraphLog:
         canvas.draw(path, color)
         self._move(dx, dy)
 
-    def _update_background_tasks(self, time):
+    def _update_background_tasks(self, time: types.Time) -> None:
         """Update the time of active background tasks."""
         for task in self.background_tasks:
             task.time += time
 
-    def _draw_recent(self, idx=None, canvas=None):
+    def _draw_recent(self, idx:int = None, canvas: pyx.canvas.canvas = None) -> None:
         """Draw the most recent background task.
 
         If `idx` is :obj:`None`, the background task is popped from the stack.
@@ -185,7 +205,7 @@ class GraphLog:
         self._move(-task.time, 0)
         self._draw_block(INACTIVE_COLOR, task.name, task.time, canvas=canvas)
 
-    def _draw_background_tasks(self, time, amount=None):
+    def _draw_background_tasks(self, time: types.Time, amount: int = None) -> None:
         """Draw all active background tasks."""
         if not self.background_tasks:
             return
@@ -203,7 +223,7 @@ class GraphLog:
         self._move(time, -LEVEL)
         self._draw_recent()
 
-    def _ctx_down(self, names, time, level_step):
+    def _ctx_down(self, names: typing.List[str], time: types.Time, level_step: int) -> None:
         """Step down a level."""
         assert self.level % LEVEL == 0
         # we can't be at the bottom and step down
@@ -224,9 +244,8 @@ class GraphLog:
         else:
             self._update_background_tasks(time)
             self._draw_recent()
-        return -level_step
 
-    def _ctx_up(self, names, time, level_step):
+    def _ctx_up(self, names: typing.List[str], time: types.Time, level_step: int) -> None:
         """Step up a level."""
         assert self.level % LEVEL == 0
 
@@ -240,20 +259,19 @@ class GraphLog:
         # the thread on the bottom records context switching as background execution
         self.background_tasks[-len(names)].time = time
 
-        return level_step
-
-    def _ctx_zero(self, name):
+    def _ctx_zero(self, name: str) -> None:
         """Context switch with zero time."""
         self._move(0, LEVEL - 0.5)
         self._draw_line(CTXSW_ZERO_COLOR, 0, 1, self.top)
         self.top.text(*self.cursor, name, TEXT_ATTR)
         self._move(0, -LEVEL - 0.5)
 
-    def init_core(self, _cpu):
+    def init_core(self, _cpu: 'cpu.Core') -> None:
         """Register a :class:`Core`."""
         pass
 
-    def context_switch(self, cpu, split_index, appendix, time):
+    def context_switch(self, cpu: 'cpu.Core', split_index: typing.Optional[int],
+            appendix: typing.Optional['context.Chain'], time: types.Time):
         """Log an context switch event."""
         thread_diff = None
 
@@ -287,22 +305,22 @@ class GraphLog:
 
         self.level += ctx_func(names, time, levels)
 
-    def thread_execute(self, cpu, runtime):
+    def thread_execute(self, cpu: 'cpu.Core', runtime: types.Time) -> None:
         """Log an thread execution event."""
         self._update_background_tasks(runtime)
         current_thread_name = _name_thread(cpu.status.chain.top)
         self._draw_block(EXEC_COLORS, current_thread_name, runtime)
         self.task_executed = True
 
-    def thread_yield(self, _cpu):
+    def thread_yield(self, _cpu: 'cpu.Core') -> None:
         """Log an thread yielded event."""
         pass
 
-    def cpu_idle(self, _cpu, idle_time):
+    def cpu_idle(self, _cpu: 'cpu.Core', idle_time: types.Time) -> None:
         """Log an CPU idle event."""
         self._draw_line(IDLE_COLOR, idle_time, 0)
 
-    def timer_interrupt(self, cpu, idx, delay):
+    def timer_interrupt(self, cpu: 'cpu.Core', idx: int, delay: types.Time) -> None:
         """Log an timer interrupt event."""
         # calculate depth of the module at idx from the top
         current = cpu.status.chain.top
@@ -318,14 +336,14 @@ class GraphLog:
         self._draw_line(TIMER_COLOR, 0, 1, self.top)
         self._move(delay, timer_level_offset - 1)
 
-    def thread_statistics(self, stats):
+    def thread_statistics(self, _stats: 'threads.ThreadStatsDict') -> None:
         """Log thread statistics.
 
         A no-op for this logger.
         """
         pass
 
-    def cpu_statistics(self, stats):
+    def cpu_statistics(self, _stats: 'cpu.CoreStatsDict') -> None:
         """Log CPU statistics.
 
         A no-op for this logger.

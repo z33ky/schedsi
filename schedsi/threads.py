@@ -3,18 +3,47 @@
 
 import sys
 import threading
-from schedsi import context, cpurequest
+import typing
+from schedsi import context, cpurequest, types
+
+if typing.TYPE_CHECKING:
+    from schedsi.module import Module
+
+
+Tid = typing.NewType('Tid', int)
+
+FullTid = typing.Tuple[str, Tid]
+ThreadStatsValues = typing.Union[typing.List[types.Time], types.Time]
+SchedulerStatsValues = typing.Dict[FullTid, ThreadStatsValues]
+# VCPUStatsValues = typing.Dict[FullTid, 'ThreadStatsDict']
+# https://github.com/python/mypy/issues/1561
+# instead manually unroll 'ThreadStatsDict' one level
+VCPUStatsValues2 = typing.Dict[FullTid, typing.Dict[str, typing.Union[
+    ThreadStatsValues,
+    typing.Dict[FullTid, typing.Any]]
+]]
+VCPUStatsValues1 = typing.Dict[FullTid, typing.Dict[str, typing.Union[
+    ThreadStatsValues,
+    typing.Dict[FullTid, VCPUStatsValues2]]
+]]
+VCPUStatsValues0 = typing.Dict[FullTid, typing.Dict[str, typing.Union[
+    ThreadStatsValues,
+    typing.Dict[FullTid, VCPUStatsValues1]]
+]]
+ThreadStatsDict = typing.Dict[str, typing.Union[SchedulerStatsValues, VCPUStatsValues2, ThreadStatsValues]]
+
+_PrivateExecutor = typing.Generator[cpurequest.Request,
+                                    typing.Union[types.Time, context.Chain],
+                                    types.Time]
 
 
 class _ThreadStats:  # pylint: disable=too-few-public-methods
     """Thread statistics."""
 
-    def __init__(self):
-        """Create a :class:`_ThreadStats`."""
-        self.finished_time = -1
-        self.ctxsw = []
-        self.run = []
-        self.wait = []
+    finished_time = types.Time(-1)
+    ctxsw: typing.List[types.Time] = []
+    run: typing.List[types.Time] = []
+    wait: typing.List[types.Time] = []
 
 
 class Thread:
@@ -29,18 +58,26 @@ class Thread:
         * :class:`_ThreadStats`
     """
 
-    def __init__(self, module, tid=None, *, ready_time=0, units=-1):
+    module: 'Module'
+    tid: Tid
+    ready_time: types.Time
+    remaining: types.Time
+    is_running = threading.Lock()
+    stats = _ThreadStats()
+
+    def __init__(self, module: 'Module', tid: Tid = None, *,
+                 ready_time = types.Time(0), units = types.Time(-1)) -> None:
         """Create a :class:`Thread`."""
         self.module = module
         if tid is None:
-            tid = module.num_threads()
+            tid = Tid(module.num_threads())
         self.tid = tid
         self.ready_time = ready_time
         self.remaining = units
-        self.is_running = threading.Lock()
-        self.stats = _ThreadStats()
+        #self.is_running = threading.Lock()
+        #self.stats = _ThreadStats()
 
-    def execute(self):
+    def execute(self) -> context.Executor:
         """Simulate execution.
 
         The thread will run for as long as it can.
@@ -52,10 +89,12 @@ class Thread:
         assert locked
 
         current_time = yield cpurequest.Request.current_time()
+        assert isinstance(current_time, types.Time), \
+            'cpurequest.Request.current_time did not return cpu.Time.'
         while True:
-            current_time = yield from self._execute(current_time, -1)
+            current_time = yield from self._execute(current_time, types.Time(-1))
 
-    def _get_ready(self, current_time):
+    def _get_ready(self, current_time: types.Time) -> None:
         """Get ready to execute.
 
         Called before :meth:`_execute`.
@@ -65,12 +104,12 @@ class Thread:
         assert self.ready_time != -1 and self.ready_time <= current_time
         assert self.is_running.locked()
 
-        self.stats.wait.append(current_time - self.ready_time)
+        self.stats.wait.append(types.Time(current_time - self.ready_time))
         self.ready_time = current_time
 
         # self.run_crunch(current_time, 0)
 
-    def _execute(self, current_time, run_time):
+    def _execute(self, current_time: types.Time, run_time: types.Time) -> _PrivateExecutor:
         """Simulate execution.
 
         Update some state.
@@ -89,15 +128,19 @@ class Thread:
             assert run_time > 0
             assert run_time <= self.remaining or self.remaining == -1
 
-        current_time = yield cpurequest.Request.execute(run_time)
+        # https://github.com/python/mypy/issues/1174
+        time = yield cpurequest.Request.execute(run_time)
+        assert isinstance(time, types.Time), \
+            'cpurequest.Request.current_time did not return cpu.Time.'
+        current_time = time
 
         if self.is_finished():
             yield cpurequest.Request.idle()
-            return
+            raise StopIteration
 
         return current_time
 
-    def is_finished(self):
+    def is_finished(self) -> bool:
         """Check if the :class:`Thread` is finished.
 
         Returns True if the :class:`Thread` still has something to do,
@@ -105,7 +148,7 @@ class Thread:
         """
         return self.remaining == 0
 
-    def run_ctxsw(self, _current_time, run_time):
+    def run_ctxsw(self, _current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         This should be called just after a context switch to another thread
@@ -120,7 +163,7 @@ class Thread:
             assert locked
         self.stats.ctxsw.append(run_time)
 
-    def run_background(self, current_time, _run_time):
+    def run_background(self, current_time: types.Time, _run_time: types.Time) -> None:
         """Update runtime state.
 
         This should be called while the thread is in the context stack, but not
@@ -130,7 +173,7 @@ class Thread:
         assert self.is_running.locked()
         self.ready_time = current_time
 
-    def run_crunch(self, current_time, run_time):
+    def run_crunch(self, current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         This should be called while the thread is active.
@@ -152,14 +195,14 @@ class Thread:
                 self.end()
                 return
 
-    def end(self):
+    def end(self) -> None:
         """End execution."""
         assert self.is_finished()
         self.stats.finished_time = self.ready_time
         # never start again
-        self.ready_time = -1
+        self.ready_time = types.Time(-1)
 
-    def finish(self, _current_time):
+    def finish(self, _current_time: types.Time) -> None:
         """Become inactive.
 
         This should be called when the thread becomes inactive.
@@ -167,7 +210,7 @@ class Thread:
         assert self.is_running.locked()
         self.is_running.release()
 
-    def get_statistics(self, current_time):
+    def get_statistics(self, current_time: types.Time) -> ThreadStatsDict:
         """Obtain statistics.
 
         Not thread-safe.
@@ -184,12 +227,9 @@ class Thread:
 class _BGStatThread(Thread):
     """Base class for threads recording background time."""
 
-    def __init__(self, *args, **kwargs):
-        """Create a :class:`_BGStatThread`."""
-        super().__init__(*args, **kwargs)
-        self.bg_times = []
+    bg_times: typing.List[types.Time] = []
 
-    def run_background(self, current_time, run_time):
+    def run_background(self, current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         See :meth:`Thread.run_background`.
@@ -197,7 +237,7 @@ class _BGStatThread(Thread):
         self.bg_times.append(run_time)
         super().run_background(current_time, run_time)
 
-    def get_statistics(self, current_time):
+    def get_statistics(self, current_time: types.Time) -> ThreadStatsDict:
         """Obtain statistics.
 
         See :meth:`Thread.get_statistics`.
@@ -213,11 +253,13 @@ class SchedulerThread(_BGStatThread):
     Execution is forwarded to the scheduler of the child :class:`Module`.
     """
 
+    # https://github.com/python/mypy/issues/1735
+    last_bg_time: typing.Optional[types.Time] = None
+
     def __init__(self, *args, scheduler, **kwargs):
         """Create a :class:`SchedulerThread`."""
         super().__init__(scheduler.module, *args, **kwargs)
         self._scheduler = scheduler
-        self.last_bg_time = None
 
     def execute(self):
         """Simulate execution.
@@ -242,15 +284,16 @@ class SchedulerThread(_BGStatThread):
             bg_time[0] = self.last_bg_time
             thing = scheduler.send(current_time)
 
-    def run_background(self, current_time, run_time):
+    def run_background(self, current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         See :meth:`Thread.run_background`.
         """
+        assert self.last_bg_time is not None
         self.last_bg_time += run_time
         super().run_background(current_time, run_time)
 
-    def run_ctxsw(self, current_time, run_time):
+    def run_ctxsw(self, current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         See :meth:`Thread.run_ctxsw`.
@@ -263,18 +306,19 @@ class SchedulerThread(_BGStatThread):
         #       deep down the hierarchy.
         #       So run_ctxsw is invoked on the kernel thread.
         if self.module.parent is None:
+            assert self.last_bg_time is not None
             self.last_bg_time += run_time
         super().run_ctxsw(current_time, run_time)
 
-    def num_threads(self):
+    def num_threads(self) -> int:
         """Return number of threads in :attr:`_scheduler`."""
         return self._scheduler.num_threads()
 
-    def add_thread(self, thread):
+    def add_thread(self, thread: Thread) -> None:
         """Add threads to scheduler."""
         self._scheduler.add_thread(thread)
 
-    def get_statistics(self, current_time):
+    def get_statistics(self, current_time: types.Time) -> ThreadStatsDict:
         """Obtain statistics.
 
         See :meth:`_BGStatThread.get_statistics`.
@@ -290,7 +334,10 @@ class VCPUThread(_BGStatThread):
     Execution is forwarded to the :class:`SchedulerThread` of the child.
     """
 
-    def __init__(self, module, *args, child, **kwargs):
+    _chain: context.Chain
+    _update_active = False
+
+    def __init__(self, module: 'Module', *args, child: 'Module', **kwargs) -> None:
         """Create a :class:`VCPUThread`."""
         if child.parent != module:
             print(module.name, 'is adding a VCPUThread for', child.name,
@@ -300,16 +347,14 @@ class VCPUThread(_BGStatThread):
             print('VCPUThread expected a SchedulerThread, got', type(self._thread).__name__, '.',
                   file=sys.stderr)
 
-        super().__init__(module, *args, **kwargs, ready_time=self._thread.ready_time, units=None)
-
-        self._update_active = False
+        super().__init__(module, *args, ready_time=self._thread.ready_time, units=None, **kwargs)
 
     @property
-    def _thread(self):
+    def _thread(self) -> Thread:
         """The :class:`Thread` the execution is forwarded to."""
         return self._chain.bottom
 
-    def execute(self):
+    def execute(self) -> context.Executor:
         """Simulate execution.
 
         Switch context and forward to child thread.
@@ -320,14 +365,21 @@ class VCPUThread(_BGStatThread):
         assert locked
 
         current_time = yield cpurequest.Request.current_time()
+        assert isinstance(current_time, types.Time), \
+            'cpurequest.Request.current_time did not return cpu.Time.'
         while True:
             self._update_active = True
             self._get_ready(current_time)
             self._update_active = False
-            self._chain = yield cpurequest.Request.resume_chain(self._chain)
+            chain = yield cpurequest.Request.resume_chain(self._chain)
+            assert isinstance(chain, context.Chain), \
+                'cpurequest.Request.idle did not return context.Chain.'
+            self._chain = chain
             current_time = yield cpurequest.Request.idle()
+            assert isinstance(current_time, types.Time), \
+                'cpurequest.Request.idle did not return cpu.Time.'
 
-    def run_crunch(self, current_time, run_time):
+    def run_crunch(self, current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         See :meth:`Thread.run`.
@@ -336,17 +388,19 @@ class VCPUThread(_BGStatThread):
         super().run_crunch(current_time, run_time)
         self._update_active = False
 
-    def get_statistics(self, current_time):
+    def get_statistics(self, current_time: types.Time) -> ThreadStatsDict:
         """Obtain statistics.
 
         See :meth:`_BGStatThread.get_statistics`.
         """
         stats = super().get_statistics(current_time)
         sched_key = (self._thread.module.name, self._thread.tid)
-        stats['scheduler'] = {sched_key: self._thread.get_statistics(current_time)}
+        thread = typing.cast(SchedulerThread, self._thread)
+        stats['scheduler'] = {sched_key: thread.get_statistics(current_time)}
         return stats
 
-    def __getattribute__(self, key):
+    @typing.no_type_check
+    def __getattribute__(self, key: str) -> Any:
         """:attr:`ready_time` and :attr:`remaining` should be taken from the \
         :class:`SchedulerThread`.
 
@@ -354,15 +408,22 @@ class VCPUThread(_BGStatThread):
         for which `_update_active` should be set so the key is passed through.
         """
         if key == 'remaining' or (key == 'ready_time' and
-                                  not object.__getattribute__(self, '_update_active')):
-            return object.__getattribute__(self, '_thread').__getattribute__(key)
-        return object.__getattribute__(self, key)
+                                  not super().__getattribute__('_update_active')):
+            return super().__getattribute__('_thread').__getattribute__(key)
+        return super().__getattribute__(key)
 
 
 class PeriodicWorkThread(Thread):
     """A thread needing periodic bursts of CPU."""
 
-    def __init__(self, module, *args, period, burst, **kwargs):
+    original_ready_time: types.Time
+    period: types.Time
+    burst: types.Time
+    current_burst_left: typing.Optional[types.Time]
+    total_run_time = types.Time(0)
+
+    def __init__(self, module: 'Module', *args, period: types.Time, burst: types.Time,
+                 **kwargs) -> None:
         """Create a :class:`PeriodicWorkThread`."""
         if period <= burst:
             raise RuntimeError('burst must not exceed period')
@@ -372,14 +433,12 @@ class PeriodicWorkThread(Thread):
         self.original_ready_time = self.ready_time
         self.period = period
         self.burst = burst
-        self.current_burst_left = None
-        self.total_run_time = 0
 
-    def _calc_activations(self, current_time):
+    def _calc_activations(self, current_time: types.Time) -> int:
         """Calculate the number activations at `current_time`."""
         return int((current_time - self.original_ready_time) / self.period) + 1
 
-    def _get_quota(self, current_time):
+    def _get_quota(self, current_time: types.Time) -> types.Time:
         """Calculate the quota at `current_time`.
 
         Won't return more than :attr:`remaining`.
@@ -389,7 +448,7 @@ class PeriodicWorkThread(Thread):
             quota_left = min(self.remaining, quota_left)
         return quota_left
 
-    def _update_ready_time(self, current_time):
+    def _update_ready_time(self, current_time: types.Time) -> None:
         """Update :attr:`ready_time` if the current burst is finished.
 
         Requires :attr:`current_burst_left` to be up-to-date.
@@ -400,7 +459,7 @@ class PeriodicWorkThread(Thread):
                             + self.original_ready_time
 
     # will run as long as the summed up bursts require
-    def execute(self):
+    def execute(self) -> context.Executor:
         """Simulate execution.
 
         See :meth:`Thread.execute`.
@@ -409,6 +468,8 @@ class PeriodicWorkThread(Thread):
         assert locked
 
         current_time = yield cpurequest.Request.current_time()
+        assert isinstance(current_time, types.Time), \
+            'cpurequest.Request.current_time did not return cpu.Time.'
         while True:
             quota_left = self._get_quota(current_time)
             if quota_left != 0:
@@ -426,20 +487,22 @@ class PeriodicWorkThread(Thread):
             current_time = yield from super()._execute(current_time, quota_left)
             if self.current_burst_left == 0:
                 current_time = yield cpurequest.Request.idle()
+                assert isinstance(current_time, types.Time), \
+                    'cpurequest.Request.idle did not return cpu.Time.'
 
-    def run_crunch(self, current_time, run_time):
+    def run_crunch(self, current_time: types.Time, run_time: types.Time) -> None:
         """Update runtime state.
 
         See :meth:`Thread.run`.
         """
         super().run_crunch(current_time, run_time)
-        assert self.current_burst_left >= run_time
+        assert self.current_burst_left is not None and self.current_burst_left >= run_time
         self.current_burst_left -= run_time
         self._update_ready_time(current_time)
         self.total_run_time += run_time
         assert self.total_run_time == sum(self.stats.run)
 
-    def finish(self, current_time):
+    def finish(self, current_time: types.Time) -> None:
         """Become inactive.
 
         See :meth:`Thread.finish`.

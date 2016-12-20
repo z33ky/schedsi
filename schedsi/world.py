@@ -2,13 +2,13 @@
 """Defines the :class:`World`."""
 
 import io
-from schedsi import binarylog, cpu
+from schedsi import cpu
 
 
 class World:
     """The world keeps data to enable execution."""
 
-    def __init__(self, cores, kernel, log=binarylog.BinaryLog(io.BytesIO()), *,
+    def __init__(self, cores, kernel, log, *,
                  local_timer_scheduling):
         """Create a :class:`World`."""
         if cores > 1:

@@ -4,7 +4,14 @@
 import enum
 from schedsi import context
 
-Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute', 'timer'])
+# https://github.com/python/mypy/issues/2306
+#Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute', 'timer'])
+class Type(enum.Enum):
+    current_time = 1
+    resume_chain = 2
+    idle = 3
+    execute = 4
+    timer = 5
 
 
 class Request:
