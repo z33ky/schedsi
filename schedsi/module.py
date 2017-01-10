@@ -67,6 +67,7 @@ class Module:
         """
         self._scheduler_thread.add_thread(thread)
 
-    def get_thread_statistics(self):
+    def get_thread_statistics(self, current_time):
         """Obtain statistics of threads managed by this module."""
-        return {(self.name, vcpu[1].tid): vcpu[1].get_statistics() for vcpu in self._vcpus}
+        return {(self.name, vcpu[1].tid): vcpu[1].get_statistics(current_time)
+                for vcpu in self._vcpus}

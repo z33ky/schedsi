@@ -34,5 +34,6 @@ class World:
         kernel = self.cores[0].kernel
         # there should be only one kernel?
         assert all(c.kernel == kernel for c in self.cores)
-        self.log.thread_statistics(kernel.get_thread_statistics())
+        current_time = max(core.status.current_time for core in self.cores)
+        self.log.thread_statistics(kernel.get_thread_statistics(current_time))
         self.log.cpu_statistics(core.get_statistics() for core in self.cores)

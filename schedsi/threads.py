@@ -6,7 +6,7 @@ import threading
 from schedsi import context, cpurequest
 
 
-class _ThreadStats:
+class _ThreadStats:  # pylint: disable=too-few-public-methods
     """Thread statistics."""
 
     def __init__(self):
@@ -15,22 +15,6 @@ class _ThreadStats:
         self.ctxsw = []
         self.run = []
         self.wait = []
-
-    def _all_times(self):
-        """Return tuple of all time-arrays."""
-        return (self.ctxsw, self.run, self.wait)
-
-    def clear(self):
-        """Clear statistics."""
-        for times in self._all_times():
-            times.clear()
-
-    def append(self, other):
-        """Append `other`'s statistics to `self`."""
-        assert self.finished_time == -1
-        self.finished_time = other.finished_time
-        for (mine, theirs) in zip(self._all_times(), other._all_times()):  # pylint: disable=protected-access
-            mine += theirs
 
 
 class Thread:
@@ -55,7 +39,6 @@ class Thread:
         self.remaining = units
         self.is_running = threading.Lock()
         self.stats = _ThreadStats()
-        self.completed_stats = _ThreadStats()
 
     def execute(self):
         """Simulate execution.
@@ -182,13 +165,18 @@ class Thread:
         This should be called when the thread becomes inactive.
         """
         assert self.is_running.locked()
-        self.completed_stats.append(self.stats)
-        self.stats.clear()
         self.is_running.release()
 
-    def get_statistics(self):
-        """Obtain statistics."""
-        stats = self.completed_stats.__dict__.copy()
+    def get_statistics(self, current_time):
+        """Obtain statistics.
+
+        Not thread-safe.
+        """
+        # the CPU should be locked during this
+        # this means we can read data without locking self.is_running
+        stats = self.stats.__dict__.copy()
+        if not self.is_finished() and current_time != self.ready_time:
+            stats['wait'].append(current_time - self.ready_time)
         stats['remaining'] = self.remaining
         return stats
 
@@ -209,12 +197,12 @@ class _BGStatThread(Thread):
         self.bg_times.append(run_time)
         super().run_background(current_time, run_time)
 
-    def get_statistics(self):
+    def get_statistics(self, current_time):
         """Obtain statistics.
 
         See :meth:`Thread.get_statistics`.
         """
-        stats = super().get_statistics()
+        stats = super().get_statistics(current_time)
         stats['bg'] = self.bg_times
         return stats
 
@@ -286,13 +274,13 @@ class SchedulerThread(_BGStatThread):
         """Add threads to scheduler."""
         self._scheduler.add_thread(thread)
 
-    def get_statistics(self):
+    def get_statistics(self, current_time):
         """Obtain statistics.
 
         See :meth:`_BGStatThread.get_statistics`.
         """
-        stats = super().get_statistics()
-        stats['children'] = self._scheduler.get_thread_statistics()
+        stats = super().get_statistics(current_time)
+        stats['children'] = self._scheduler.get_thread_statistics(current_time)
         return stats
 
 
@@ -348,14 +336,14 @@ class VCPUThread(_BGStatThread):
         super().run_crunch(current_time, run_time)
         self._update_active = False
 
-    def get_statistics(self):
+    def get_statistics(self, current_time):
         """Obtain statistics.
 
         See :meth:`_BGStatThread.get_statistics`.
         """
-        stats = super().get_statistics()
+        stats = super().get_statistics(current_time)
         sched_key = (self._thread.module.name, self._thread.tid)
-        stats['scheduler'] = {sched_key: self._thread.get_statistics()}
+        stats['scheduler'] = {sched_key: self._thread.get_statistics(current_time)}
         return stats
 
     def __getattribute__(self, key):
@@ -449,7 +437,7 @@ class PeriodicWorkThread(Thread):
         self.current_burst_left -= run_time
         self._update_ready_time(current_time)
         self.total_run_time += run_time
-        assert self.total_run_time == sum(self.stats.run + self.completed_stats.run)
+        assert self.total_run_time == sum(self.stats.run)
 
     def finish(self, current_time):
         """Become inactive.

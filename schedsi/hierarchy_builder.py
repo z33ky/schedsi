@@ -204,12 +204,12 @@ class ModuleBuilderThread(threads.Thread):
         for _ in range(0, self.vcpus):
             self.module.add_thread(threads.VCPUThread(self.module, child=child))
 
-    def get_statistics(self):
+    def get_statistics(self, current_time):
         """Obtain statistics.
 
         See :meth:`Thread.get_statistics`.
         """
-        stats = super().get_statistics()
+        stats = super().get_statistics(current_time)
         stats.update({'spawn_skew': self.spawn_skew})
 
     def add_thread(self, thread, *args, **kwargs):

@@ -99,14 +99,14 @@ class Scheduler:
             if waiting_queue[i].bottom.ready_time <= time:
                 ready_queue.append(waiting_queue.pop(i))
 
-    def get_thread_statistics(self):
+    def get_thread_statistics(self, current_time):
         """Obtain statistics of all threads."""
         rcu_data = self._rcu.read()
         all_threads = (ctx.bottom for ctx in
                        itertools.chain(rcu_data.finished_chains, rcu_data.waiting_chains,
                                        rcu_data.ready_chains))
         return {tid: stats for tid, stats in
-                (((t.module.name, t.tid), t.get_statistics()) for t in all_threads)}
+                (((t.module.name, t.tid), t.get_statistics(current_time)) for t in all_threads)}
 
     def _start_schedule(self, _prev_run_time):
         """Prepare making a scheduling decision.
