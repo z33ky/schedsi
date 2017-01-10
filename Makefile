@@ -3,19 +3,30 @@ DESTDIR=/
 
 PY_SOURCES=schedsi example tests replay.py plot.py
 
-example: .PHONY
-	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py -
+example-lt: .PHONY
+	PYTHONPATH=. example/localtimer_kernel.py|PYTHONPATH=. ./replay.py -
 
-text: .PHONY
-	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py - --text
+example-st: .PHONY
+	PYTHONPATH=. example/singletimer_kernel.py|PYTHONPATH=. ./replay.py -
 
-graph: .PHONY
-	PYTHONPATH=. example/kernel.py|PYTHONPATH=. ./replay.py - --graph
+example: .PHONY example-lt
+
+text-lt: .PHONY
+	PYTHONPATH=. example/localtimer_kernel.py|PYTHONPATH=. ./replay.py - --text
+
+text-st: .PHONY
+	PYTHONPATH=. example/singletimer_kernel.py|PYTHONPATH=. ./replay.py - --text
+
+graph-lt: .PHONY
+	PYTHONPATH=. example/localtimer_kernel.py|PYTHONPATH=. ./replay.py - --graph
+
+graph-st: .PHONY
+	PYTHONPATH=. example/singletimer_kernel.py|PYTHONPATH=. ./replay.py - --graph
 
 test: .PHONY
-	PYTHONPATH=. tests/example.py
+	PYTHONPATH=. tests/examples.py
 	PYTHONPATH=. tests/simple.py
-	PYTHONPATH=. tests/graph.py
+	PYTHONPATH=. tests/graphs.py
 
 update-docs:
 	rm -f docs/source/schedsi.rst

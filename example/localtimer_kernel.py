@@ -4,18 +4,18 @@
 The test consists of a kernel using the round robin scheduler
 to schedule two threads - one continuously executing,
 one with periodic bursts.
+This example uses the local timers feature.
 """
 
+# pylint: disable=duplicate-code
 import sys
 from schedsi import binarylog, hierarchy_builder, schedulers, threads, world
 
 # Create a hierarchy of a kernel, a child module and two grand-children.
-# this is the same as tests/simple_hierarchy.py
-# pylint: disable=duplicate-code
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))
-TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin)
-BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin)
-BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
+TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin.builder(time_slice=10))
+BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin.builder(time_slice=8))
+BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF.builder(time_slice=8))
 
 KERNEL.add_thread(threads.Thread, units=50) \
       .add_thread(threads.PeriodicWorkThread, ready_time=5, units=50, period=20, burst=5) \
@@ -42,7 +42,7 @@ def main():
         binary_log = binarylog.BinaryLog(log_file)
 
         # Create and run the world.
-        the_world = world.World(1, KERNEL.module, binary_log, local_timer_scheduling=False)
+        the_world = world.World(1, KERNEL.module, binary_log, local_timer_scheduling=True)
         while the_world.step() <= 400:
             pass
 
