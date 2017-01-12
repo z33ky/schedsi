@@ -1,5 +1,9 @@
 0.4.0dev:
 	* MLFQ scheduling
+	* PenaltyMLFQ addon
+	* ModuleBuilder added for more convenient hierarchy specification
+	* ModuleBuilderThread added for dynamic hierarchy expansion
+	* removal of "unsuccessful" (i.e. non-atomic) context switches
 	* decreased binary log buffering for faster output
 	* thread statistics fixes
 	* logging of statistics
