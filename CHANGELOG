@@ -1,4 +1,5 @@
 0.4.0dev:
+	* local-timer based scheduling support added
 	* MLFQ scheduling
 	* PenaltyMLFQ addon
 	* ModuleBuilder added for more convenient hierarchy specification
