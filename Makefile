@@ -9,6 +9,9 @@ example-lt: .PHONY
 example-st: .PHONY
 	PYTHONPATH=. example/singletimer_kernel.py|PYTHONPATH=. ./replay.py -
 
+example-pen: .PHONY
+	PYTHONPATH=. example/penalty_scheduler.py|PYTHONPATH=. ./replay.py -
+
 example: .PHONY example-lt
 
 text-lt: .PHONY
@@ -17,11 +20,17 @@ text-lt: .PHONY
 text-st: .PHONY
 	PYTHONPATH=. example/singletimer_kernel.py|PYTHONPATH=. ./replay.py - --text
 
+text-pen: .PHONY
+	PYTHONPATH=. example/penalty_scheduler.py|PYTHONPATH=. ./replay.py - --text
+
 graph-lt: .PHONY
 	PYTHONPATH=. example/localtimer_kernel.py|PYTHONPATH=. ./replay.py - --graph
 
 graph-st: .PHONY
 	PYTHONPATH=. example/singletimer_kernel.py|PYTHONPATH=. ./replay.py - --graph
+
+graph-pen: .PHONY
+	PYTHONPATH=. example/penalty_scheduler.py|PYTHONPATH=. ./replay.py - --graph
 
 test: .PHONY
 	PYTHONPATH=. tests/examples.py

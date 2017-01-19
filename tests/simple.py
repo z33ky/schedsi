@@ -6,7 +6,7 @@ import io
 import unittest
 from schedsi import textlog, world
 from tests import common
-from example import localtimer_kernel, singletimer_kernel
+from example import localtimer_kernel, singletimer_kernel, penalty_scheduler
 
 
 class TestExample(unittest.TestCase):
@@ -46,6 +46,11 @@ class TestExample(unittest.TestCase):
     def test_singletimer(self):
         """Test that the single timer hierarchy executes as expected."""
         self.exec_world('single_timer_scheduling.log', 1, singletimer_kernel.KERNEL.module,
+                        local_timer_scheduling=False)
+
+    def test_penalty_scheduler(self):
+        """Test that the penalty scheduler executes as expected."""
+        self.exec_world('penalty_scheduling.log', 1, penalty_scheduler.KERNEL.module,
                         local_timer_scheduling=False)
 
 
