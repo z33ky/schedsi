@@ -14,11 +14,14 @@ from schedsi import multilevel_feedback_queue, penalty_scheduler_addon, schedule
 class PenaltyMLFQ(scheduler.SchedulerAddon, multilevel_feedback_queue.MLFQ):
     """A :class:`multilevel_feedback_queue` variant with per-queue time-slices."""
 
-    def __init__(self, module, *, timeslices, priority_boost_time=None):
+    def __init__(self, module, *, level_time_slices, priority_boost_time=None):
         """Create a :class:`PenaltyMLFQ` scheduler."""
-        super().__init__(module, penalty_scheduler_addon.PenaltySchedulerAddon(self, None, 0),
-                         levels=len(timeslices), priority_boost_time=priority_boost_time)
-        self.timeslices = timeslices
+        super().__init__(module,
+                         penalty_scheduler_addon.PenaltySchedulerAddon(self,
+                                                                       penalty_time_slice=None,
+                                                                       threshold=0),
+                         levels=len(level_time_slices), priority_boost_time=priority_boost_time)
+        self.level_time_slices = level_time_slices
 
         self.addon.threshold = None
         # we overwrite self.addon.schedule in _schedule
@@ -37,7 +40,7 @@ class PenaltyMLFQ(scheduler.SchedulerAddon, multilevel_feedback_queue.MLFQ):
         queue_idx = next(i for i, v in enumerate(rcu_copy.data.ready_queues)
                          if v is rcu_copy.data.ready_chains)
 
-        timeslice = self.timeslices[queue_idx]
+        timeslice = self.level_time_slices[queue_idx]
         threshold = -timeslice / 2
 
         self.addon.schedule = lambda *args: self.addon_schedule(*args, timeslice, threshold)

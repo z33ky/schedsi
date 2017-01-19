@@ -14,7 +14,7 @@ class PenaltySchedulerAddonData():  # pylint: disable=too-few-public-methods
     def __init__(self):
         """Create a :class:`PenaltySchedulerAddonData`."""
         self.sat_out_threads = []
-        self.last_timeslice = None
+        self.last_time_slice = None
         self.niceness = {}
 
 
@@ -28,14 +28,14 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
     selects a chain that has a `niceness` above the :attr:`threshold`.
     """
 
-    def __init__(self, addee, timeslice, threshold=None):
+    def __init__(self, addee, *, penalty_time_slice, threshold=None):
         """Create a :class:`PenaltySchedulerAddon`."""
         super().__init__(addee)
-        self.timeslice = timeslice
+        self.penalty_time_slice = penalty_time_slice
         if threshold is None:
             # is this a reasonable default?
             # is there a reasonable default?
-            threshold = -timeslice / 2
+            threshold = -penalty_time_slice / 2
         self.threshold = threshold
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
@@ -62,9 +62,9 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
                     # probably was blocked by another addon
                     rcu_data.sat_out_threads.append(last_id)
                 else:
-                    rcu_data.niceness[last_id] += rcu_data.last_timeslice - prev_run_time
+                    rcu_data.niceness[last_id] += rcu_data.last_time_slice - prev_run_time
                     niceness = rcu_data.niceness[last_id]
-                rcu_data.last_timeslice = None
+                rcu_data.last_time_slice = None
 
         if rcu_data.sat_out_threads:
             assert last_chain
@@ -83,7 +83,7 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         assert not rcu_data.niceness or 0 in rcu_data.niceness.values()
 
     # this differs only in optional arguments
-    def schedule(self, idx, rcu_data, timeslice=None, threshold=None):  # pylint: disable=arguments-differ
+    def schedule(self, idx, rcu_data, time_slice=None, threshold=None):  # pylint: disable=arguments-differ
         """See :meth:`SchedulerAddonBase.schedule`.
 
         Checks the niceness for the selected chain and blocks it
@@ -92,9 +92,9 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         if idx == -1:
             return True
 
-        if not timeslice:
-            timeslice = self.timeslice
-        assert timeslice
+        if not time_slice:
+            time_slice = self.penalty_time_slice
+        assert time_slice
 
         if not threshold:
             threshold = self.threshold
@@ -119,6 +119,6 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
                     rcu_data.last_timeslice = None
                     return False
 
-        rcu_data.last_timeslice = timeslice
+        rcu_data.last_time_slice = time_slice
 
         return True
