@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Defines the base class for schedulers."""
 
+import inspect
 import itertools
+import sys
 from schedsi import context, cpurequest, rcu
 
 
@@ -234,6 +236,21 @@ class Scheduler:
         yield  # pylint: disable=unreachable
 
 
+_PENALTY_SCHEDULER_CLASS_TEMPLATE = """\
+from schedsi import scheduler
+import {addon_cls_module}
+import {scheduler_cls_module}
+
+class {typename}(scheduler.SchedulerAddon, {scheduler_cls_module}.{scheduler_cls}):
+    ':class:`{scheduler_cls}` with :class:`~{addon_cls}` attached.'
+
+    def __init__({init_args}):
+        'Create a :class:`{typename}`.'
+        super().__init__({scheduler_forward}, {addon_cls_module}.{addon_cls}(self, {addon_forward}),
+                         {scheduler_kwforward})
+"""
+
+
 class SchedulerAddonBase():
     """Scheduler addon base-class.
 
@@ -245,6 +262,51 @@ class SchedulerAddonBase():
     def __init__(self, scheduler):
         """Create a :class:`SchedulerAddonBase`."""
         self.scheduler = scheduler
+
+    @classmethod
+    def attach(cls, typename, scheduler_cls):
+        """Create a scheduler-class with an addon attached.
+
+        A new class named `typename` is returned, which represents the `scheduler_cls`
+        with the addon attached.
+        """
+        signature = inspect.signature(cls.__init__)
+        init_args = ', '.join(str(v) for v in signature.parameters.values()) + ', **kwargs'
+
+        parameters = signature.parameters.copy()
+        # pop self-parameter
+        parameters.popitem(0)
+        # pop *args
+        _, args = parameters.popitem(0)
+        if args.kind is not inspect.Parameter.VAR_POSITIONAL:
+            raise NotImplementedError('Positional addon parameters not implemented.')
+        if any(arg.kind is inspect.Parameter.VAR_KEYWORD for arg in parameters.values()):
+            raise NotImplementedError('**kwargs for addon parameters not implemented.')
+
+        addon_forward = ', '.join(param.name + '=' + param.name for param in parameters.values())
+
+        # this mirrors how the pure-python stdlib does dynamic class creation
+        class_definition = _PENALTY_SCHEDULER_CLASS_TEMPLATE.format(
+            typename=typename,
+            addon_cls_module=cls.__module__,
+            addon_cls=cls.__name__,
+            scheduler_cls_module=scheduler_cls.__module__,
+            scheduler_cls=scheduler_cls.__name__,
+            init_args=init_args,
+            scheduler_forward='*args',
+            scheduler_kwforward='**kwargs',
+            addon_forward=addon_forward,
+        )
+        namespace = {'__name__': 'schedaddon_' + typename}
+        exec(class_definition, namespace)  # pylint: disable=exec-used
+        result = namespace[typename]
+        result._source = class_definition
+        try:
+            result.__module__ = sys._getframe(1).f_globals.get('__name__', '__main__')  # pylint: disable=protected-access
+        except (AttributeError, ValueError):
+            pass
+
+        return result
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
         """Transmute a :class:`SchedulerData`.

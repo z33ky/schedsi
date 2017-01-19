@@ -28,9 +28,9 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
     selects a chain that has a `niceness` above the :attr:`threshold`.
     """
 
-    def __init__(self, addee, *, penalty_time_slice, threshold=None):
+    def __init__(self, *args, penalty_time_slice, threshold=None):
         """Create a :class:`PenaltySchedulerAddon`."""
-        super().__init__(addee)
+        super().__init__(*args)
         self.penalty_time_slice = penalty_time_slice
         if threshold is None:
             # is this a reasonable default?
