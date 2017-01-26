@@ -60,12 +60,12 @@ class Module:
         """Return number of threads managed by this module."""
         return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
 
-    def add_thread(self, thread):
+    def add_thread(self, thread, **kwargs):
         """Add threads.
 
         See :meth:`SchedulerThread.add_threads() <schedsi.threads.SchedulerThread.add_threads>`.
         """
-        self._scheduler_thread.add_thread(thread)
+        self._scheduler_thread.add_thread(thread, **kwargs)
 
     def get_thread_statistics(self, current_time):
         """Obtain statistics of threads managed by this module."""
