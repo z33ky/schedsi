@@ -193,7 +193,8 @@ class _Status:
             return False
         elif request.rtype == cpurequest.Type.execute:
             time = self._calc_runtime(request.thing)
-            assert time > 0 and time <= request.thing
+            assert time > 0
+            assert time <= request.thing or request.thing == -1
             self.cpu.log.thread_execute(self.cpu, time)
             self._update_time(time)
             self.stats.crunch_time += time
