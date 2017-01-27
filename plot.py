@@ -73,7 +73,7 @@ def plot_scheduler(name, stats):
     print('Plotting thread {}...'.format(name))
     figures.plot_thread(name, stats)
 
-    for (key, values) in stats['children'].items():
+    for (key, values) in sorted(stats['children'].items()):
         print('Plotting thread {}...'.format(key))
         figures.plot_thread(key, values)
 
