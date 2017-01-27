@@ -22,7 +22,6 @@ class SJF(scheduler.Scheduler):
         finished_chains = rcu_data.finished_chains
         new_idx = len(ready_chains)
         super()._update_ready_chains(time, rcu_data)
-        assert rcu_data.last_idx == -1
 
         new_chains = ready_chains[new_idx:]
         del ready_chains[new_idx:]

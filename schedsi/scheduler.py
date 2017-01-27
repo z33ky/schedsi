@@ -160,9 +160,9 @@ class Scheduler:
                     #     # current_time = yield cpurequest.Request.execute(1)
                     #     continue
 
-                rcu_data.last_idx = -1
-
             self._update_ready_chains(current_time, rcu_data)
+
+            rcu_data.last_idx = -1
 
             return rcu_copy, dest, last_idx
 
