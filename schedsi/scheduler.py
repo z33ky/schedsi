@@ -391,6 +391,9 @@ class SchedulerAddon(Scheduler):
             # TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
             for request in schedule:
                 if request.rtype == cpurequest.Type.resume_chain:
-                    request = schedule.send(request.thing)
-                assert request.rtype != cpurequest.Type.idle
+                    try:
+                        request = schedule.send(request.thing)
+                    except StopIteration:
+                        return
+                assert request.rtype not in (cpurequest.Type.idle, cpurequest.Type.resume_chain)
                 yield request
