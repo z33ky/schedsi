@@ -112,7 +112,7 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
                 # only nicest thread may run
                 nicest_tid = max((id(c.bottom) for c in rcu_data.ready_chains),
                                  key=lambda tid: rcu_data.niceness.get(tid, 0))
-                assert niceness <= rcu_data.niceness[nicest_tid]
+                assert niceness <= rcu_data.niceness.get(nicest_tid, 0)
                 if tid != nicest_tid:
                     rcu_data.sat_out_threads.append(tid)
                     rcu_data.last_timeslice = None
