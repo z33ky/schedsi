@@ -174,7 +174,7 @@ class Scheduler:
             return last_chain_queue[-1]
         return None
 
-    def _schedule(self, idx, rcu_copy):
+    def _schedule(self, idx, time_slice, rcu_copy):
         """Update :attr:`_rcu` and schedule the chain at `idx`.
 
         If `idx` is -1, yield an idle request.
@@ -191,7 +191,7 @@ class Scheduler:
             yield cpurequest.Request.idle()
             return
 
-        yield cpurequest.Request.timer(self.time_slice)
+        yield cpurequest.Request.timer(time_slice)
 
         rcu_copy.data.ready_chains[idx] = \
             yield cpurequest.Request.resume_chain(rcu_copy.data.ready_chains[idx])
@@ -210,9 +210,9 @@ class Scheduler:
         """
         while True:
             rcu_copy, *rest = yield from self._start_schedule(*prev_run_time)
-            idx = yield from self._sched_loop(rcu_copy, *rest)
+            idx, time_slice = yield from self._sched_loop(rcu_copy, *rest)
 
-            yield from self._schedule(idx, rcu_copy)
+            yield from self._schedule(idx, time_slice, rcu_copy)
 
     def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx):  # pylint: disable=no-self-use
         """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
@@ -231,7 +231,7 @@ class Scheduler:
             idx = -1
         if num_chains != 1:
             raise RuntimeError('Scheduler cannot make scheduling decision.')
-        return idx
+        return idx, self.time_slice
         # needs to be a coroutine
         yield  # pylint: disable=unreachable
 
@@ -338,13 +338,21 @@ class SchedulerAddonBase():
         """Hook for :meth:`_start_schedule`."""
         pass
 
-    def schedule(self, _idx, _rcu_data):  # pylint: disable=no-self-use
+    def schedule(self, _idx, time_slice, _rcu_data):  # pylint: disable=no-self-use
         """Hook for :meth:`_schedule`.
 
-        Return True to proceed or False to schedule another chain.
+        Return a tuple (
+
+            * True to proceed, False to schedule another chain
+            * time slice
+
+        )
+        The :class:`SchedulerAddon` captures the :class:`requests <schedsi.cpurequest.Request>`
+        yielded from :meth:`Scheduler._schedule` to filter the resume-chain request and override
+        the timer request.
         Care should be taken for the case the same chain is selected again.
         """
-        return True
+        return True, time_slice
 
 
 class SchedulerAddon(Scheduler):
@@ -379,21 +387,26 @@ class SchedulerAddon(Scheduler):
 
         return (rcu_copy, *rest)
 
-    def _schedule(self, idx, rcu_copy):
+    def _schedule(self, idx, time_slice, rcu_copy):
         """See :meth:`Scheduler._schedule`.
 
         This will also call the :attr:`addon`'s :meth:`~SchedulerAddonBase.schedule`.
         """
-        schedule = super()._schedule(idx, rcu_copy)
-        if self.addon.schedule(idx, rcu_copy.data):
-            yield from schedule
-        else:
-            # TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
-            for request in schedule:
-                if request.rtype == cpurequest.Type.resume_chain:
-                    try:
-                        request = schedule.send(request.thing)
-                    except StopIteration:
-                        return
+        schedule = super()._schedule(idx, time_slice, rcu_copy)
+        proceed, time_slice = self.addon.schedule(idx, time_slice, rcu_copy.data)
+        # TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
+        for request in schedule:
+            if request.rtype == cpurequest.Type.timer:
+                if not proceed:
+                    continue
+                request.thing = time_slice
+            elif request.rtype == cpurequest.Type.resume_chain:
+                try:
+                    response = request.thing
+                    if proceed:
+                        response = (yield request)
+                    request = schedule.send(response)
+                except StopIteration:
+                    return
                 assert request.rtype not in (cpurequest.Type.idle, cpurequest.Type.resume_chain)
-                yield request
+            yield request

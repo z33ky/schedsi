@@ -28,14 +28,21 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
     selects a chain that has a `niceness` above the :attr:`threshold`.
     """
 
-    def __init__(self, *args, penalty_time_slice, threshold=None):
-        """Create a :class:`PenaltySchedulerAddon`."""
+    def __init__(self, *args, override_time_slice=None, threshold=None):
+        """Create a :class:`PenaltySchedulerAddon`.
+
+        `threshold` is a function that takes the time-slice to be used
+        and returns the amount the niceness values may differ for that
+        time-slice.
+        """
         super().__init__(*args)
-        self.penalty_time_slice = penalty_time_slice
+        self.override_time_slice = override_time_slice
         if threshold is None:
             # is this a reasonable default?
             # is there a reasonable default?
-            threshold = -penalty_time_slice / 2
+            def threshold(time_slice):  # pylint: disable=function-redefined
+                """Return the threshold for the `time_slice`."""
+                return -time_slice / 2
         self.threshold = threshold
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
@@ -82,28 +89,20 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
                 rcu_data.niceness[k] -= niceness
         assert not rcu_data.niceness or 0 in rcu_data.niceness.values()
 
-    # this differs only in optional arguments
-    def schedule(self, idx, rcu_data, time_slice=None, threshold=None):  # pylint: disable=arguments-differ
+    def schedule(self, idx, time_slice, rcu_data):
         """See :meth:`SchedulerAddonBase.schedule`.
 
         Checks the niceness for the selected chain and blocks it
         if it's below the :attr:`threshold`.
         """
         if idx == -1:
-            return True
-
-        if not time_slice:
-            time_slice = self.penalty_time_slice
-        assert time_slice
-
-        if not threshold:
-            threshold = self.threshold
-        assert threshold
+            return True, time_slice
 
         tid = id(rcu_data.ready_chains[idx].bottom)
 
         niceness = rcu_data.niceness.setdefault(tid, 0)
-        if niceness < threshold:
+
+        if niceness < self.threshold(time_slice):
             if tid in rcu_data.sat_out_threads:
                 # scheduler selected a thread that we wanted to stall again
                 # allow it to run then
@@ -117,8 +116,8 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
                 if tid != nicest_tid:
                     rcu_data.sat_out_threads.append(tid)
                     rcu_data.last_timeslice = None
-                    return False
+                    return False, None
 
         rcu_data.last_time_slice = time_slice
 
-        return True
+        return True, self.override_time_slice

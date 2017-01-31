@@ -9,17 +9,19 @@ This example does not use the local timers feature.
 
 # pylint: disable=duplicate-code
 import sys
-from schedsi import binarylog, hierarchy_builder, penalty_scheduler_addon, schedulers, threads, world
+from schedsi import (binarylog, hierarchy_builder, penalty_scheduler_addon, schedulers, threads,
+                     world)
 
-PenaltyRoundRobin = penalty_scheduler_addon.PenaltySchedulerAddon.attach("PenaltyRoundRobin",
-                                                                         schedulers.RoundRobin)
+PRR = penalty_scheduler_addon.PenaltySchedulerAddon.attach("PRR", schedulers.RoundRobin)
+
+PMLFQ = penalty_scheduler_addon.PenaltySchedulerAddon.attach("PMLFQ", schedulers.MLFQ)
 
 # Create a hierarchy of a kernel, a child module and two grand-children.
-KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PenaltyRoundRobin.builder(penalty_time_slice=9,
-                                                                             time_slice=10))
-TOP_MODULE = KERNEL.add_module(scheduler=schedulers.PMLFQ.builder(level_time_slices=[10, 8, 6, 5],
-                                                                  priority_boost_time=30))
-BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=PenaltyRoundRobin.builder(penalty_time_slice=7))
+KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PRR.builder(time_slice=9,
+                                                               override_time_slice=10))
+TOP_MODULE = KERNEL.add_module(scheduler=PMLFQ.builder(level_time_slices=[10, 8, 6, 5],
+                                                       priority_boost_time=30))
+BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=PRR.builder(time_slice=7))
 BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
 
 KERNEL.add_thread(threads.Thread, units=50) \

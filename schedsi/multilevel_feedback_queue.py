@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Defines a multi-level feedback queue scheduler.
-
-This scheduler does not prevent gaming the scheduler by
-almost, but not completely, running for a time-slice.
-Such a thread will not get a priority reduction.
-"""
+"""Defines a multi-level feedback queue scheduler."""
 
 from schedsi import cpurequest, scheduler
 
@@ -38,17 +33,34 @@ class MLFQData(scheduler.SchedulerData):  # pylint: disable=too-few-public-metho
 
 
 class MLFQ(scheduler.Scheduler):
-    """Multi-level feedback queue scheduler."""
+    """Multi-level feedback queue scheduler.
 
-    def __init__(self, module, *, levels=8, priority_boost_time, **kwargs):
+    If `level_time_slices` is specified for :meth:`__init__`, this scheduler
+    will use time-slices and can thus not be used outside the kernel with the
+    single timer scheduling strategy.
+    Use the :class:`PenaltySchedulerAddon` for this case.
+    """
+
+    def __init__(self, module, *, level_time_slices=None, priority_boost_time, **kwargs):
         """Create a class:`MLFQ`."""
+        if level_time_slices is None:
+            levels = 8
+        else:
+            levels = len(level_time_slices)
         assert levels > 0
+
         if priority_boost_time is not None:
             # priority boost has no effect with 1 queue
             assert levels != 1
             assert priority_boost_time >= 0
+
         super().__init__(module, MLFQData(levels, priority_boost_time), **kwargs)
+
+        self.level_time_slices = level_time_slices
+        if level_time_slices is None:
+            self.level_time_slices = [self.time_slice] * levels
         self.prio_boost_time = priority_boost_time
+
         if priority_boost_time is None:
             self._priority_boost = self._no_priority_boost
 
@@ -253,6 +265,10 @@ class MLFQ(scheduler.Scheduler):
             if num_chains == 0:
                 idx = -1
 
-        return idx
+        # important: == vs is; empty arrays will compare equal with ==
+        level = next(i for i, v in enumerate(rcu_data.ready_queues)
+                     if v is rcu_data.ready_chains)
+
+        return idx, self.level_time_slices[level]
         # needs to be a coroutine
         yield  # pylint: disable=unreachable

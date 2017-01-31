@@ -58,6 +58,6 @@ class SJF(scheduler.Scheduler):
         idx = 0
         if not rcu_copy.data.ready_chains:
             idx = -1
-        return idx
+        return idx, self.time_slice
         # needs to be a coroutine
         yield  # pylint: disable=unreachable
