@@ -175,7 +175,8 @@ class Thread:
         # the CPU should be locked during this
         # this means we can read data without locking self.is_running
         stats = self.stats.__dict__.copy()
-        if not self.is_finished() and current_time != self.ready_time:
+        if not self.is_finished() and current_time > self.ready_time:
+            assert self.ready_time != -1
             stats['wait'].append(current_time - self.ready_time)
         stats['remaining'] = self.remaining
         return stats
