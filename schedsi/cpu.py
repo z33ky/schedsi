@@ -148,10 +148,11 @@ class _Status:
         self._update_time(cost)
         assert self._calc_runtime(cost) == cost or self.chain.next_timeout <= 0
 
-        thread_from.run_ctxsw(self.current_time, cost)
         self._run_background(cost)
-
-        if appendix is not None:
+        if split_index is not None:
+            self.chain.top.run_ctxsw(self.current_time, cost)
+        else:
+            thread_from.run_ctxsw(self.current_time, cost)
             self.chain.append_chain(appendix)
 
         assert thread_from != self.chain.top
@@ -244,8 +245,14 @@ class _KernelTimerOnlyStatus(_Status):
 
         # kernel scheduler gets restarted
         current_context = self.chain.current_context
-        current_context.buffer.finish(self.current_time)
+
+        prev_chain = current_context.buffer
         current_context.reply(None)
+
+        if not prev_chain.current_context.started:
+            prev_chain.split(-1)
+        prev_chain.finish(self.current_time)
+
         current_context.restart(self.current_time)
 
     def _switch_to_parent(self):

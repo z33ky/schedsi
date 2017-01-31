@@ -120,7 +120,7 @@ class ModuleBuilderThread(threads.Thread):
         This can be called once all :class:`Modules` are spawned.
         """
         self._execute = super()._execute
-        self.finish = super().finish
+        self.suspend = super().suspend
         self.end = super().end
 
     def is_spawning_disabled(self):
@@ -147,17 +147,17 @@ class ModuleBuilderThread(threads.Thread):
             self._spawn_module(current_time)
             self.disable_spawning()
             if super().is_finished():
-                self._get_ready(current_time)
+                self._update_ready_time(current_time)
                 yield cpurequest.Request.idle()
                 return
         elif run_time == -1 or current_time + run_time > self.time:
             run_time = self.time - current_time
         return (yield from super()._execute(current_time, run_time))
 
-    def finish(self, current_time):  # pylint: disable=method-hidden
-        """Become inactive.
+    def suspend(self, current_time):  # pylint: disable=method-hidden
+        """Become suspended.
 
-        See :meth:`Thread.finish`.
+        See :meth:`Thread.suspend`.
 
         Spawns a :class:`Thread` if it's time.
         """
@@ -166,7 +166,7 @@ class ModuleBuilderThread(threads.Thread):
             self.disable_spawning()
         else:
             assert self.time > current_time, 'Ran over spawn time.'
-        super().finish(current_time)
+        super().suspend(current_time)
 
     def end(self):  # pylint: disable=method-hidden
         """End execution.

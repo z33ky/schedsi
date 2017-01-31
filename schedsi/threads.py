@@ -256,15 +256,6 @@ class SchedulerThread(_BGStatThread):
 
         See :meth:`Thread.run_ctxsw`.
         """
-        # HACK: Also count switching to the kernel.
-        #       for other modules, context switching time
-        #       is attributed to them.
-        #       However, for the kernel there is no single module
-        #       that we're switching from, since it can come from
-        #       deep down the hierarchy.
-        #       So run_ctxsw is invoked on the kernel thread.
-        if self.module.parent is None:
-            self.last_bg_time += run_time
         super().run_ctxsw(current_time, run_time)
 
     def num_threads(self):
