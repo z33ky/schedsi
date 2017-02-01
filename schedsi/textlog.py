@@ -114,7 +114,7 @@ class TextLog:
             return str(stats)
 
         if isinstance(stats, (list, tuple)):
-            return str(list(stats))
+            return str([list(stat) if isinstance(stat, tuple) else stat for stat in stats])
 
         assert False, 'Cannot encode {}'.format(type(stats))
 

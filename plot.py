@@ -41,7 +41,12 @@ class ThreadFigures:
             times = stats[key]
             subplot = fig[1][self.plot_count]
 
-            max_time = math.ceil(max(times, default=0))
+            if not times:
+                max_time = 0
+            else:
+                if isinstance(times[0], list):
+                    times = [sum(elem) for elem in times]
+                max_time = math.ceil(max(times))
             subplot.hist(times, max_time + 1, range=(-0.5, max_time + 0.5))
             subplot.set_title(title)
             subplot.set_xlabel('time')

@@ -143,6 +143,8 @@ class _Status:
         if split_index is not None:
             prev_chain = self.chain.split(split_index + 1)
             self.chain.current_context.reply(prev_chain)
+            for ctx in prev_chain.contexts:
+                ctx.thread.suspend(self.current_time)
 
         # update for cost regardless of the time-slice, because context switching is atomic
         self._update_time(cost)
@@ -151,9 +153,12 @@ class _Status:
         self._run_background(cost)
         if split_index is not None:
             self.chain.top.run_ctxsw(self.current_time, cost)
+            self.chain.top.resume(self.current_time, True)
         else:
             thread_from.run_ctxsw(self.current_time, cost)
             self.chain.append_chain(appendix)
+            for ctx in appendix.contexts:
+                ctx.thread.resume(self.current_time, False)
 
         assert thread_from != self.chain.top
 

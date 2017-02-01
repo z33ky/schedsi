@@ -356,6 +356,6 @@ def replay(binary, log):
 
 def get_thread_statistics(binary):
     """Read thread statistics from a MessagePack file."""
-    for entry in msgpack.Unpacker(binary, read_size=16 * 1024, encoding='utf-8', use_list=False):
+    for entry in msgpack.Unpacker(binary, read_size=16 * 1024, encoding='utf-8', use_list=True):
         if entry['type'] == _EntryType.thread_statistics.name:
             return entry['stats']

@@ -14,7 +14,7 @@ class _ThreadStats:  # pylint: disable=too-few-public-methods
         self.finished_time = -1
         self.ctxsw = []
         self.run = []
-        self.wait = []
+        self.wait = [[]]
 
 
 class Thread:
@@ -55,20 +55,15 @@ class Thread:
         while True:
             current_time = yield from self._execute(current_time, -1)
 
-    def _get_ready(self, current_time):
-        """Get ready to execute.
+    def _update_ready_time(self, current_time):
+        """Update ready_time while executing.
 
-        Called before :meth:`_execute`.
-        Can be used to update execution state without actually spending
-        time executing.
+        Includes some checks to make sure the state is sane.
         """
         assert self.ready_time != -1 and self.ready_time <= current_time
         assert self.is_running.locked()
 
-        self.stats.wait.append(current_time - self.ready_time)
         self.ready_time = current_time
-
-        # self.run_crunch(current_time, 0)
 
     def _execute(self, current_time, run_time):
         """Simulate execution.
@@ -79,9 +74,9 @@ class Thread:
 
         Returns the next current time or None if :attr:`remaining` is 0.
         """
-        self._get_ready(current_time)
-
         assert not self.is_finished()
+
+        self._update_ready_time(current_time)
 
         if run_time == -1:
             run_time = self.remaining
@@ -120,15 +115,16 @@ class Thread:
             assert locked
         self.stats.ctxsw.append(run_time)
 
-    def run_background(self, current_time, _run_time):
+    def run_background(self, _current_time, _run_time):
         """Update runtime state.
 
         This should be called while the thread is in the context stack, but not
         active (not the top).
-        `current_time` refers to the time just after the active thread has run.
+        `_current_time` refers to the time just after the active thread has run.
         """
         assert self.is_running.locked()
-        self.ready_time = current_time
+        # never called for work threads
+        assert False
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.
@@ -138,7 +134,7 @@ class Thread:
         """
         assert self.is_running.locked()
 
-        self.stats.run.append(run_time)
+        self.stats.run[-1].append(run_time)
 
         self.ready_time += run_time
         assert self.ready_time == current_time
@@ -159,6 +155,42 @@ class Thread:
         # never start again
         self.ready_time = -1
 
+    def suspend(self, current_time):
+        """Become suspended.
+
+        This should be called when the thread becomes inactive,
+        but will be resumed later.
+
+        `current_time` refers to the time before the context switch
+        away from this thread.
+        """
+        if self.is_running.locked():
+            # only record waiting time if the thread has executed
+            self.stats.wait.append([])
+            self.ready_time = max(self.ready_time, current_time)
+
+    def resume(self, current_time, returning):
+        """Resume execution.
+
+        This should be called after :meth:`suspend` to become active again.
+
+        `current_time` refers to the time just after the context switch.
+        """
+        if self.is_finished():
+            return
+
+        assert self.ready_time != -1
+
+        if returning:
+            self._update_ready_time(current_time)
+        else:
+            if current_time >= self.ready_time:
+                # we only want to record waiting time if the thread is ready to execute
+                self.stats.wait[-1].append(current_time - self.ready_time)
+                self.stats.run.append([])
+                # we can't use _update_ready_time() here because we might not yet be executing
+                self.ready_time = current_time
+
     def finish(self, _current_time):
         """Become inactive.
 
@@ -175,9 +207,11 @@ class Thread:
         # the CPU should be locked during this
         # this means we can read data without locking self.is_running
         stats = self.stats.__dict__.copy()
-        if not self.is_finished() and current_time > self.ready_time:
+        if not self.is_finished() and current_time >= self.ready_time:
             assert self.ready_time != -1
-            stats['wait'].append(current_time - self.ready_time)
+            stats['waiting'] = current_time - self.ready_time
+        if stats['wait'][-1] == []:
+            stats['wait'].pop()
         stats['remaining'] = self.remaining
         return stats
 
@@ -188,15 +222,33 @@ class _BGStatThread(Thread):
     def __init__(self, *args, **kwargs):
         """Create a :class:`_BGStatThread`."""
         super().__init__(*args, **kwargs)
-        self.bg_times = []
+        self.bg_times = [[]]
 
     def run_background(self, current_time, run_time):
         """Update runtime state.
 
         See :meth:`Thread.run_background`.
         """
-        self.bg_times.append(run_time)
-        super().run_background(current_time, run_time)
+        self.bg_times[-1].append(run_time)
+        self._update_ready_time(current_time)
+
+    def resume(self, current_time, returning):
+        if returning:
+            self.bg_times.append([])
+        super().resume(current_time, returning)
+
+    def finish(self, current_time):
+        """Become inactive.
+
+        See :meth:`Thread.finish`.
+        """
+        if self.module.parent is not None or self.tid != 0:
+            self.bg_times.append([])
+        else:
+            # in single timer scheduling the kernel is restarted
+            # but we already got a new list from resume() after the context switch
+            assert self.bg_times[-1] == []
+        super().finish(current_time)
 
     def get_statistics(self, current_time):
         """Obtain statistics.
@@ -205,6 +257,8 @@ class _BGStatThread(Thread):
         """
         stats = super().get_statistics(current_time)
         stats['bg'] = self.bg_times
+        if stats['bg'][-1] == []:
+            stats['bg'].pop()
         return stats
 
 
@@ -236,7 +290,7 @@ class SchedulerThread(_BGStatThread):
         scheduler = self._scheduler.schedule(bg_time)
         thing = next(scheduler)
         current_time = yield cpurequest.Request.current_time()
-        self._get_ready(current_time)
+        self._update_ready_time(current_time)
         while True:
             self.last_bg_time = 0
             current_time = yield thing
@@ -314,10 +368,28 @@ class VCPUThread(_BGStatThread):
         current_time = yield cpurequest.Request.current_time()
         while True:
             self._update_active = True
-            self._get_ready(current_time)
+            self._update_ready_time(current_time)
             self._update_active = False
             self._chain = yield cpurequest.Request.resume_chain(self._chain)
             current_time = yield cpurequest.Request.idle()
+
+    def suspend(self, current_time):
+        """Become suspended.
+
+        See :meth:`Thread.suspend`.
+        """
+        self._update_active = True
+        super().suspend(current_time)
+        self._update_active = False
+
+    def resume(self, current_time, returning):
+        """Resume execution.
+
+        See :meth:`_BGStatThread.resume`.
+        """
+        self._update_active = True
+        super().resume(current_time, returning)
+        self._update_active = False
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.
@@ -429,7 +501,7 @@ class PeriodicWorkThread(Thread):
         self.current_burst_left -= run_time
         self._update_ready_time(current_time)
         self.total_run_time += run_time
-        assert self.total_run_time == sum(self.stats.run)
+        assert self.total_run_time == sum([sum(x) for x in self.stats.run])
 
     def finish(self, current_time):
         """Become inactive.
