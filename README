@@ -11,7 +11,14 @@ The graph gets written as a SVG and to present hierarchical scheduling they are 
 Time still flows horizontally, but the vertical axis represents the depth of the hierarchy. Threads can be differentiated by their ID written on the bar.
 Context switches are also modeled to take time (though it can be set to 0) and are also drawn as triangles going up or down the vertical axis.
 
-There are two very similar examples in `examples/`, the only difference is the usage of either a single scheduling timer or per-module local timers. `./HACKING` provides an overview of the inner workings.
-The example script produces a binary log file (MessagePack). To get a human readable version of the log `./replay.py` can be used to convert it to either a text log or a SVG graph.
+There are five examples in `examples/`.
+`examples/singletimer_kernel.py` and `examples/localtimer_kernel.py` describe the same process hierarchy and only differ in their hierarchical scheduling strategy, with the former using a single scheduling timer and the latter a per-module local timer.
+There are two very similar examples in `examples/`, the only difference is the usage of either a single scheduling timer or per-module local timers.
+`examples/penalty_scheduler.py` provides a variation that uses the penalty scheduler addon, as well as the MLFQ scheduler on the single scheduler timer strategy.
+Finally there are two examples showcasing the CFS scheduler: `examples/cfs.py`, which uses the local timer stragegy and `examples/penalty_cfs.py`, which uses the penalty scheduler addon.
+
+The example scripts produce a binary log file (MessagePack). To get a human readable version of the log `./replay.py` can be used to convert it to either a text log or a SVG graph. There are also various make targets to directly produce these logs from the examples.
 The text log also prints statistics. Thread statistics are in JSON and histograms of it can be plotted using `./plot.py`. `./plot.py` can also parse binary log files for the statistics.
 The `replay` and `plot` tools are installed as `schedsi-replay` and `schedsi-plot` by the `./setup.py` file (or the `install` make target).
+
+`./HACKING` provides an overview of the inner workings.

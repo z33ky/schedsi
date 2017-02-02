@@ -1,12 +1,16 @@
 0.4.0dev:
 	* local-timer based scheduling support added
 	* MLFQ scheduling
-	* PenaltyMLFQ addon
+	* CFS scheduling
+	* improved PenaltySchedulerAddon
+		* schedulers now return time-slices, which is used for the local-timer based scheduling
+		* the addon uses these time-slices to measure the penalty
+	* add FixedTimeSliceSchedulerAddon
 	* ModuleBuilder added for more convenient hierarchy specification
 	* ModuleBuilderThread added for dynamic hierarchy expansion
 	* removal of "unsuccessful" (i.e. non-atomic) context switches
 	* decreased binary log buffering for faster output
-	* thread statistics fixes
+	* thread statistics changes (and fixes!)
 	* logging of statistics
 	* plotting tool for statistics
 0.3.1:
