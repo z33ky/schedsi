@@ -32,7 +32,8 @@ class CFS(scheduler.Scheduler):
 
     This scheduler uses time-slices and can thus not be used outside
     the kernel with the single timer scheduling strategy.
-    Use the :class:`PenaltySchedulerAddon` for this case.
+    Use the :class:`PenaltySchedulerAddon` or the
+    :class:`FixedTimeSliceSchedulerAddon` for this case.
     """
 
     def __init__(self, module, *, default_shares, min_period, min_slice, **kwargs):
