@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Defines a base class for schedulers attempting to run threads for certain time-slices.
+"""Defines a scheduler addon, that assigns penalties to threads
+running more than their allotted time-slices.
 
 Without a local timer, this is approximated by keeping track of the difference of the debit
 and credit ("niceness").
 """
 
-from schedsi import scheduler
+from schedsi import fixed_time_slice_scheduler_addon
 
 
 class PenaltySchedulerAddonData():  # pylint: disable=too-few-public-methods
@@ -18,7 +19,7 @@ class PenaltySchedulerAddonData():  # pylint: disable=too-few-public-methods
         self.niceness = {}
 
 
-class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
+class PenaltySchedulerAddon(fixed_time_slice_scheduler_addon.FixedTimeSliceSchedulerAddon):
     """Penalty tracking scheduler-addon.
 
     `niceness` is always <= 0 and represents how much longer the chain ran
@@ -35,8 +36,7 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         and returns the amount the niceness values may differ for that
         time-slice.
         """
-        super().__init__(*args)
-        self.override_time_slice = override_time_slice
+        super().__init__(*args, override_time_slice=override_time_slice)
         if threshold is None:
             # is this a reasonable default?
             # is there a reasonable default?
@@ -96,7 +96,7 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
         if it's below the :attr:`threshold`.
         """
         if idx == -1:
-            return True, time_slice
+            return super().schedule(idx, time_slice, rcu_data)
 
         tid = id(rcu_data.ready_chains[idx].bottom)
 
@@ -120,4 +120,4 @@ class PenaltySchedulerAddon(scheduler.SchedulerAddonBase):
 
         rcu_data.last_time_slice = time_slice
 
-        return True, self.override_time_slice
+        return super().schedule(idx, time_slice, rcu_data)
