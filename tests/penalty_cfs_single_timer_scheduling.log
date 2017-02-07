@@ -1,134 +1,134 @@
-cpu 0 @   0: module 0         selects 1.
-cpu 0 @   0: thread 0-1       runs for 10 units.
-cpu 0 @  10: module 0         timer elapsed.
-cpu 0 @  10: module 0         selects 2.
-cpu 0 @  10: thread 0-2       runs for 4 units.
-cpu 0 @  14: thread 0-2       yields.
-cpu 0 @  14: module 0         selects 5.
-cpu 0 @  14: thread 0-5       runs for 10 units.
-cpu 0 @  24: module 0         timer elapsed.
-cpu 0 @  24: module 0         selects 6.
-cpu 0 @  24: thread 0-6       runs for 10 units.
-cpu 0 @  34: module 0         timer elapsed.
-cpu 0 @  34: module 0         selects 7.
-cpu 0 @  34: thread 0-7       runs for 10 units.
-cpu 0 @  44: module 0         timer elapsed.
-cpu 0 @  44: module 0         selects 3.
-cpu 0 @  44: thread 0-3       runs for 4 units.
-cpu 0 @  48: thread 0-3       yields.
-cpu 0 @  48: module 0         selects 5.
-cpu 0 @  48: thread 0-5       runs for 10 units.
-cpu 0 @  58: module 0         timer elapsed.
-cpu 0 @  58: module 0         selects 5.
-cpu 0 @  58: thread 0-5       runs for 10 units.
-cpu 0 @  68: module 0         timer elapsed.
-cpu 0 @  68: module 0         selects 5.
-cpu 0 @  68: thread 0-5       runs for 10 units.
-cpu 0 @  78: module 0         timer elapsed.
-cpu 0 @  78: module 0         selects 5.
-cpu 0 @  78: thread 0-5       runs for 10 units.
-cpu 0 @  88: module 0         timer elapsed.
-cpu 0 @  88: module 0         selects 5.
-cpu 0 @  88: thread 0-5       runs for 10 units.
-cpu 0 @  98: module 0         timer elapsed.
-cpu 0 @  98: module 0         selects 1.
-cpu 0 @  98: thread 0-1       runs for 10 units.
-cpu 0 @ 108: module 0         timer elapsed.
-cpu 0 @ 108: module 0         selects 5.
-cpu 0 @ 108: thread 0-5       runs for 10 units.
-cpu 0 @ 118: module 0         timer elapsed.
-cpu 0 @ 118: module 0         selects 5.
-cpu 0 @ 118: thread 0-5       runs for 10 units.
-cpu 0 @ 128: module 0         timer elapsed.
-cpu 0 @ 128: module 0         selects 5.
-cpu 0 @ 128: thread 0-5       runs for 10 units.
-cpu 0 @ 138: module 0         timer elapsed.
-cpu 0 @ 138: module 0         selects 5.
-cpu 0 @ 138: thread 0-5       runs for 10 units.
-cpu 0 @ 148: module 0         timer elapsed.
-cpu 0 @ 148: module 0         selects 5.
-cpu 0 @ 148: thread 0-5       runs for 10 units.
-cpu 0 @ 158: module 0         timer elapsed.
-cpu 0 @ 158: module 0         selects 5.
-cpu 0 @ 158: thread 0-5       runs for 10 units.
-cpu 0 @ 168: module 0         timer elapsed.
-cpu 0 @ 168: module 0         selects 2.
-cpu 0 @ 168: thread 0-2       runs for 4 units.
-cpu 0 @ 172: thread 0-2       yields.
-cpu 0 @ 172: module 0         selects 5.
-cpu 0 @ 172: thread 0-5       runs for 10 units.
-cpu 0 @ 182: module 0         timer elapsed.
-cpu 0 @ 182: module 0         selects 5.
-cpu 0 @ 182: thread 0-5       runs for 10 units.
-cpu 0 @ 192: module 0         timer elapsed.
-cpu 0 @ 192: module 0         selects 3.
-cpu 0 @ 192: thread 0-3       runs for 4 units.
-cpu 0 @ 196: thread 0-3       yields.
-cpu 0 @ 196: module 0         selects 5.
-cpu 0 @ 196: thread 0-5       runs for 10 units.
-cpu 0 @ 206: module 0         timer elapsed.
-cpu 0 @ 206: module 0         selects 5.
-cpu 0 @ 206: thread 0-5       runs for 10 units.
-cpu 0 @ 216: module 0         timer elapsed.
-cpu 0 @ 216: module 0         selects 1.
-cpu 0 @ 216: thread 0-1       runs for 10 units.
-cpu 0 @ 226: module 0         timer elapsed.
-cpu 0 @ 226: module 0         selects 5.
-cpu 0 @ 226: thread 0-5       runs for 10 units.
-cpu 0 @ 236: module 0         timer elapsed.
-cpu 0 @ 236: module 0         selects 1.
-cpu 0 @ 236: thread 0-1       runs for 10 units.
-cpu 0 @ 246: module 0         timer elapsed.
-cpu 0 @ 246: module 0         selects 1.
-cpu 0 @ 246: thread 0-1       runs for 10 units.
-cpu 0 @ 256: module 0         timer elapsed.
-cpu 0 @ 256: module 0         selects 1.
-cpu 0 @ 256: thread 0-1       runs for 10 units.
-cpu 0 @ 266: module 0         timer elapsed.
-cpu 0 @ 266: module 0         selects 1.
-cpu 0 @ 266: thread 0-1       runs for 10 units.
-cpu 0 @ 276: module 0         timer elapsed.
-cpu 0 @ 276: module 0         selects 1.
-cpu 0 @ 276: thread 0-1       runs for 10 units.
-cpu 0 @ 286: module 0         timer elapsed.
-cpu 0 @ 286: module 0         selects 1.
-cpu 0 @ 286: thread 0-1       runs for 10 units.
-cpu 0 @ 296: module 0         timer elapsed.
-cpu 0 @ 296: module 0         selects 1.
-cpu 0 @ 296: thread 0-1       runs for 10 units.
-cpu 0 @ 306: module 0         timer elapsed.
-cpu 0 @ 306: module 0         selects 7.
-cpu 0 @ 306: thread 0-7       runs for 10 units.
-cpu 0 @ 316: module 0         timer elapsed.
-cpu 0 @ 316: module 0         selects 6.
-cpu 0 @ 316: thread 0-6       runs for 10 units.
-cpu 0 @ 326: module 0         timer elapsed.
-cpu 0 @ 326: module 0         selects 1.
-cpu 0 @ 326: thread 0-1       runs for 10 units.
-cpu 0 @ 336: module 0         timer elapsed.
-cpu 0 @ 336: module 0         selects 5.
-cpu 0 @ 336: thread 0-5       runs for 10 units.
-cpu 0 @ 346: module 0         timer elapsed.
-cpu 0 @ 346: module 0         selects 5.
-cpu 0 @ 346: thread 0-5       runs for 10 units.
-cpu 0 @ 356: module 0         timer elapsed.
-cpu 0 @ 356: module 0         selects 1.
-cpu 0 @ 356: thread 0-1       runs for 10 units.
-cpu 0 @ 366: module 0         timer elapsed.
-cpu 0 @ 366: module 0         selects 5.
-cpu 0 @ 366: thread 0-5       runs for 10 units.
-cpu 0 @ 376: module 0         timer elapsed.
-cpu 0 @ 376: module 0         selects 2.
-cpu 0 @ 376: thread 0-2       runs for 4 units.
-cpu 0 @ 380: thread 0-2       yields.
-cpu 0 @ 380: module 0         selects 1.
-cpu 0 @ 380: thread 0-1       runs for 10 units.
-cpu 0 @ 390: module 0         timer elapsed.
-cpu 0 @ 390: module 0         selects 5.
-cpu 0 @ 390: thread 0-5       runs for 10 units.
-cpu 0 @ 400: module 0         timer elapsed.
-cpu 0 @ 400: module 0         selects 3.
-cpu 0 @ 400: thread 0-3       runs for 4 units.
+cpu 0 @   0.0000000000000000: module 0         selects 1.
+cpu 0 @   0.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @  10.0000000000000000: module 0         timer elapsed.
+cpu 0 @  10.0000000000000000: module 0         selects 2.
+cpu 0 @  10.0000000000000000: thread 0-2       runs for 4.0000000000000000 units.
+cpu 0 @  14.0000000000000000: thread 0-2       yields.
+cpu 0 @  14.0000000000000000: module 0         selects 5.
+cpu 0 @  14.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @  24.0000000000000000: module 0         timer elapsed.
+cpu 0 @  24.0000000000000000: module 0         selects 6.
+cpu 0 @  24.0000000000000000: thread 0-6       runs for 10.0000000000000000 units.
+cpu 0 @  34.0000000000000000: module 0         timer elapsed.
+cpu 0 @  34.0000000000000000: module 0         selects 7.
+cpu 0 @  34.0000000000000000: thread 0-7       runs for 10.0000000000000000 units.
+cpu 0 @  44.0000000000000000: module 0         timer elapsed.
+cpu 0 @  44.0000000000000000: module 0         selects 3.
+cpu 0 @  44.0000000000000000: thread 0-3       runs for 4.0000000000000000 units.
+cpu 0 @  48.0000000000000000: thread 0-3       yields.
+cpu 0 @  48.0000000000000000: module 0         selects 5.
+cpu 0 @  48.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @  58.0000000000000000: module 0         timer elapsed.
+cpu 0 @  58.0000000000000000: module 0         selects 5.
+cpu 0 @  58.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @  68.0000000000000000: module 0         timer elapsed.
+cpu 0 @  68.0000000000000000: module 0         selects 5.
+cpu 0 @  68.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @  78.0000000000000000: module 0         timer elapsed.
+cpu 0 @  78.0000000000000000: module 0         selects 5.
+cpu 0 @  78.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @  88.0000000000000000: module 0         timer elapsed.
+cpu 0 @  88.0000000000000000: module 0         selects 5.
+cpu 0 @  88.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @  98.0000000000000000: module 0         timer elapsed.
+cpu 0 @  98.0000000000000000: module 0         selects 1.
+cpu 0 @  98.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 108.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 108.0000000000000000: module 0         selects 5.
+cpu 0 @ 108.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 118.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 118.0000000000000000: module 0         selects 5.
+cpu 0 @ 118.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 128.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 128.0000000000000000: module 0         selects 5.
+cpu 0 @ 128.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 138.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 138.0000000000000000: module 0         selects 5.
+cpu 0 @ 138.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 148.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 148.0000000000000000: module 0         selects 5.
+cpu 0 @ 148.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 158.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 158.0000000000000000: module 0         selects 5.
+cpu 0 @ 158.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 168.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 168.0000000000000000: module 0         selects 2.
+cpu 0 @ 168.0000000000000000: thread 0-2       runs for 4.0000000000000000 units.
+cpu 0 @ 172.0000000000000000: thread 0-2       yields.
+cpu 0 @ 172.0000000000000000: module 0         selects 5.
+cpu 0 @ 172.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 182.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 182.0000000000000000: module 0         selects 5.
+cpu 0 @ 182.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 192.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 192.0000000000000000: module 0         selects 3.
+cpu 0 @ 192.0000000000000000: thread 0-3       runs for 4.0000000000000000 units.
+cpu 0 @ 196.0000000000000000: thread 0-3       yields.
+cpu 0 @ 196.0000000000000000: module 0         selects 5.
+cpu 0 @ 196.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 206.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 206.0000000000000000: module 0         selects 5.
+cpu 0 @ 206.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 216.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 216.0000000000000000: module 0         selects 1.
+cpu 0 @ 216.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 226.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 226.0000000000000000: module 0         selects 5.
+cpu 0 @ 226.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 236.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 236.0000000000000000: module 0         selects 1.
+cpu 0 @ 236.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 246.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 246.0000000000000000: module 0         selects 1.
+cpu 0 @ 246.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 256.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 256.0000000000000000: module 0         selects 1.
+cpu 0 @ 256.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 266.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 266.0000000000000000: module 0         selects 1.
+cpu 0 @ 266.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 276.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 276.0000000000000000: module 0         selects 1.
+cpu 0 @ 276.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 286.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 286.0000000000000000: module 0         selects 1.
+cpu 0 @ 286.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 296.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 296.0000000000000000: module 0         selects 1.
+cpu 0 @ 296.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 306.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 306.0000000000000000: module 0         selects 7.
+cpu 0 @ 306.0000000000000000: thread 0-7       runs for 10.0000000000000000 units.
+cpu 0 @ 316.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 316.0000000000000000: module 0         selects 6.
+cpu 0 @ 316.0000000000000000: thread 0-6       runs for 10.0000000000000000 units.
+cpu 0 @ 326.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 326.0000000000000000: module 0         selects 1.
+cpu 0 @ 326.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 336.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 336.0000000000000000: module 0         selects 5.
+cpu 0 @ 336.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 346.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 346.0000000000000000: module 0         selects 5.
+cpu 0 @ 346.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 356.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 356.0000000000000000: module 0         selects 1.
+cpu 0 @ 356.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 366.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 366.0000000000000000: module 0         selects 5.
+cpu 0 @ 366.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 376.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 376.0000000000000000: module 0         selects 2.
+cpu 0 @ 376.0000000000000000: thread 0-2       runs for 4.0000000000000000 units.
+cpu 0 @ 380.0000000000000000: thread 0-2       yields.
+cpu 0 @ 380.0000000000000000: module 0         selects 1.
+cpu 0 @ 380.0000000000000000: thread 0-1       runs for 10.0000000000000000 units.
+cpu 0 @ 390.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 390.0000000000000000: module 0         selects 5.
+cpu 0 @ 390.0000000000000000: thread 0-5       runs for 10.0000000000000000 units.
+cpu 0 @ 400.0000000000000000: module 0         timer elapsed.
+cpu 0 @ 400.0000000000000000: module 0         selects 3.
+cpu 0 @ 400.0000000000000000: thread 0-3       runs for 4.0000000000000000 units.
 Thread stats:
 {
 	"0-0": {

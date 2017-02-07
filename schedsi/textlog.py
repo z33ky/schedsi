@@ -7,35 +7,38 @@ import itertools
 TextLogAlign = collections.namedtuple('TextLogAlign', 'cpu time module thread')
 
 
-def _timespan(cost):
-    """Stringify a timespan."""
-    return '{} unit{}'.format(cost, '' if cost == 1 else 's')
-
-
-def _ctxsw(module_to, time):
-    """Stringify a context switch."""
-    return 'spends {} to switch to {}'.format(_timespan(time), module_to.name)
-
-
 class TextLog:
     """Text logger.
 
     Outputs the events in a text file.
     """
 
-    def __init__(self, stream, align=TextLogAlign(0, 0, 0, 0)):
+    def __init__(self, stream, align=TextLogAlign(0, 0, 0, 0), *, time_precision):
         """Create a :class:`TextLog`."""
         self.stream = stream
         self.align = align
+        # the +1 is for the decimal separator
+        self.align = self.align._replace(time=self.align.time + time_precision + 1)
+        self.time_prec = time_precision
+
+    def _timespan(self, cost):
+        """Stringify a timespan."""
+        return '{:.{prec}f} unit{}'.format(cost, '' if cost == 1 else 's', prec=self.time_prec)
+
+    def _ctxsw(self, module_to, time):
+        """Stringify a context switch."""
+        return 'spends {} to switch to {}'.format(self._timespan(time), module_to.name)
 
     def _ct(self, cpu):
         """Stringify CPU and time.
 
         This should be the start of pretty much every message.
         """
-        return 'cpu {:>{cpu_align}} @ {:>{time_align}}: '.format(cpu.uid, cpu.status.current_time,
-                                                                 cpu_align=self.align.cpu,
-                                                                 time_align=self.align.time)
+        return 'cpu {:>{cpu_align}} @ {:>{time_align}.{prec}f}: '.format(cpu.uid,
+                                                                         cpu.status.current_time,
+                                                                         cpu_align=self.align.cpu,
+                                                                         time_align=self.align.time,
+                                                                         prec=self.time_prec)
 
     def _ctt(self, cpu):
         """Stringify CPU, time and the current thread."""
@@ -68,11 +71,11 @@ class TextLog:
         if time != 0:
             thread_to = appendix and appendix.top or cpu.status.chain.thread_at(split_index)
 
-            self.stream.write(self._ctm(cpu) + '{}.\n'.format(_ctxsw(thread_to.module, time)))
+            self.stream.write(self._ctm(cpu) + '{}.\n'.format(self._ctxsw(thread_to.module, time)))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
-        self.stream.write(self._ctt(cpu) + 'runs for {}.\n'.format(_timespan(runtime)))
+        self.stream.write(self._ctt(cpu) + 'runs for {}.\n'.format(self._timespan(runtime)))
 
     def thread_yield(self, cpu):
         """Log a thread yield event."""
@@ -80,13 +83,13 @@ class TextLog:
 
     def cpu_idle(self, cpu, idle_time):
         """Log an CPU idle event."""
-        self.stream.write(self._ct(cpu) + 'idle for {}.\n'.format(_timespan(idle_time)))
+        self.stream.write(self._ct(cpu) + 'idle for {}.\n'.format(self._timespan(idle_time)))
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
         self.stream.write(self._ctm(cpu, idx) + 'timer elapsed')
         if delay:
-            self.stream.write(' ({} delay)'.format(_timespan(delay)))
+            self.stream.write(' ({} delay)'.format(self._timespan(delay)))
         self.stream.write('.\n')
 
     @classmethod

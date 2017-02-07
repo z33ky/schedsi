@@ -27,10 +27,13 @@ def _extract_param(arg, name):
 
 def _usage():
     """Print usage and exit with error."""
-    print('Usage:', sys.argv[0], 'IN_FILENAME [(--text[=FILENAME[TEXT_ALIGN]]|--graph[=FILENAME])]')
+    print('Usage:', sys.argv[0],
+          'IN_FILENAME [(--text[=FILENAME[TIME_PRECISION[TEXT_ALIGN]]]|--graph[=FILENAME])]')
     print('if IN_FILENAME is -, read from stdin.')
     print('If FILENAME is not set, create use using the current system time.')
     print('If FILENAME is -, write to stdout.')
+    print('TIME_PRECISION is in the format :precision, '
+          'where precision denotes the number of decimal digits to print.')
     print('TEXT_ALIGN is in the format :cpu:time:module:thread:, '
           'where each element between to colons is a number '
           'specifying the padding of the fields in the text log.')
@@ -51,15 +54,16 @@ def main():
         value = _extract_param(param, '--text')
         if value is not None:
             fileparam = value.split(':')
-            filename = fileparam[0]
+            filename = fileparam.pop(0)
+            time_prec = 2
             align = None
-            if len(fileparam) > 1:
-                alignparam = fileparam[1:]
-                print(*alignparam)
-                if len(alignparam) != 5:
-                    print('Invalid TEXT_ALIGN', alignparam)
+            if fileparam:
+                time_prec = int(fileparam.pop(0))
+            if fileparam:
+                if len(fileparam) != 4:
+                    print('Invalid TEXT_ALIGN', fileparam)
                 else:
-                    align = textlog.TextLogAlign(*(int(x) for x in alignparam[:-1]))
+                    align = textlog.TextLogAlign(*(int(x) for x in fileparam))
 
             if align is None:
                 align = textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1)
@@ -68,7 +72,8 @@ def main():
                 filename = NOW + '.log'
             log_to_file = filename != '-'
             with open(filename, 'x') if log_to_file else sys.stdout as log_file:
-                binarylog.replay(input_log, textlog.TextLog(log_file, align))
+                binarylog.replay(input_log, textlog.TextLog(log_file, align,
+                                                            time_precision=time_prec))
                 if log_to_file:
                     print('Wrote to', filename)
             return

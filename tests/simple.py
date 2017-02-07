@@ -28,7 +28,7 @@ class TestExample(unittest.TestCase):
     def exec_world(self, log, *world_args, **world_kwargs):
         """Create and run a world and test the produced log against a reference."""
         text_buf = io.StringIO()
-        text_log = textlog.TextLog(text_buf, self.textlog_align)
+        text_log = textlog.TextLog(text_buf, self.textlog_align, time_precision=16)
 
         the_world = world.World(*world_args, text_log, **world_kwargs)
         while the_world.step() <= 400:
