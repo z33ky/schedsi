@@ -168,8 +168,8 @@ class _Status:
         """Return execution to the parent :class:`Thread`."""
         if len(self.chain) == 1:
             # kernel yields
-            slice_left = self.chian.next_timeout
-            if slice_left <= 0:
+            slice_left = self.chain.next_timeout
+            if slice_left is None:
                 raise RuntimeError('Kernel cannot yield without timeout.')
             self.cpu.log.cpu_idle(self.cpu, slice_left)
             self.stats.idle_time += slice_left
