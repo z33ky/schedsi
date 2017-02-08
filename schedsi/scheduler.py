@@ -229,7 +229,7 @@ class Scheduler:
         idx = 0
         if num_chains == 0:
             idx = -1
-        if num_chains != 1:
+        elif num_chains != 1:
             raise RuntimeError('Scheduler cannot make scheduling decision.')
         return idx, self.time_slice
         # needs to be a coroutine
