@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Functionality to create a :class:`Module`-hierarchy."""
 
+import collections
 from schedsi import cpurequest, module, threads
 
 
@@ -12,18 +13,26 @@ class ModuleBuilder:
         self.module = module.Module(name, parent, scheduler)
         self.vcpus = []
 
-    def add_module(self, name=None, *, scheduler, vcpus=1):
+    def add_module(self, name=None, vcpu_add_args=None, *, scheduler, vcpus=1):
         """Attach a child :class:`Module`.
 
         The `name` is auto-generated, if it is `None`,
         as `self.name + "." + len(self.children)`.
+
+        `vcpu_add_args` may be a single `dict`, in which
+        case it is used for all vcpus, or it can be a list
+        thereof, in which case it must have a length equal
+        to `vcpus`.
 
         Returns the child-:class:`Module`.
         """
         if name is None:
             name = self.module.name + '.' + str(self.module.num_children())
         madder = ModuleBuilder(name, self.module, scheduler=scheduler)
-        self.vcpus.append((madder.module, vcpus))
+        if not isinstance(vcpu_add_args, collections.abc.Sequence):
+            vcpu_add_args = [vcpu_add_args] * vcpus
+        assert len(vcpu_add_args) == vcpus
+        self.vcpus.append((madder.module, vcpu_add_args))
         return madder
 
     def add_thread(self, thread, add_args=None, **kwargs):
@@ -46,9 +55,9 @@ class ModuleBuilder:
 
         Returns `self`.
         """
-        for child, vcpus in self.vcpus:
-            for _ in range(0, vcpus):
-                self.add_thread(threads.VCPUThread, child=child)
+        for child, vcpu_add_args in self.vcpus:
+            for add_args in vcpu_add_args:
+                self.add_thread(threads.VCPUThread, add_args, child=child)
         self.vcpus.clear()
         return self
 
