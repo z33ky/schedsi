@@ -89,9 +89,12 @@ class MLFQ(scheduler.Scheduler):
 
         See :meth:`Thread.num_threads`.
         """
-        return self._rcu.look(lambda d:
-                              sum(len(x) for x in
-                                  d.ready_queues + d.waiting_queues + [d.finished_chains]))
+        def count_threads(rcu_data):
+            """Count the threads in all queues."""
+            chains = itertools.chain(rcu_data.ready_queues, rcu_data.waiting_queues,
+                                     (rcu_data.finished_chains,))
+            return sum(len(x) for x in chains)
+        return self._rcu.look(count_threads)
 
     def get_thread_statistics(self, current_time):
         """Obtain statistics of all threads.
