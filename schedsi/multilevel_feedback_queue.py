@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Defines a multi-level feedback queue scheduler."""
 
+import itertools
 from schedsi import cpurequest, scheduler
 
 
@@ -91,6 +92,18 @@ class MLFQ(scheduler.Scheduler):
         return self._rcu.look(lambda d:
                               sum(len(x) for x in
                                   d.ready_queues + d.waiting_queues + [d.finished_chains]))
+
+    def get_thread_statistics(self, current_time):
+        """Obtain statistics of all threads.
+
+        See `Scheduler.get_thread_statistics`.
+        """
+        rcu_data = self._rcu.read()
+        all_threads = (ctx.bottom for queue in itertools.chain(rcu_data.ready_queues,
+                                                               rcu_data.waiting_queues,
+                                                               (rcu_data.finished_chains,))
+                       for ctx in queue)
+        return self._get_thread_statistics(current_time, all_threads)
 
     @classmethod
     def _update_ready_chains(cls, time, rcu_data):

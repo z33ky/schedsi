@@ -107,6 +107,11 @@ class Scheduler:
         all_threads = (ctx.bottom for ctx in
                        itertools.chain(rcu_data.finished_chains, rcu_data.waiting_chains,
                                        rcu_data.ready_chains))
+        return self._get_thread_statistics(current_time, all_threads)
+
+    @staticmethod
+    def _get_thread_statistics(current_time, all_threads):
+        """Obtain statistics of `all_threads`."""
         return {tid: stats for tid, stats in
                 (((t.module.name, t.tid), t.get_statistics(current_time)) for t in all_threads)}
 
