@@ -125,6 +125,21 @@ class MLFQ(scheduler.Scheduler):
                    for ready in rcu_data.ready_queues)
         assert all(t.bottom.is_finished() for t in rcu_data.finished_chains)
 
+    def get_next_waiting(self, rcu_data):
+        """See :meth:`Scheduler.get_next_waiting`."""
+        next_waiting = None
+        assert not rcu_data.waiting_chains
+        waiting_queue = rcu_data.waiting_chains
+        for queue in rcu_data.waiting_queues:
+            rcu_data.waiting_chains = queue
+            candidate = super().get_next_waiting(rcu_data)
+            if candidate is not None:
+                if next_waiting is None or \
+                   next_waiting.bottom.ready_time > candidate.bottom.ready_time:
+                    next_waiting = candidate
+        rcu_data.waiting_chains = waiting_queue
+        return next_waiting
+
     def _start_schedule(self, prev_run_time):  # pylint: disable=method-hidden
         """See :meth:`Scheduler._start_schedule`.
 

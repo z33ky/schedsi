@@ -54,12 +54,12 @@ class AddonScheduler(Scheduler):
 
         return (rcu_copy, *rest)
 
-    def _schedule(self, idx, time_slice, rcu_copy):
+    def _schedule(self, idx, time_slice, next_ready_time, rcu_copy):
         """See :meth:`Scheduler._schedule`.
 
         This will also call the :attr:`addon`'s :meth:`~Addon.schedule`.
         """
-        schedule = super()._schedule(idx, time_slice, rcu_copy)
+        schedule = super()._schedule(idx, time_slice, next_ready_time, rcu_copy)
         proceed, time_slice = self.addon.schedule(idx, time_slice, rcu_copy.data)
 
         answer = None
@@ -74,7 +74,17 @@ class AddonScheduler(Scheduler):
             if request.rtype == CPURequestType.timer:
                 if not proceed:
                     request = CPURequest.current_time()
-                request.thing = time_slice
+                else:
+                    delta = None
+                    if next_ready_time[0] != 0:
+                        if next_ready_time[0] is not None:
+                            current_time = yield CPURequest.current_time()
+                            delta = next_ready_time[0] - current_time
+                        # if this assumption does not hold we need to decide
+                        # whether we really want to override this
+                        assert delta == request.thing
+                    if time_slice is None or delta is None:
+                        request.thing = time_slice
             elif request.rtype == CPURequestType.resume_chain:
                 assert can_idle
                 if not proceed:

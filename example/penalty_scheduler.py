@@ -14,8 +14,8 @@ from schedsi.log import binarylog
 from schedsi.util import hierarchy_builder
 
 PRR = schedulers.addons.Penalizer.attach("PRR", schedulers.RoundRobin)
-
 PMLFQ = schedulers.addons.Penalizer.attach("PMLFQ", schedulers.MLFQ)
+FSJF = schedulers.addons.TimeSliceFixer.attach("FSJF", schedulers.SJF)
 
 # Create a hierarchy of a kernel, a child module and two grand-children.
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PRR.builder(time_slice=9,
@@ -23,7 +23,7 @@ KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PRR.builder(time_slice=9,
 TOP_MODULE = KERNEL.add_module(scheduler=PMLFQ.builder(level_time_slices=[10, 8, 6, 5],
                                                        priority_boost_time=30))
 BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=PRR.builder(time_slice=7))
-BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
+BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=FSJF)
 
 KERNEL.add_thread(threads.Thread, units=50) \
       .add_thread(threads.PeriodicWorkThread, ready_time=5, units=50, period=20, burst=5) \

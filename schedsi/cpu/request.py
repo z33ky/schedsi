@@ -17,7 +17,7 @@ class Request:
         elif rtype == Type.resume_chain:
             assert isinstance(thing, context.Chain)
         elif rtype == Type.idle:
-            assert thing is None
+            assert thing is None or thing > 0
         elif rtype == Type.execute:
             assert thing is None or thing > 0
         elif rtype == Type.timer:

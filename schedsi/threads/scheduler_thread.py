@@ -28,16 +28,26 @@ class SchedulerThread(_BGStatThread):
 
         # abusing a list as communication channel
         bg_time = [self.last_bg_time]
+        scheduler_ready_time = [None]
 
-        scheduler = self._scheduler.schedule(bg_time)
-        thing = next(scheduler)
-        current_time = yield cpurequest.Request.current_time()
-        self._update_ready_time(current_time)
+        scheduler = self._scheduler.schedule(bg_time, scheduler_ready_time)
+        request = next(scheduler)
+        self._update_ready_time((yield cpurequest.Request.current_time()))
         while True:
             self.last_bg_time = 0
-            current_time = yield thing
+
+            if request.rtype == cpurequest.Type.idle:
+                if scheduler_ready_time[0] is not None:
+                    self.ready_time = scheduler_ready_time[0]
+                else:
+                    self.ready_time = -1
+                    self.remaining = 0
+                    #self.end()
+
+            answer = yield request
+
             bg_time[0] = self.last_bg_time
-            thing = scheduler.send(current_time)
+            request = scheduler.send(answer)
 
     def run_background(self, current_time, run_time):
         """Update runtime state.

@@ -14,6 +14,13 @@
 	* thread statistics changes (and fixes!)
 	* logging of statistics
 	* plotting tool for statistics
+	* scheduler and VCPU threads wait until schedulers have ready threads
+		* when a scheduler yields, the parent module knows that its child does not have any ready threads
+		* normally idle threads would wait for some signal, i.e. message, to arrive
+		* thus a module would resume the scheduler if it previously yielded, but now has a message waiting
+		* in the simulator, threads wake up "by themselves", which is why we need to do this
+		* previously, yielding schedulers were assumed to still have ready threads
+		* they would just yield again though, leading to an alternating series of "schedule A, A yields"
 0.3.1:
 	* PenaltySchedulerAddon fix
 0.3.0:

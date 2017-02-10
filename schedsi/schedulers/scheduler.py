@@ -115,6 +115,10 @@ class Scheduler:
         return {tid: stats for tid, stats in
                 (((t.module.name, t.tid), t.get_statistics(current_time)) for t in all_threads)}
 
+    def get_next_waiting(self, rcu_data):  # pylint: disable=no-self-use
+        """Return (one of) the thread(s) that is next in line to become ready."""
+        return min(rcu_data.waiting_chains, key=lambda c: c.bottom.ready_time, default=None)
+
     def _start_schedule(self, _prev_run_time):
         """Prepare making a scheduling decision.
 
@@ -179,10 +183,12 @@ class Scheduler:
             return last_chain_queue[-1]
         return None
 
-    def _schedule(self, idx, time_slice, rcu_copy):
+    def _schedule(self, idx, time_slice, next_ready_time, rcu_copy):
         """Update :attr:`_rcu` and schedule the chain at `idx`.
 
         If `idx` is -1, yield an idle request.
+
+        `next_ready_time` should be forwarded from :meth:`schedule`.
 
         Yields a :class:`~schedsi.cpurequest.Request`.
         """
@@ -195,8 +201,20 @@ class Scheduler:
             return
 
         if idx == -1:
+            next_chain = self.get_next_waiting(rcu_copy.data)
+            if next_chain:
+                next_ready_time[0] = next_chain.bottom.ready_time
+
+                current_time = yield CPURequest.current_time()
+                delta = next_chain.bottom.ready_time - current_time
+                assert delta > 0
+                yield CPURequest.timer(delta)
+            else:
+                next_ready_time[0] = None
+
             yield CPURequest.idle()
             return
+        next_ready_time[0] = 0
 
         yield CPURequest.timer(time_slice)
 
@@ -205,7 +223,7 @@ class Scheduler:
         if not self._rcu.update(rcu_copy):
             assert False, 'Multi-vcpu synchronization not yet supported'
 
-    def schedule(self, prev_run_time):
+    def schedule(self, prev_run_time, next_ready_time):
         """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
 
         This simply calls :meth:`_start_schedule`, :meth:`_sched_loop` and
@@ -214,11 +232,14 @@ class Scheduler:
         Yields a :class:`~schedsi.cpurequest.Request`.
         Consumes the current time.
         """
+        assert len(prev_run_time) == 1
+        assert len(next_ready_time) == 1
+        assert next_ready_time[0] is None
         while True:
             rcu_copy, *rest = yield from self._start_schedule(*prev_run_time)
             idx, time_slice = yield from self._sched_loop(rcu_copy, *rest)
 
-            yield from self._schedule(idx, time_slice, rcu_copy)
+            yield from self._schedule(idx, time_slice, next_ready_time, rcu_copy)
 
     def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx):  # pylint: disable=no-self-use
         """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
