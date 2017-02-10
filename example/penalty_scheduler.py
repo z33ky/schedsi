@@ -13,9 +13,9 @@ from schedsi import schedulers, threads, world
 from schedsi.log import binarylog
 from schedsi.util import hierarchy_builder
 
-PRR = schedulers.addons.PenaltySchedulerAddon.attach("PRR", schedulers.RoundRobin)
+PRR = schedulers.addons.Penalizer.attach("PRR", schedulers.RoundRobin)
 
-PMLFQ = schedulers.addons.PenaltySchedulerAddon.attach("PMLFQ", schedulers.MLFQ)
+PMLFQ = schedulers.addons.Penalizer.attach("PMLFQ", schedulers.MLFQ)
 
 # Create a hierarchy of a kernel, a child module and two grand-children.
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PRR.builder(time_slice=9,

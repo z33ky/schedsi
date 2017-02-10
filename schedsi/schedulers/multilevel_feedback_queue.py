@@ -40,8 +40,8 @@ class MLFQ(scheduler.Scheduler):
     If `level_time_slices` is specified for :meth:`__init__`, this scheduler
     will use time-slices and can thus not be used outside the kernel with the
     single timer scheduling strategy.
-    Use the :class:`PenaltySchedulerAddon` or the
-    :class:`FixedTimeSliceSchedulerAddon` for this case.
+    Use the :class:`~schedulers.addons.Penalizer` or the
+    :class:`~schedulers.addons.TimeSliceFixer` for this case.
     """
 
     def __init__(self, module, *, level_time_slices=None, priority_boost_time, **kwargs):

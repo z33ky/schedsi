@@ -1,25 +1,24 @@
 #!/usr/bin/env python3
-"""Defines a scheduler addon, that assigns penalties to threads
-running more than their allotted time-slices.
+"""Defines a scheduler addon, that penalizes threads running more than their allotted time-slices.
 
-Without a local timer, this is approximated by keeping track of the difference of the debit
-and credit ("niceness").
+This allows approximation of time-slices without a local timer by recording the difference of
+debit and credit ("niceness").
 """
 
-from . import fixed_time_slice_scheduler_addon
+from . import time_slice_fixer
 
 
-class PenaltySchedulerAddonData():  # pylint: disable=too-few-public-methods
-    """Mutable data for the :class:`PenaltySchedulerAddon`."""
+class PenalizerData():  # pylint: disable=too-few-public-methods
+    """Mutable data for the :class:`PenalizerAddon`."""
 
     def __init__(self):
-        """Create a :class:`PenaltySchedulerAddonData`."""
+        """Create a :class:`PenalizerData`."""
         self.sat_out_threads = []
         self.last_time_slice = None
         self.niceness = {}
 
 
-class PenaltySchedulerAddon(fixed_time_slice_scheduler_addon.FixedTimeSliceSchedulerAddon):
+class Penalizer(time_slice_fixer.TimeSliceFixer):
     """Penalty tracking scheduler-addon.
 
     `niceness` is always <= 0 and represents how much longer the chain ran
@@ -30,7 +29,7 @@ class PenaltySchedulerAddon(fixed_time_slice_scheduler_addon.FixedTimeSliceSched
     """
 
     def __init__(self, *args, override_time_slice=None, threshold=None):
-        """Create a :class:`PenaltySchedulerAddon`.
+        """Create a :class:`Penalizer`.
 
         `threshold` is a function that takes the time-slice to be used
         and returns the amount the niceness values may differ for that
@@ -46,11 +45,11 @@ class PenaltySchedulerAddon(fixed_time_slice_scheduler_addon.FixedTimeSliceSched
         self.threshold = threshold
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
-        """See :meth:`SchedulerAddonBase.transmute_rcu_data`."""
-        super().transmute_rcu_data(original, PenaltySchedulerAddonData, *addon_data)
+        """See :meth:`Addon.transmute_rcu_data`."""
+        super().transmute_rcu_data(original, PenalizerData, *addon_data)
 
     def start_schedule(self, prev_run_time, rcu_data, last_chain_queue, last_chain_idx):
-        """See :meth:`SchedulerAddonBase.start_schedule`."""
+        """See :meth:`Addon.start_schedule`."""
         super().start_schedule(prev_run_time, rcu_data, last_chain_queue, last_chain_idx)
         last_chain = self._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)
         last_thread = last_chain and last_chain.bottom
@@ -90,7 +89,7 @@ class PenaltySchedulerAddon(fixed_time_slice_scheduler_addon.FixedTimeSliceSched
         assert not rcu_data.niceness or 0 in rcu_data.niceness.values()
 
     def schedule(self, idx, time_slice, rcu_data):
-        """See :meth:`SchedulerAddonBase.schedule`.
+        """See :meth:`TimeSliceFixer.schedule`.
 
         Checks the niceness for the selected chain and blocks it
         if it's below the :attr:`threshold`.
