@@ -3,10 +3,11 @@
 
 # pylint: disable=duplicate-code
 import sys
-from schedsi import (binarylog, hierarchy_builder, penalty_scheduler_addon, schedulers, threads,
-                     world)
+from schedsi import schedulers, threads, world
+from schedsi.log import binarylog
+from schedsi.util import hierarchy_builder
 
-PCFS = penalty_scheduler_addon.PenaltySchedulerAddon.attach("PCFS", schedulers.CFS)
+PCFS = schedulers.addons.PenaltySchedulerAddon.attach("PCFS", schedulers.CFS)
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PCFS.builder(default_shares=400,
                                                                 min_period=30,
                                                                 min_slice=6,

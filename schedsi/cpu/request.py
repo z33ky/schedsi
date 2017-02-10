@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Defines a :class:`CPURequest`."""
+"""Defines a :class:`Request`."""
 
 import enum
-from schedsi import context
+from schedsi.cpu import context
 
 Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute', 'timer'])
 

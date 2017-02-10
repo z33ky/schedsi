@@ -5,7 +5,7 @@ The design is influenced by Linux's CFS scheduler.
 """
 
 import bisect
-from schedsi import scheduler
+from schedsi.schedulers import scheduler
 
 
 class CFSData(scheduler.SchedulerData):  # pylint: disable=too-few-public-methods

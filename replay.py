@@ -3,7 +3,8 @@
 
 import datetime
 import sys
-from schedsi import binarylog, graphlog, textlog
+from schedsi.log import binarylog
+from schedsi import log
 
 NOW = datetime.datetime.now().isoformat()
 
@@ -63,17 +64,16 @@ def main():
                 if len(fileparam) != 4:
                     print('Invalid TEXT_ALIGN', fileparam)
                 else:
-                    align = textlog.TextLogAlign(*(int(x) for x in fileparam))
+                    align = log.TextLogAlign(*(int(x) for x in fileparam))
 
             if align is None:
-                align = textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1)
+                align = log.TextLogAlign(cpu=1, time=3, module=7, thread=1)
 
             if not filename:
                 filename = NOW + '.log'
             log_to_file = filename != '-'
             with open(filename, 'x') if log_to_file else sys.stdout as log_file:
-                binarylog.replay(input_log, textlog.TextLog(log_file, align,
-                                                            time_precision=time_prec))
+                binarylog.replay(input_log, log.TextLog(log_file, align, time_precision=time_prec))
                 if log_to_file:
                     print('Wrote to', filename)
             return
@@ -86,9 +86,9 @@ def main():
 
             log_to_file = filename != '-'
             with open(filename, 'xb') if log_to_file else sys.stdout.buffer as log_file:
-                log = graphlog.GraphLog()
-                binarylog.replay(input_log, log)
-                log.write(log_file)
+                graph_log = log.GraphLog()
+                binarylog.replay(input_log, graph_log)
+                graph_log.write(log_file)
                 if log_to_file:
                     print('Wrote to', filename)
             return

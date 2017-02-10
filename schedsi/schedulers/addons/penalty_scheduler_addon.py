@@ -6,7 +6,7 @@ Without a local timer, this is approximated by keeping track of the difference o
 and credit ("niceness").
 """
 
-from schedsi import fixed_time_slice_scheduler_addon
+from . import fixed_time_slice_scheduler_addon
 
 
 class PenaltySchedulerAddonData():  # pylint: disable=too-few-public-methods

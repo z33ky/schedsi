@@ -9,12 +9,13 @@ This example does not use the local timers feature.
 
 # pylint: disable=duplicate-code
 import sys
-from schedsi import (binarylog, hierarchy_builder, penalty_scheduler_addon, schedulers, threads,
-                     world)
+from schedsi import schedulers, threads, world
+from schedsi.log import binarylog
+from schedsi.util import hierarchy_builder
 
-PRR = penalty_scheduler_addon.PenaltySchedulerAddon.attach("PRR", schedulers.RoundRobin)
+PRR = schedulers.addons.PenaltySchedulerAddon.attach("PRR", schedulers.RoundRobin)
 
-PMLFQ = penalty_scheduler_addon.PenaltySchedulerAddon.attach("PMLFQ", schedulers.MLFQ)
+PMLFQ = schedulers.addons.PenaltySchedulerAddon.attach("PMLFQ", schedulers.MLFQ)
 
 # Create a hierarchy of a kernel, a child module and two grand-children.
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=PRR.builder(time_slice=9,

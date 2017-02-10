@@ -2,7 +2,8 @@
 """Defines a multi-level feedback queue scheduler."""
 
 import itertools
-from schedsi import cpurequest, scheduler
+from schedsi.schedulers import scheduler
+from schedsi.cpu import request as cpurequest
 
 
 class MLFQData(scheduler.SchedulerData):  # pylint: disable=too-few-public-methods

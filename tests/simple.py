@@ -5,7 +5,8 @@ import difflib
 import importlib
 import io
 import unittest
-from schedsi import textlog, world
+from schedsi import world
+from schedsi.log import textlog
 from tests import common
 
 
@@ -14,7 +15,7 @@ class TestExample(unittest.TestCase):
 
     Comparison is done via the text log, so that divergences can easily be checked.
     """
-    textlog_align = textlog.TextLogAlign(cpu=1, time=3, module=7, thread=1)
+    textlog_align = textlog.Align(cpu=1, time=3, module=7, thread=1)
 
     @staticmethod
     def _get_kernel(name):

@@ -4,7 +4,8 @@
 import inspect
 import itertools
 import sys
-from schedsi import context, cpurequest, rcu
+from schedsi import rcu
+from schedsi.cpu import context, request as cpurequest
 
 
 class SchedulerData:  # pylint: disable=too-few-public-methods
@@ -242,7 +243,7 @@ class Scheduler:
 
 
 _PENALTY_SCHEDULER_CLASS_TEMPLATE = """\
-from schedsi import scheduler
+from schedsi.schedulers import scheduler
 import {addon_cls_module}
 import {scheduler_cls_module}
 

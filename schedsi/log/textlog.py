@@ -4,7 +4,7 @@
 import collections
 import itertools
 
-TextLogAlign = collections.namedtuple('TextLogAlign', 'cpu time module thread')
+Align = collections.namedtuple('Align', 'cpu time module thread')
 
 
 class TextLog:
@@ -13,7 +13,7 @@ class TextLog:
     Outputs the events in a text file.
     """
 
-    def __init__(self, stream, align=TextLogAlign(0, 0, 0, 0), *, time_precision):
+    def __init__(self, stream, align=Align(0, 0, 0, 0), *, time_precision):
         """Create a :class:`TextLog`."""
         self.stream = stream
         self.align = align

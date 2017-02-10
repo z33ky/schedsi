@@ -2,7 +2,8 @@
 """Defines :class:`Module`."""
 
 import sys
-from schedsi import cpu, threads
+from schedsi.cpu import core
+from schedsi.threads import scheduler_thread, vcpu_thread
 
 
 class Module:
@@ -19,7 +20,7 @@ class Module:
         """Create a :class:`Module`."""
         self.name = name
         self.parent = parent
-        self._scheduler_thread = threads.SchedulerThread(0, scheduler=scheduler(self))
+        self._scheduler_thread = scheduler_thread.SchedulerThread(0, scheduler=scheduler(self))
         self._vcpus = []
         # HACK: VCPUs are usually added after other threads, but we need it sooner
         #       to get a num_threads count for naming threads.
@@ -42,7 +43,7 @@ class Module:
             self._vcpus = []
         if len(self._vcpus) == 1:
             raise RuntimeError('Does not support more than 1 vcpu yet.')
-        if not isinstance(vcpu, (threads.VCPUThread, cpu.Core)):
+        if not isinstance(vcpu, (vcpu_thread.VCPUThread, core.Core)):
             print(self.name, 'expected a VCPU, got', type(vcpu).__name__, '.', file=sys.stderr)
         self._vcpus.append((vcpu, self._scheduler_thread))
         return self._scheduler_thread

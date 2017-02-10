@@ -13,7 +13,7 @@ import tempfile
 import matplotlib
 import matplotlib.pyplot
 
-from schedsi import binarylog
+from schedsi.log import binarylog
 
 
 class ThreadFigures:

@@ -2,7 +2,7 @@
 """Defines a shortest job first scheduler."""
 
 import bisect
-from schedsi import scheduler
+from schedsi.schedulers import scheduler
 
 
 class SJF(scheduler.Scheduler):

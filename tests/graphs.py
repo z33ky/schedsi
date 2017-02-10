@@ -6,7 +6,8 @@ import os
 import subprocess
 import sys
 import unittest
-from schedsi import graphlog, world
+from schedsi import world
+from schedsi.log import graphlog
 from example import localtimer_kernel, singletimer_kernel
 
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Defines a :class:`Core`."""
 
-from schedsi import context, cpurequest
+from . import context
+from .request import Type as RequestType
 
 CTXSW_COST = 1
 
@@ -190,14 +191,14 @@ class _Status:
         assert prev_chain is None
 
     def _handle_request(self, request):
-        """Handle a :class:`~schedsi.cpurequest.Request`.
+        """Handle a :class:`~schedsi.request.Request`.
 
         Returns whether time was spent handling the request..
         """
-        if request.rtype == cpurequest.Type.current_time:
+        if request.rtype == RequestType.current_time:
             # no-op
             return False
-        elif request.rtype == cpurequest.Type.execute:
+        elif request.rtype == RequestType.execute:
             time = self._calc_runtime(request.thing)
             assert time > 0
             assert time <= request.thing or request.thing == -1
@@ -206,12 +207,12 @@ class _Status:
             self.stats.crunch_time += time
             self._run_background(time)
             self.chain.top.run_crunch(self.current_time, time)
-        elif request.rtype == cpurequest.Type.idle:
+        elif request.rtype == RequestType.idle:
             self.cpu.log.thread_yield(self.cpu)
             self._switch_to_parent()
-        elif request.rtype == cpurequest.Type.resume_chain:
+        elif request.rtype == RequestType.resume_chain:
             self._append_chain(request.thing)
-        elif request.rtype == cpurequest.Type.timer:
+        elif request.rtype == RequestType.timer:
             self.chain.set_timer(request.thing)
             return False
         else:
@@ -284,12 +285,12 @@ class _KernelTimerOnlyStatus(_Status):
             * only the kernel can set a timer.
 
         """
-        if request.rtype == cpurequest.Type.resume_chain:
+        if request.rtype == RequestType.resume_chain:
             assert len(request.thing) == 1
             chain = context.Chain.from_thread(request.thing.bottom)
             self._append_chain(chain)
             return True
-        if request.rtype == cpurequest.Type.timer:
+        if request.rtype == RequestType.timer:
             if self.chain.top.module != self.cpu.kernel:
                 if request.thing is None:
                     return False

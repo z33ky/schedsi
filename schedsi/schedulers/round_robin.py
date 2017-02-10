@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Defines a preemptible Round Robin scheduler."""
 
-from schedsi import multilevel_feedback_queue
+from . import multilevel_feedback_queue
 
 
 class RoundRobin(multilevel_feedback_queue.MLFQ):

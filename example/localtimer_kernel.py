@@ -9,7 +9,9 @@ This example uses the local timers feature.
 
 # pylint: disable=duplicate-code
 import sys
-from schedsi import binarylog, hierarchy_builder, schedulers, threads, world
+from schedsi import schedulers, threads, world
+from schedsi.log import binarylog
+from schedsi.util import hierarchy_builder
 
 # Create a hierarchy of a kernel, a child module and two grand-children.
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))

@@ -5,7 +5,7 @@ This allows usage of such schedulers outside the kernel with the
 single timer scheduling strategy.
 """
 
-from schedsi import scheduler
+from .. import scheduler
 
 
 class FixedTimeSliceSchedulerAddon(scheduler.SchedulerAddonBase):

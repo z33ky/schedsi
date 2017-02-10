@@ -2,7 +2,8 @@
 """Functionality to create a :class:`Module`-hierarchy."""
 
 import collections
-from schedsi import cpurequest, module, threads
+from schedsi.cpu import request as cpurequest
+from schedsi import module, threads
 
 
 class ModuleBuilder:

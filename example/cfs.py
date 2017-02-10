@@ -3,7 +3,9 @@
 
 # pylint: disable=duplicate-code
 import sys
-from schedsi import binarylog, hierarchy_builder, schedulers, threads, world
+from schedsi import schedulers, threads, world
+from schedsi.log import binarylog
+from schedsi.util import hierarchy_builder
 
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.CFS.builder(default_shares=400,
                                                                           min_period=30,
