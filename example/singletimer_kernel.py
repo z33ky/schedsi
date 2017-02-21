@@ -13,11 +13,15 @@ from schedsi import schedulers, threads, world
 from schedsi.log import binarylog
 from schedsi.util import hierarchy_builder
 
+# this is required for the non-kernel modules
+FRR = schedulers.addons.TimeSliceFixer.attach("FRR", schedulers.RoundRobin)
+FSJF = schedulers.addons.TimeSliceFixer.attach("FSJF", schedulers.SJF)
+
 # Create a hierarchy of a kernel, a child module and two grand-children.
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))
-TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin)
-BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin)
-BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
+TOP_MODULE = KERNEL.add_module(scheduler=FRR)
+BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=FRR)
+BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=FSJF)
 
 KERNEL.add_thread(threads.Thread, units=50) \
       .add_thread(threads.PeriodicWorkThread, ready_time=5, units=50, period=20, burst=5) \
