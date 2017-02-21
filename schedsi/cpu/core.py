@@ -102,8 +102,9 @@ class _Status:
         self.cpu.log.timer_interrupt(self.cpu, idx, -self.chain.next_timeout)
         self.stats.timer_delay += -self.chain.next_timeout
 
-        _, time = self._context_switch(split_index=idx)
-        self.stats.timer_delay += time
+        if len(self.chain) > 1:
+            _, time = self._context_switch(split_index=idx)
+            self.stats.timer_delay += time
 
         self.chain.set_timer(None)
 
@@ -253,11 +254,12 @@ class _KernelTimerOnlyStatus(_Status):
         current_context = self.chain.current_context
 
         prev_chain = current_context.buffer
-        current_context.reply(None)
+        if prev_chain:
+            current_context.reply(None)
 
-        if not prev_chain.current_context.started:
-            prev_chain.split(-1)
-        prev_chain.finish(self.current_time)
+            if not prev_chain.current_context.started:
+                prev_chain.split(-1)
+            prev_chain.finish(self.current_time)
 
         current_context.restart(self.current_time)
 
