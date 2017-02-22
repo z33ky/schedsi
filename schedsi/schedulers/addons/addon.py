@@ -2,7 +2,7 @@
 
 import inspect
 import sys
-from schedsi.cpu.request import Type as CPURequestType
+from schedsi.cpu.request import Request as CPURequest, Type as CPURequestType
 from ..scheduler import Scheduler
 
 
@@ -61,22 +61,30 @@ class AddonScheduler(Scheduler):
         """
         schedule = super()._schedule(idx, time_slice, rcu_copy)
         proceed, time_slice = self.addon.schedule(idx, time_slice, rcu_copy.data)
+
+        answer = None
+        can_idle = True
         # TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
-        for request in schedule:
+        while True:
+            try:
+                request = schedule.send(answer)
+            except StopIteration:
+                return
+
             if request.rtype == CPURequestType.timer:
                 if not proceed:
-                    continue
+                    request = CPURequest.current_time()
                 request.thing = time_slice
             elif request.rtype == CPURequestType.resume_chain:
-                try:
-                    response = request.thing
-                    if proceed:
-                        response = (yield request)
-                    request = schedule.send(response)
-                except StopIteration:
-                    return
-                assert request.rtype not in (CPURequestType.idle, CPURequestType.resume_chain)
-            yield request
+                assert can_idle
+                if not proceed:
+                    answer = request.thing
+                    can_idle = False
+                    continue
+            else:
+                assert can_idle or request.rtype != CPURequestType.idle
+
+            answer = yield request
 
 
 class Addon():
