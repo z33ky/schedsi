@@ -405,7 +405,9 @@ class VCPUThread(_BGStatThread):
 
         See :meth:`_BGStatThread.get_statistics`.
         """
+        self._update_active = True
         stats = super().get_statistics(current_time)
+        self._update_active = False
         sched_key = (self._thread.module.name, self._thread.tid)
         stats['scheduler'] = {sched_key: self._thread.get_statistics(current_time)}
         return stats
