@@ -200,9 +200,9 @@ class _Status:
             # no-op
             return False
         elif request.rtype == RequestType.execute:
-            time = self._calc_runtime(request.thing)
+            time = self._calc_runtime(request.arg)
             assert time > 0
-            assert request.thing is None or time <= request.thing
+            assert request.arg is None or time <= request.arg or request.arg == -1
             self.cpu.log.thread_execute(self.cpu, time)
             self._update_time(time)
             self.stats.crunch_time += time
@@ -212,9 +212,9 @@ class _Status:
             self.cpu.log.thread_yield(self.cpu)
             self._switch_to_parent()
         elif request.rtype == RequestType.resume_chain:
-            self._append_chain(request.thing)
+            self._append_chain(request.arg)
         elif request.rtype == RequestType.timer:
-            self.chain.set_timer(request.thing)
+            self.chain.set_timer(request.arg)
             return False
         else:
             assert False
@@ -288,13 +288,13 @@ class _KernelTimerOnlyStatus(_Status):
 
         """
         if request.rtype == RequestType.resume_chain:
-            assert len(request.thing) == 1
-            chain = context.Chain.from_thread(request.thing.bottom)
+            assert len(request.arg) == 1
+            chain = context.Chain.from_thread(request.arg.bottom)
             self._append_chain(chain)
             return True
         if request.rtype == RequestType.timer:
             if self.chain.top.module != self.cpu.kernel:
-                if request.thing is None:
+                if request.arg is None:
                     return False
                 raise RuntimeError('Received timer request from non-kernel scheduler.')
             # let super() handle the rest of this request

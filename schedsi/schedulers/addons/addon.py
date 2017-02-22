@@ -82,13 +82,13 @@ class AddonScheduler(Scheduler):
                             delta = next_ready_time[0] - current_time
                         # if this assumption does not hold we need to decide
                         # whether we really want to override this
-                        assert delta == request.thing
+                        assert delta == request.arg
                     if time_slice is None or delta is None:
-                        request.thing = time_slice
+                        request.arg = time_slice
             elif request.rtype == CPURequestType.resume_chain:
                 assert can_idle
                 if not proceed:
-                    answer = request.thing
+                    answer = request.arg
                     can_idle = False
                     continue
             else:

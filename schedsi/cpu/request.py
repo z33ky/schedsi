@@ -10,22 +10,22 @@ Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute', 'ti
 class Request:
     """A request to the CPU."""
 
-    def __init__(self, rtype, thing):
+    def __init__(self, rtype, arg):
         """Create a :class:`Request`."""
         if rtype == Type.current_time:
-            assert thing is None
+            assert arg is None
         elif rtype == Type.resume_chain:
-            assert isinstance(thing, context.Chain)
+            assert isinstance(arg, context.Chain)
         elif rtype == Type.idle:
-            assert thing is None or thing > 0
+            assert arg is None or arg > 0
         elif rtype == Type.execute:
-            assert thing is None or thing > 0
+            assert arg is None or arg > 0
         elif rtype == Type.timer:
-            assert thing is None or thing > 0
+            assert arg is None or arg > 0
         else:
             assert False, 'Unknown Type'
         self.rtype = rtype
-        self.thing = thing
+        self.arg = arg
 
     @classmethod
     def current_time(cls):
