@@ -1,5 +1,6 @@
 """Define the :class:`PeriodicWorkThread`."""
 
+import math
 from schedsi.cpu import request as cpurequest
 from schedsi.threads.thread import Thread
 
@@ -66,7 +67,9 @@ class PeriodicWorkThread(Thread):
                     quota_plus = self._get_quota(current_time + quota_left)
                 self.current_burst_left = quota_left
             else:
-                self.current_burst_left = 0
+                # FIXME: this is a crutch resulting from floating point inaccuracies
+                assert math.isclose(self.current_burst_left, 0, abs_tol=1e-10)
+                quota_left = self.current_burst_left
 
             current_time = yield from super()._execute(current_time, quota_left)
             if self.current_burst_left == 0:
