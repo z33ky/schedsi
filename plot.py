@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """A tool to plot schedsi simulation statistics."""
 
+import collections
 import functools
 import json
 import math
@@ -44,7 +45,7 @@ class ThreadFigures:
             if not times:
                 max_time = 0
             else:
-                if isinstance(times[0], list):
+                if isinstance(times[0], collections.abc.Sequence):
                     times = [sum(elem) for elem in times]
                 max_time = math.ceil(max(times))
             subplot.hist(times, max_time + 1, range=(-0.5, max_time + 0.5))
