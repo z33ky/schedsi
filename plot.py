@@ -81,6 +81,9 @@ def plot_scheduler(name, stats):
 
     for (key, values) in sorted(stats['children'].items()):
         print('Plotting thread {}...'.format(key))
+        scheduler = values.get('scheduler', None)
+        if scheduler is not None:
+            key += ' (' + ', '.join(scheduler.keys()) + ')'
         figures.plot_thread(key, values)
 
     # strip the thread-id from the name
