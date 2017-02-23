@@ -22,9 +22,8 @@ class VCPUThread(_BGStatThread):
             print('VCPUThread expected a SchedulerThread, got', type(self._thread).__name__, '.',
                   file=sys.stderr)
 
-        super().__init__(module, *args, **kwargs, ready_time=self._thread.ready_time, units=None)
-
-        self._update_active = False
+        super().__init__(module, *args, **kwargs,
+                         ready_time=self._thread.ready_time, units=self._thread.remaining)
 
     @property
     def _thread(self):
@@ -43,9 +42,7 @@ class VCPUThread(_BGStatThread):
 
         current_time = yield cpurequest.Request.current_time()
         while True:
-            self._update_active = True
             self._update_ready_time(current_time)
-            self._update_active = False
             self._chain = yield cpurequest.Request.resume_chain(self._chain)
             current_time = yield cpurequest.Request.idle()
 
@@ -54,48 +51,16 @@ class VCPUThread(_BGStatThread):
 
         See :meth:`Thread.suspend`.
         """
-        self._update_active = True
         super().suspend(current_time)
-        self._update_active = False
-
-    def resume(self, current_time, returning):
-        """Resume execution.
-
-        See :meth:`_BGStatThread.resume`.
-        """
-        self._update_active = True
-        super().resume(current_time, returning)
-        self._update_active = False
-
-    def run_crunch(self, current_time, run_time):
-        """Update runtime state.
-
-        See :meth:`Thread.run`.
-        """
-        self._update_active = True
-        super().run_crunch(current_time, run_time)
-        self._update_active = False
+        self.ready_time = self._thread.ready_time
+        self.remaining = self._thread.remaining
 
     def get_statistics(self, current_time):
         """Obtain statistics.
 
         See :meth:`_BGStatThread.get_statistics`.
         """
-        self._update_active = True
         stats = super().get_statistics(current_time)
-        self._update_active = False
         sched_key = (self._thread.module.name, self._thread.tid)
         stats['scheduler'] = {sched_key: self._thread.get_statistics(current_time)}
         return stats
-
-    def __getattribute__(self, key):
-        """:attr:`ready_time` and :attr:`remaining` should be taken from the \
-        :class:`SchedulerThread`.
-
-        Except for ready_time when we're calculating this thread's statistics,
-        for which `_update_active` should be set so the key is passed through.
-        """
-        if key == 'remaining' or (key == 'ready_time' and
-                                  not object.__getattribute__(self, '_update_active')):
-            return object.__getattribute__(self, '_thread').__getattribute__(key)
-        return object.__getattribute__(self, key)
