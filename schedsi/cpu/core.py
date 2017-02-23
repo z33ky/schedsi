@@ -146,8 +146,8 @@ class _Status:
                 ctx.thread.suspend(self.current_time)
 
         # update for cost regardless of the time-slice, because context switching is atomic
+        assert self._calc_runtime(cost) == cost or self.chain.next_timeout <= cost
         self._update_time(cost)
-        assert self._calc_runtime(cost) == cost or self.chain.next_timeout <= 0
 
         self._run_background(cost)
         if split_index is not None:
