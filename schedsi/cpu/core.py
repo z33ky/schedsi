@@ -78,9 +78,6 @@ class _Status:
         `time` must not be negative.
         """
         assert time >= 0
-        timeout = self.chain.next_timeout
-        if timeout is not None:
-            assert time <= timeout or timeout <= 0
 
         self.current_time += time
         self.chain.elapse(time)
