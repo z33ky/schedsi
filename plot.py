@@ -16,6 +16,9 @@ import matplotlib.pyplot
 
 from schedsi.log import binarylog
 
+# TODO: parameterize
+BINS_CLUSTER = 10
+
 
 class ThreadFigures:
     """Management of pyplot figures for thread-timing statistics."""
@@ -47,8 +50,9 @@ class ThreadFigures:
             else:
                 if isinstance(times[0], collections.abc.Sequence):
                     times = [sum(elem) for elem in times]
-                max_time = math.ceil(max(times))
-            subplot.hist(times, max_time + 1, range=(-0.5, max_time + 0.5))
+                max_time = max(times)
+            bins = max(1, math.ceil(max_time / BINS_CLUSTER))
+            subplot.hist(times, bins, range=(0, max_time))
             subplot.set_title(title)
             subplot.set_xlabel('time')
             subplot.set_ylabel('count')
