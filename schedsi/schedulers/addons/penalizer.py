@@ -51,6 +51,9 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
     def start_schedule(self, prev_run_time, rcu_data, last_chain_queue, last_chain_idx):
         """See :meth:`Addon.start_schedule`."""
         super().start_schedule(prev_run_time, rcu_data, last_chain_queue, last_chain_idx)
+        if prev_run_time and rcu_data.last_time_slice is None:
+            assert not rcu_data.sat_out_threads
+            return
         last_chain = self._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)
         last_thread = last_chain and last_chain.bottom
         last_id = id(last_thread)
@@ -87,6 +90,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
             for k in rcu_data.niceness.keys():
                 rcu_data.niceness[k] -= niceness
         assert not rcu_data.niceness or 0 in rcu_data.niceness.values()
+        assert all(v <= 0 for v in rcu_data.niceness.values())
 
     def schedule(self, idx, time_slice, rcu_data):
         """See :meth:`TimeSliceFixer.schedule`.
@@ -101,7 +105,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
 
         niceness = rcu_data.niceness.setdefault(tid, 0)
 
-        if niceness < self.threshold(time_slice):
+        if time_slice is not None and niceness < self.threshold(time_slice):
             if tid in rcu_data.sat_out_threads:
                 # scheduler selected a thread that we wanted to stall again
                 # allow it to run then
