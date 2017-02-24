@@ -18,6 +18,8 @@ from schedsi.log import binarylog
 
 # TODO: parameterize
 BINS_CLUSTER = 10
+TIME_RANGE_CLAMPING = 10
+COUNT_RANGE_CLAMPING = 10
 
 
 class ThreadFigures:
@@ -47,12 +49,18 @@ class ThreadFigures:
 
             if not times:
                 max_time = 0
+                max_range = 0
             else:
                 if isinstance(times[0], collections.abc.Sequence):
                     times = [sum(elem) for elem in times]
                 max_time = max(times)
+                max_range = max_time
+                if max_range != 0:
+                    clamp_range = max_range + (max_range / TIME_RANGE_CLAMPING)
+                    max_range = round(max_range,
+                                      -math.floor(math.log(clamp_range, TIME_RANGE_CLAMPING)))
             bins = max(1, math.ceil(max_time / BINS_CLUSTER))
-            subplot.hist(times, bins, range=(0, max_time))
+            subplot.hist(times, bins, range=(0, max_range))
             subplot.set_title(title)
             subplot.set_xlabel('time')
             subplot.set_ylabel('count')
@@ -62,6 +70,9 @@ class ThreadFigures:
                 ylim[1] += 0.1
             elif ylim[1] > 1:
                 ylim[1] += math.log10(ylim[1])
+            if ylim[1] != 0:
+                clamp_ylim = ylim[1] + (ylim[1] / COUNT_RANGE_CLAMPING)
+                ylim[1] = round(ylim[1], -math.floor(math.log(clamp_ylim, COUNT_RANGE_CLAMPING)))
             subplot.axes.set_ylim(ylim)
         self.plot_count += 1
 
