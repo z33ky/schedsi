@@ -2,6 +2,7 @@
 	* local-timer based scheduling support added
 	* MLFQ scheduling
 	* CFS scheduling
+	* FCFS scheduling
 	* improved PenaltySchedulerAddon
 		* schedulers now return time-slices, which is used for the local-timer based scheduling
 		* the addon uses these time-slices to measure the penalty
