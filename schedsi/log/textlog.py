@@ -120,7 +120,7 @@ class TextLog:
             return str([list(stat) if isinstance(stat, tuple) else stat for stat in stats])
 
         if stats is None:
-            return '-1'
+            return 'null'
 
         assert False, 'Cannot encode {}'.format(type(stats))
 
