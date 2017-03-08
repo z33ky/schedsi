@@ -10,6 +10,7 @@ class _ThreadStats:  # pylint: disable=too-few-public-methods
     def __init__(self):
         """Create a :class:`_ThreadStats`."""
         self.finished_time = None
+        self.response_time = None
         self.ctxsw = []
         self.run = []
         self.wait = [[]]
@@ -22,20 +23,25 @@ class Thread:
         * an associated module
         * a locally unique thread id
         * ready time (`None` if finished)
+        * response units - after how many units to set
+                           :attr:`stats.response_time` (`None` if irrelevant)
         * remaining workload (`None` if infinite)
         * a lock indicating whether this thread is currently active
         * :class:`_ThreadStats`
     """
 
-    def __init__(self, module, tid=None, *, ready_time=0, units=None):
+    def __init__(self, module, tid=None, *, ready_time=0, units=None, response_units=None):
         """Create a :class:`Thread`."""
         assert ready_time >= 0
         assert units is None or units >= 0
+        assert response_units is None or units is None or response_units <= units
+
         self.module = module
         if tid is None:
             tid = module.num_threads()
         self.tid = tid
         self.ready_time = ready_time
+        self.response_units = response_units
         self.remaining = units
         self.is_running = threading.Lock()
         self.stats = _ThreadStats()
@@ -139,6 +145,12 @@ class Thread:
         self.ready_time += run_time
         assert self.ready_time == current_time
 
+        if self.response_units is not None:
+            self.response_units -= run_time
+            if self.response_units <= 0:
+                self.stats.response_time = current_time + self.response_units
+                self.response_units = None
+
         if self.remaining is not None:
             assert self.remaining >= run_time
             self.remaining -= run_time
@@ -151,6 +163,7 @@ class Thread:
     def end(self):
         """End execution."""
         assert self.is_finished()
+        assert self.response_units is None
         self.stats.finished_time = self.ready_time
         # never start again
         self.ready_time = None
