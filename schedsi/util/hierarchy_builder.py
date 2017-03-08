@@ -70,17 +70,17 @@ class ModuleBuilderThread(threads.Thread):
     """
 
     def __init__(self, time, parent, name=None, *args, vcpus=1, scheduler,
-                 units=None, ready_time=None, **kwargs):
+                 units=-1, ready_time=None, **kwargs):
         """Create a :class:`ModuleBuilderThread`.
 
         `time` refers to the time the module should be spawned.
-        `units` may be `None` to indicate the thread should be finished when the thread spawns.
+        `units` may be `-1` to indicate the thread should be finished when the thread spawns.
         `ready_time` may be `None` to indicate it coinciding with `time`.
 
-        `time` must be >= `ready_time` and <= `ready_time` + `units` if `units` != -1.
+        `time` must be >= `ready_time` and <= `ready_time` + `units` if `units` != `None`.
         """
-        if units is None:
-            assert ready_time is None, 'If units is None, ready_time must be None.'
+        if units == -1:
+            assert ready_time is None, 'If units is -1, ready_time must be None.'
             units = 0
             self.destroy_after_spawn = True
         else:
@@ -101,7 +101,7 @@ class ModuleBuilderThread(threads.Thread):
             self.init_args[1].update({'ready_time': ready_time, 'units': units})
 
         assert time >= ready_time, 'Spawn time must not come before ready_time.'
-        assert units == -1 or time <= ready_time + units, \
+        assert units is None or time <= ready_time + units, \
             'Spawn time must not exceed execution time.'
 
         self.time = time
@@ -110,7 +110,7 @@ class ModuleBuilderThread(threads.Thread):
         self.threads = []
         self.vcpus = vcpus
 
-        self.spawn_skew = -1
+        self.spawn_skew = None
 
     def _late_init(self, parent):
         """Call `super().__init__`.
@@ -160,7 +160,7 @@ class ModuleBuilderThread(threads.Thread):
                 self._update_ready_time(current_time)
                 yield cpurequest.Request.idle()
                 return
-        elif run_time == -1 or current_time + run_time > self.time:
+        elif run_time is None or current_time + run_time > self.time:
             run_time = self.time - current_time
         return (yield from super()._execute(current_time, run_time))
 
@@ -206,7 +206,7 @@ class ModuleBuilderThread(threads.Thread):
                 assert kwargs is None
                 thread._late_init(child)  # pylint: disable=protected-access
             else:
-                if kwargs.get('ready_time', -1) == -1:
+                if kwargs.get('ready_time', None) is None:
                     kwargs['ready_time'] = self.time
                 else:
                     self.spawn_skew = kwargs['ready_time'] - current_time

@@ -9,7 +9,7 @@ class _ThreadStats:  # pylint: disable=too-few-public-methods
 
     def __init__(self):
         """Create a :class:`_ThreadStats`."""
-        self.finished_time = -1
+        self.finished_time = None
         self.ctxsw = []
         self.run = []
         self.wait = [[]]
@@ -21,14 +21,16 @@ class Thread:
     A thread has
         * an associated module
         * a locally unique thread id
-        * ready time (-1 if finished)
-        * remaining workload (-1 if infinite)
+        * ready time (`None` if finished)
+        * remaining workload (`None` if infinite)
         * a lock indicating whether this thread is currently active
         * :class:`_ThreadStats`
     """
 
-    def __init__(self, module, tid=None, *, ready_time=0, units=-1):
+    def __init__(self, module, tid=None, *, ready_time=0, units=None):
         """Create a :class:`Thread`."""
+        assert ready_time >= 0
+        assert units is None or units >= 0
         self.module = module
         if tid is None:
             tid = module.num_threads()
@@ -51,14 +53,14 @@ class Thread:
 
         current_time = yield cpurequest.Request.current_time()
         while True:
-            current_time = yield from self._execute(current_time, -1)
+            current_time = yield from self._execute(current_time, None)
 
     def _update_ready_time(self, current_time):
         """Update ready_time while executing.
 
         Includes some checks to make sure the state is sane.
         """
-        assert self.ready_time != -1 and self.ready_time <= current_time
+        assert self.ready_time is not None and 0 <= self.ready_time <= current_time
         assert self.is_running.locked()
 
         self.ready_time = current_time
@@ -76,11 +78,11 @@ class Thread:
 
         self._update_ready_time(current_time)
 
-        if run_time == -1:
+        if run_time is None:
             run_time = self.remaining
         else:
             assert run_time > 0
-            assert run_time <= self.remaining or self.remaining == -1
+            assert self.remaining is None or run_time <= self.remaining
 
         current_time = yield cpurequest.Request.execute(run_time)
 
@@ -137,7 +139,7 @@ class Thread:
         self.ready_time += run_time
         assert self.ready_time == current_time
 
-        if self.remaining != -1:
+        if self.remaining is not None:
             assert self.remaining >= run_time
             self.remaining -= run_time
 
@@ -151,7 +153,7 @@ class Thread:
         assert self.is_finished()
         self.stats.finished_time = self.ready_time
         # never start again
-        self.ready_time = -1
+        self.ready_time = None
 
     def suspend(self, current_time):
         """Become suspended.
@@ -165,7 +167,10 @@ class Thread:
         if self.is_running.locked():
             # only record waiting time if the thread has executed
             self.stats.wait.append([])
-            self.ready_time = max(self.ready_time, current_time)
+            if self.ready_time is not None:
+                self.ready_time = max(self.ready_time, current_time)
+            else:
+                assert self.stats.finished_time > 0
 
     def resume(self, current_time, returning):
         """Resume execution.
@@ -177,7 +182,7 @@ class Thread:
         if self.is_finished():
             return
 
-        assert self.ready_time != -1
+        assert self.ready_time is not None
 
         if returning:
             self._update_ready_time(current_time)
@@ -206,7 +211,7 @@ class Thread:
         # this means we can read data without locking self.is_running
         stats = self.stats.__dict__.copy()
         if not self.is_finished() and current_time >= self.ready_time:
-            assert self.ready_time != -1
+            assert self.ready_time is not None
             stats['waiting'] = current_time - self.ready_time
         if stats['wait'][-1] == []:
             stats['wait'].pop()

@@ -53,7 +53,7 @@ class _Status:
         If :attr:`chain.next_timeout` is sooner, then the operation
         would be interrupted. This function evaluates this.
 
-        -1 is considered "as long as possible".
+        `None` is considered "as long as possible".
 
         Also see :meth:`_update_time`.
 
@@ -64,9 +64,9 @@ class _Status:
 
         timeout = self.chain.next_timeout
         if timeout is None:
-            if time == -1:
+            if time is None:
                 raise RuntimeError('CPU hang due to unyielding execution without set timer.')
-        elif time > timeout or time == -1:
+        elif time is None or time > timeout:
             time = max(0, timeout)
 
         assert time > 0 or time == 0 and timeout <= 0
@@ -201,7 +201,7 @@ class _Status:
         elif request.rtype == RequestType.execute:
             time = self._calc_runtime(request.thing)
             assert time > 0
-            assert time <= request.thing or request.thing == -1
+            assert request.thing is None or time <= request.thing
             self.cpu.log.thread_execute(self.cpu, time)
             self._update_time(time)
             self.stats.crunch_time += time

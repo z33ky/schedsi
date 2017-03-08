@@ -27,14 +27,14 @@ class SJF(scheduler.Scheduler):
         del ready_chains[new_idx:]
 
         # we sort the list to make insertion easier
-        new_chains = sorted(new_chains, key=lambda c: c.bottom.remaining)
+        new_chains = sorted(new_chains, key=lambda c: c.bottom.remaining or -1)
 
         # remaining_list should contain the remaining times of all non-infinitly threads
-        inf_idx = next((i for i, c in enumerate(ready_chains) if c.bottom.remaining == -1), None)
+        inf_idx = next((i for i, c in enumerate(ready_chains) if c.bottom.remaining is None), None)
         remaining_list = list(c.bottom.remaining for c in ready_chains[:inf_idx])
 
         # filter out the infinitly executing ones from new_chains
-        inf_idx = next((i for i, c in enumerate(new_chains) if c.bottom.remaining != -1),
+        inf_idx = next((i for i, c in enumerate(new_chains) if c.bottom.remaining is not None),
                        len(new_chains))
         ready_chains += new_chains[:inf_idx]
         new_chains = new_chains[inf_idx:]

@@ -119,6 +119,9 @@ class TextLog:
         if isinstance(stats, (list, tuple)):
             return str([list(stat) if isinstance(stat, tuple) else stat for stat in stats])
 
+        if stats is None:
+            return '-1'
+
         assert False, 'Cannot encode {}'.format(type(stats))
 
     def thread_statistics(self, stats):

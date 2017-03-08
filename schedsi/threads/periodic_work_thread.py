@@ -30,7 +30,7 @@ class PeriodicWorkThread(Thread):
         Won't return more than :attr:`remaining`.
         """
         quota_left = self._calc_activations(current_time) * self.burst - self.total_run_time
-        if self.remaining != -1:
+        if self.remaining is not None:
             quota_left = min(self.remaining, quota_left)
         return quota_left
 

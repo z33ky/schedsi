@@ -19,7 +19,7 @@ class Request:
         elif rtype == Type.idle:
             assert thing is None
         elif rtype == Type.execute:
-            assert thing > 0 or thing == -1
+            assert thing is None or thing > 0
         elif rtype == Type.timer:
             assert thing is None or thing > 0
         else:
