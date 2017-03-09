@@ -69,7 +69,7 @@ class ModuleBuilderThread(threads.Thread):
     Can also do computation on the side.
     """
 
-    def __init__(self, time, parent, name=None, *args, vcpus=1, scheduler,
+    def __init__(self, parent, name=None, *args, time, vcpus=1, scheduler,
                  units=-1, ready_time=None, **kwargs):
         """Create a :class:`ModuleBuilderThread`.
 
