@@ -18,7 +18,7 @@ class ModuleBuilder:
         """Attach a child :class:`Module`.
 
         The `name` is auto-generated, if it is `None`,
-        as `self.name + "." + len(self.children)`.
+        as `self.spawn_name + "." + len(self.children)`.
 
         `vcpu_add_args` may be a single `dict`, in which
         case it is used for all vcpus, or it can be a list
@@ -104,8 +104,8 @@ class ModuleBuilderThread(threads.Thread):
         assert units is None or time <= ready_time + units, \
             'Spawn time must not exceed execution time.'
 
-        self.time = time
-        self.name = name
+        self.spawn_time = time
+        self.spawn_name = name
         self.scheduler = scheduler
         self.threads = []
         self.vcpus = vcpus
@@ -153,15 +153,15 @@ class ModuleBuilderThread(threads.Thread):
         Spawns thread when it's time.
         Reduces `run_time` if we would miss the spawn time.
         """
-        if self.time <= current_time:
+        if self.spawn_time <= current_time:
             self._spawn_module(current_time)
             self.disable_spawning()
             if super().is_finished():
                 self._update_ready_time(current_time)
                 yield cpurequest.Request.idle()
                 return
-        elif run_time is None or current_time + run_time > self.time:
-            run_time = self.time - current_time
+        elif run_time is None or current_time + run_time > self.spawn_time:
+            run_time = self.spawn_time - current_time
         return (yield from super()._execute(current_time, run_time))
 
     def suspend(self, current_time):  # pylint: disable=method-hidden
@@ -171,11 +171,11 @@ class ModuleBuilderThread(threads.Thread):
 
         Spawns a :class:`Thread` if it's time.
         """
-        if self.time == current_time:
+        if self.spawn_time == current_time:
             self._spawn_module(current_time)
             self.disable_spawning()
         else:
-            assert self.time > current_time, 'Ran over spawn time.'
+            assert self.spawn_time > current_time, 'Ran over spawn time.'
         super().suspend(current_time)
 
     def end(self):  # pylint: disable=method-hidden
@@ -192,8 +192,9 @@ class ModuleBuilderThread(threads.Thread):
     def _spawn_module(self, current_time):
         """Spawn the :class:`Module`."""
         assert not self.is_spawning_disabled(), 'Spawning is disabled.'
+        assert self.spawn_time <= current_time
 
-        name = self.name
+        name = self.spawn_name
         if name is None:
             name = self.module.name + '.' + str(self.module.num_children())
 
@@ -207,14 +208,14 @@ class ModuleBuilderThread(threads.Thread):
                 thread._late_init(child)  # pylint: disable=protected-access
             else:
                 if kwargs.get('ready_time', None) is None:
-                    kwargs['ready_time'] = self.time
+                    kwargs['ready_time'] = self.spawn_time
                 thread = thread(child, *args, **kwargs)
             child.add_thread(thread)
 
         for _ in range(0, self.vcpus):
             self.module.add_thread(threads.VCPUThread(self.module, child=child))
 
-        self.spawn_skew = current_time - self.time
+        self.spawn_skew = current_time - self.spawn_time
 
     def get_statistics(self, current_time):
         """Obtain statistics.
@@ -251,7 +252,7 @@ class ModuleBuilderThread(threads.Thread):
         assert not self.is_spawning_disabled(), 'Spawning was disabled.'
 
         if time is None:
-            time = self.time
+            time = self.spawn_time
 
         thread = ModuleBuilderThread(time, self, name, *args, scheduler=scheduler, **kwargs)
         self.threads.append((thread, None, None))
