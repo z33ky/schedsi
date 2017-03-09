@@ -2,18 +2,14 @@
 """Defines a shortest job first scheduler."""
 
 import bisect
-from schedsi.schedulers import scheduler
+from schedsi.schedulers import first_come_first_serve
 
 
-class SJF(scheduler.Scheduler):
+class SJF(first_come_first_serve.FCFS):
     """Shortest job first scheduler."""
 
-    def __init__(self, module, **kwargs):
-        """Create a :class:`SJF` scheduler."""
-        super().__init__(module, **kwargs)
-
     def _update_ready_chains(self, time, rcu_data):
-        """See :meth:`Scheduler._update_ready_chains`.
+        """See :meth:`FCFS._update_ready_chains`.
 
         To make the scheduling decision easier,
         the threads will be sorted by remaining time.
@@ -48,15 +44,3 @@ class SJF(scheduler.Scheduler):
             idx = bisect.bisect(remaining_list, ctx.bottom.remaining, idx)
             ready_chains.insert(idx + count, ctx)
             count += 1
-
-    def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx):
-        """Schedule the next :class:`~schedsi.threads.Thread`.
-
-        See :meth:`~schedsi.scheduler.Scheduler._sched_loop`.
-        """
-        idx = 0
-        if not rcu_copy.data.ready_chains:
-            idx = -1
-        return idx, self.time_slice
-        # needs to be a coroutine
-        yield  # pylint: disable=unreachable
