@@ -226,7 +226,7 @@ class Thread:
         if not self.is_finished() and current_time >= self.ready_time:
             assert self.ready_time is not None
             stats['waiting'] = current_time - self.ready_time
-        if stats['wait'][-1] == []:
+        if stats['wait'] and stats['wait'][-1] == []:
             stats['wait'].pop()
         stats['remaining'] = self.remaining
         return stats
