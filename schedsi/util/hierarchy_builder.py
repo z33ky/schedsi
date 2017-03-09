@@ -208,13 +208,13 @@ class ModuleBuilderThread(threads.Thread):
             else:
                 if kwargs.get('ready_time', None) is None:
                     kwargs['ready_time'] = self.time
-                else:
-                    self.spawn_skew = kwargs['ready_time'] - current_time
                 thread = thread(child, *args, **kwargs)
             child.add_thread(thread)
 
         for _ in range(0, self.vcpus):
             self.module.add_thread(threads.VCPUThread(self.module, child=child))
+
+        self.spawn_skew = current_time - self.time
 
     def get_statistics(self, current_time):
         """Obtain statistics.
