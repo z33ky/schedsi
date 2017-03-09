@@ -209,6 +209,8 @@ class ModuleBuilderThread(threads.Thread):
             else:
                 if kwargs.get('ready_time', None) is None:
                     kwargs['ready_time'] = self.spawn_time
+                elif kwargs['ready_time'] < 0:
+                    kwargs['ready_time'] = current_time - kwargs['ready_time']
                 thread = thread(child, *args, **kwargs)
             child.add_thread(thread)
 
@@ -229,6 +231,11 @@ class ModuleBuilderThread(threads.Thread):
         """Add a :class:`Thread`.
 
         See :meth:`ModuleBuilder.add_thread`.
+
+        Negative `ready_time`s will be replaced by `current_time - ready_time`
+        at module spawn.
+        If `ready_time` is not present, it will be replaced by `current_time`
+        at module spawn.
 
         Returns `self`.
         """
