@@ -61,11 +61,9 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
         niceness = 0
         if last_chain is not None and last_id not in rcu_data.sat_out_threads:
             if last_thread.is_finished():
-                niceness = rcu_data.niceness.pop(last_id)
-                if niceness >= 0 and rcu_data.niceness:
+                last_niceness = rcu_data.niceness.pop(last_id)
+                if last_niceness >= 0 and rcu_data.niceness:
                     niceness = max(rcu_data.niceness.values())
-                else:
-                    niceness = 0
             else:
                 if prev_run_time == 0:
                     # probably was blocked by another addon
