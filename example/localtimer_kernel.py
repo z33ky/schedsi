@@ -17,7 +17,7 @@ from schedsi.util import hierarchy_builder
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=schedulers.RoundRobin.builder(time_slice=10))
 TOP_MODULE = KERNEL.add_module(scheduler=schedulers.RoundRobin.builder(time_slice=10))
 BOTTOM_MODULE_A = TOP_MODULE.add_module(scheduler=schedulers.RoundRobin.builder(time_slice=8))
-BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF.builder(time_slice=8))
+BOTTOM_MODULE_B = TOP_MODULE.add_module(scheduler=schedulers.SJF)
 
 KERNEL.add_thread(threads.Thread, units=50) \
       .add_thread(threads.PeriodicWorkThread, ready_time=5, units=50, period=20, burst=5) \
