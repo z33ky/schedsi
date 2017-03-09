@@ -150,8 +150,6 @@ class Scheduler:
             last_idx = None
             if rcu_data.last_idx != -1:
                 last_idx = rcu_data.last_idx
-                # FIXME: last thread shouldn't be in ready_chains for multi-vcpu
-                #        see _schedule() FIXME
                 last_context = rcu_data.ready_chains[last_idx]
 
                 if last_context.bottom.is_finished():
@@ -195,6 +193,7 @@ class Scheduler:
         rcu_data = rcu_copy.data
 
         rcu_data.last_idx = idx
+
         # FIXME: we need to take it out of the ready_chains for multi-vcpu
         #        else we might try to run the same chain in parallel
         if not self._rcu.update(rcu_copy):
@@ -218,10 +217,11 @@ class Scheduler:
 
         yield CPURequest.timer(time_slice)
 
-        rcu_data.ready_chains[idx] = yield CPURequest.resume_chain(rcu_data.ready_chains[idx])
-        # FIXME: this can fail on multi-vcpu
-        if not self._rcu.update(rcu_copy):
-            assert False, 'Multi-vcpu synchronization not yet supported'
+        chain = yield CPURequest.resume_chain(rcu_data.ready_chains[idx])
+        def appliance(data):
+            """Update executed chain."""
+            data.ready_chains[idx] = chain
+        self._rcu.apply(appliance)
 
     def schedule(self, prev_run_time, next_ready_time):
         """Schedule the next :class:`context.Chain <schedsi.context.Chain>`.
