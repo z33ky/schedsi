@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Defines a :class:`Context` and :class:`Chain` thereof."""
 
+from . import C
+Chain = C.Chain
+
 
 class Context:
     """An operation context for a CPU Core.
@@ -58,7 +61,7 @@ class Context:
         self.started = False
 
 
-class Chain:
+class PyChain:
     """The contexts for a scheduling-chain.
 
     The context chain represents the stack of contexts for a scheduling-chain.
@@ -129,6 +132,7 @@ class Chain:
         if tail.next_timeout is not None \
            and (self.next_timeout is None or tail.next_timeout < self.next_timeout):
             self.next_timeout = tail.next_timeout
+        return tail.contexts
 
     def set_timer(self, timeout, idx=-1):
         """Set the timeout of a context in the chain.

@@ -15,5 +15,8 @@ setuptools.setup(
             'schedsi-replay = replay:main'
             'schedsi-plot = plot:main'
             ]
-    }
+    },
+    ext_modules=[
+        setuptools.Extension("schedsi.cpu.C", ["schedsi/cpu/chain.c"])
+        ]
 )

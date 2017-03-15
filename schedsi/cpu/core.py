@@ -155,8 +155,8 @@ class _Status:
             self.chain.top.resume(self.current_time, True)
         else:
             thread_from.run_ctxsw(self.current_time, cost)
-            self.chain.append_chain(appendix)
-            for ctx in appendix.contexts:
+            new_contexts = self.chain.append_chain(appendix)
+            for ctx in new_contexts:
                 ctx.thread.resume(self.current_time, False)
 
         assert thread_from != self.chain.top

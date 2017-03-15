@@ -26,7 +26,7 @@ def _encode_cpu(cpu):
     }
 
 
-def _encode_contexts(contexts, current_context):
+def _encode_contexts(chain, current_context):
     """Encode a :class:`~schedsi.context.Context` to a :obj:`dict`.
 
     `current_context` is the top context of the current
@@ -44,18 +44,22 @@ def _encode_contexts(contexts, current_context):
             assert top.module == bottom.module
         return 'child' if is_child else 'sibling'
 
-    first = contexts[0].thread
-    chain = [{'thread': _encode_thread(first)}]
+    first = chain.bottom
+    enc_chain = [{'thread': _encode_thread(first)}]
     if current_context is not None:
-        chain[0].update({'relationship': stringify_relationship(first, current_context.thread)})
+        enc_chain[0].update({'relationship': stringify_relationship(first, current_context.thread)})
 
-    for cur, prev in zip(contexts[1:], contexts):
-        chain.append({
-            'thread': _encode_thread(cur.thread),
-            'relationship': stringify_relationship(cur.thread, prev.thread)
+    #for cur, prev in zip(contexts[1:], contexts):
+    prev = first
+    for idx in range(1, len(chain)):
+        cur = chain.thread_at(idx)
+        enc_chain.append({
+            'thread': _encode_thread(cur),
+            'relationship': stringify_relationship(cur, prev)
         })
+        prev = cur
 
-    return chain
+    return enc_chain
 
 
 def _encode_module(module):
@@ -86,7 +90,7 @@ def _encode_ctxsw(cpu, split_index, appendix, time):
         param = {'split_index': split_index}
     else:
         assert split_index is None
-        param = {'appendix': _encode_contexts(appendix.contexts, cpu.status.chain.current_context)}
+        param = {'appendix': _encode_contexts(appendix, cpu.status.chain.current_context)}
 
     param['time'] = time
 
@@ -96,7 +100,7 @@ def _encode_ctxsw(cpu, split_index, appendix, time):
 def _encode_coreinit(cpu):
     """Encode a init_core event to a :obj:`dict`."""
     return _encode_event(cpu, _Event.init_core.name,
-                         {'context': _encode_contexts(cpu.status.chain.contexts, None)})
+                         {'context': _encode_contexts(cpu.status.chain, None)})
 
 
 class BinaryLog:
