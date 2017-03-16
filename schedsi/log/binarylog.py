@@ -90,7 +90,8 @@ def _encode_ctxsw(cpu, split_index, appendix, time):
         param = {'split_index': split_index}
     else:
         assert split_index is None
-        param = {'appendix': _encode_contexts(appendix, cpu.status.chain.current_context)}
+        #param = {'appendix': _encode_contexts(appendix, cpu.status.chain.current_context)}
+        param = {'appendix': appendix.dict_encode(cpu.status.chain.current_context, _encode_thread)}
 
     param['time'] = time
 

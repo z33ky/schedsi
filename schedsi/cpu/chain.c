@@ -9,8 +9,12 @@ extern int printf(const char*, ...);
 //TODO
 #define Py_Assert(x) assert(x)
 
+static PyObject* pystring_child = NULL;
 static PyObject* pystring_finish = NULL;
+static PyObject* pystring_module = NULL;
+static PyObject* pystring_relationship = NULL;
 static PyObject* pystring_run_background = NULL;
+static PyObject* pystring_sibling = NULL;
 static PyObject* pystring_thread = NULL;
 static PyObject* pystring_timeout = NULL;
 
@@ -118,6 +122,8 @@ static PyObject* Chain_finish(Chain *const self, PyObject *const current_time);
 static PyObject* Chain_run_background(Chain *const self, PyObject *const args);
 static PyObject* Chain_iter(Chain *const self);
 
+static PyObject* Chain_dict_encode(Chain *const self, PyObject *const args);
+
 static PyMethodDef Chain_methods[] = {
 	{"from_context", (PyCFunction)Chain_from_context, METH_CLASS | METH_O,
 	 "Create a :class:`Chain` with a single context."
@@ -169,6 +175,9 @@ static PyMethodDef Chain_methods[] = {
 	 "Call :meth:`Thread.run_background <schedsi.threads.Thread.run_background>`"
 	 "on every :class:`~schedsi.threads.Thread` in the :class:`Chain`"
 	 "except :attr:`current_context`."
+	},
+	{"dict_encode", (PyCFunction)Chain_dict_encode, METH_VARARGS,
+	 "TODO",
 	},
 	{NULL}
 };
@@ -836,6 +845,47 @@ Chain_run_background(Chain *const self, PyObject *const args)
 }
 
 static PyObject*
+Chain_dict_encode(Chain *const appendix, PyObject *const args)
+{
+	assert(appendix);
+	assert(args);
+	//TODO: error handling
+	PyObject *current_context, *thread_encoder;
+	PyArg_ParseTuple(args, "OO", &current_context, &thread_encoder);
+
+	PyObject *chain = PyTuple_New(appendix->context_length);
+
+	PyObject *first_thread = PyObject_GetAttr(appendix->contexts[0], pystring_thread);
+	PyObject *first_module = PyObject_GetAttr(first_thread, pystring_module);
+	PyObject *current_thread = PyObject_GetAttr(current_context, pystring_thread);
+	PyObject *current_module = PyObject_GetAttr(current_thread, pystring_module);
+	Py_DECREF(current_thread);
+
+	PyObject *elem = PyDict_New();
+	PyDict_SetItem(elem, pystring_thread, PyObject_CallFunctionObjArgs(thread_encoder, first_thread, NULL));
+	Py_DECREF(first_thread);
+	PyDict_SetItem(elem, pystring_relationship, first_module == current_module ? pystring_sibling : pystring_child);
+	PyTuple_SET_ITEM(chain, 0, elem);
+	Py_DECREF(current_module);
+
+	PyObject *prev_module = first_module;
+	for(size_t i = 1; i < appendix->context_length; ++i) {
+		PyObject *elem = PyDict_New();
+		PyObject *cur = PyObject_GetAttr(appendix->contexts[0], pystring_thread);
+		PyDict_SetItem(elem, pystring_thread, PyObject_CallFunctionObjArgs(thread_encoder, cur, NULL));
+		PyObject *cur_module = PyObject_GetAttr(cur, pystring_module);
+		Py_DECREF(cur);
+		PyDict_SetItem(elem, pystring_relationship, cur_module == prev_module ? pystring_sibling : pystring_child);
+		PyTuple_SET_ITEM(chain, i, elem);
+		Py_DECREF(prev_module);
+		prev_module = cur_module;
+	}
+	Py_DECREF(prev_module);
+
+	return chain;
+}
+
+static PyObject*
 Chain_iter(Chain *const self)
 {
 	assert(self);
@@ -924,12 +974,20 @@ PyInit_C(void)
 {
 	if(PyType_Ready(&ChainType) < 0 ||
 		PyType_Ready(&ChainIterType) < 0 ||
+		!(pystring_child = PyUnicode_InternFromString("child")) ||
 		!(pystring_finish = PyUnicode_InternFromString("finish")) ||
+		!(pystring_module = PyUnicode_InternFromString("module")) ||
+		!(pystring_relationship = PyUnicode_InternFromString("relationship")) ||
 		!(pystring_run_background = PyUnicode_InternFromString("run_background")) ||
+		!(pystring_sibling = PyUnicode_InternFromString("sibling")) ||
 		!(pystring_thread = PyUnicode_InternFromString("thread")) ||
 		!(pystring_timeout = PyUnicode_InternFromString("timeout"))) {
+		Py_XDECREF(pystring_child);
 		Py_XDECREF(pystring_finish);
+		Py_XDECREF(pystring_module);
+		Py_XDECREF(pystring_relationship);
 		Py_XDECREF(pystring_run_background);
+		Py_XDECREF(pystring_sibling);
 		Py_XDECREF(pystring_thread);
 		Py_XDECREF(pystring_timeout);
 		return NULL;
