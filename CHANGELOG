@@ -6,7 +6,8 @@
 	* improved PenaltySchedulerAddon
 		* schedulers now return time-slices, which is used for the local-timer based scheduling
 		* the addon uses these time-slices to measure the penalty
-	* add FixedTimeSliceSchedulerAddon
+	* add TimeSliceFixer
+	* add TimeSliceMaxer
 	* ModuleBuilder added for more convenient hierarchy specification
 	* ModuleBuilderThread added for dynamic hierarchy expansion
 	* removal of "unsuccessful" (i.e. non-atomic) context switches

@@ -25,6 +25,10 @@ class TestExample(unittest.TestCase):
         """Test that the penalty-scheduler example can run."""
         self.example('penalty_scheduler')
 
+    def test_penalty_scheduler(self):  # pylint: disable=no-self-use
+        """Test that the maximizing-scheduler example can run."""
+        self.example('maximizing_scheduler')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -71,6 +71,44 @@ class AddonScheduler(AddonSchedulerBase):
         super().__init__(module, *args, **kwargs)
         self.addon = addon
         addon.transmute_rcu_data(self._rcu._data)
+        self._repeat = (None, None)
+        self._prev_run_time = 0
+
+    def _check_repeat(self, prev_run_time):
+        """Check if the :attr:`addon` wants to repeat.
+
+        And set it up if so.
+        """
+        self._repeat = (None, None)
+
+        rcu_copy = self._rcu.copy()
+        rcu_data = rcu_copy.data
+        if rcu_data.last_idx == -1:
+            return
+
+        repeat, time_slice = self.addon.repeat(rcu_data, prev_run_time)
+        if not repeat:
+            return
+        assert time_slice > 0
+
+        chain = rcu_data.ready_chains[rcu_data.last_idx]
+        current_time = yield CPURequest.current_time()
+        if chain.bottom.is_finished() or chain.bottom.ready_time > current_time:
+            return
+        self._repeat = (rcu_copy, time_slice)
+
+    def _sched_loop(self, rcu_copy, last_chain_queue, last_chain_idx):
+        """See :meth:`Scheduler._sched_loop`.
+
+        Takes care of repeating the last decision, if desired.
+        """
+        if self._repeat[0] is not None:
+            assert self._repeat[0] is rcu_copy
+            assert rcu_copy.data.last_idx != -1
+            if last_chain_idx == -1:
+                last_chain_idx = None
+            return rcu_copy.data.last_idx, self._repeat[1]
+        return (yield from super()._sched_loop(rcu_copy, last_chain_queue, last_chain_idx))
 
     def _start_schedule(self, prev_run_time):
         """See :meth:`AddonSchedulerBase._start_schedule`.
@@ -78,6 +116,18 @@ class AddonScheduler(AddonSchedulerBase):
         This will also call the
         :attr:`addon`'s :meth:`~Addon.start_schedule` hook.
         """
+        yield from self._check_repeat(prev_run_time)
+        if self._repeat[0] is not None:
+            self._prev_run_time += prev_run_time
+            return (self._repeat[0], None, None)
+        else:
+            assert self._repeat[1] is None
+            if prev_run_time is not None:
+                prev_run_time += self._prev_run_time
+                self._prev_run_time = 0
+            else:
+                assert self._prev_run_time == 0
+
         rcu_copy, *rest = yield from super()._start_schedule(prev_run_time)
 
         self.addon.start_schedule(prev_run_time, rcu_copy.data, *rest)
@@ -201,6 +251,18 @@ class Addon():
         See :meth:`Scheduler._get_last_chain`.
         """
         return self.scheduler._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)  # pylint: disable=protected-access
+
+    def repeat(self, _idx, _prev_run_time):
+        """Called before :meth:`Scheduler._start_schedule`, :meth:`Scheduler._schedule`.
+
+        Returns a tuple (
+
+            * True if last scheduling decision should be repeated, False if not
+            * time-slice (if first element is True, None otherwise)
+
+        )
+        """
+        return False, None
 
     def start_schedule(self, _prev_run_time, _rcu_data, _last_chain_queue, _last_chain_idx):  # pylint: disable=no-self-use
         """Hook for :meth:`_start_schedule`."""

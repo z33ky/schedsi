@@ -63,6 +63,11 @@ class TestExample(unittest.TestCase):
         self.exec_world('penalty_scheduling.log', 1, self._get_kernel('penalty_scheduler'),
                         local_timer_scheduling=False)
 
+    def test_maximizing_scheduler(self):
+        """Test that the maximizing scheduler executes as expected."""
+        self.exec_world('maximizing_scheduling.log', 1, self._get_kernel('maximizing_scheduler'),
+                        local_timer_scheduling=False)
+
     def test_cfs(self):
         """Test that the penalty scheduler executes as expected."""
         self.exec_world('cfs_scheduling.log', 1, self._get_kernel('cfs'),
