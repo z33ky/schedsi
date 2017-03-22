@@ -11,7 +11,8 @@ from schedsi.schedulers.addons import addon
 import {addon_cls_module}
 import {scheduler_cls_module}
 
-class {typename}(addon.AddonScheduler, {scheduler_cls_module}.{scheduler_cls}):
+class {typename}(addon.AddonScheduler, {scheduler_cls_module}.{scheduler_cls},
+                 addon.AddonSchedulerBase):
     ':class:`{scheduler_cls}` with :class:`~{addon_cls}` attached.'
 
     def __init__({init_args}):
@@ -21,15 +22,44 @@ class {typename}(addon.AddonScheduler, {scheduler_cls_module}.{scheduler_cls}):
 """
 
 
-class AddonScheduler(Scheduler):
+class AddonSchedulerBase(Scheduler):
+    """Scheduler Base-class for :class:`AddonScheduler`.
+
+    See :class:`AddonScheduler`.
+    """
+
+    def __init__(self, module, *args, **kwargs):
+        """Create a :class:`AddonSchedulerBase`."""
+        super().__init__(module, *args, **kwargs)
+        # set this to skip Scheduler._start_schedule
+        self._start_schedule_rcu_copy = None
+
+    def _start_schedule(self, prev_run_time):
+        """See :meth:`Scheduler._start_schedule`.
+
+        This skips :meth:`Scheduler._start_schedule`
+        if :attr:`_start_schedule_rcu_copy` is set.
+        """
+        if self._start_schedule_rcu_copy is None:
+            return (yield from super()._start_schedule(prev_run_time))
+
+        rcu_copy = self._start_schedule_rcu_copy
+        self._start_schedule_rcu_copy = None
+        idx = rcu_copy.data.last_idx
+
+        self._update_ready_chains((yield CPURequest.current_time()), rcu_copy.data)
+        rcu_copy.data.last_idx = -1
+        return rcu_copy, rcu_copy.data.ready_chains, idx
+
+
+class AddonScheduler(AddonSchedulerBase):
     """Scheduler with addon.
 
-    This can be used to add scheduler addons via
-    multiple inheritance.
-    For instance, if we wanted the Addon `MyAddon`
-    with the `BaseScheduler` scheduler, you can do this::
+    This can be used to add scheduler addons via multiple inheritance.
+    For instance, if we wanted the Addon `MyAddon` with the `BaseScheduler` scheduler,
+    you can do this::
 
-        class MyScheduler(AddonScheduler, BaseScheduler):
+        class MyScheduler(AddonScheduler, BaseScheduler, AddonSchedulerBase):
             def __init__(self, module):
                 super().__init__(module, MyAddon("addon-param"), "sched-param")
 
@@ -43,7 +73,7 @@ class AddonScheduler(Scheduler):
         addon.transmute_rcu_data(self._rcu._data)
 
     def _start_schedule(self, prev_run_time):
-        """See :meth:`Scheduler._start_schedule`.
+        """See :meth:`AddonSchedulerBase._start_schedule`.
 
         This will also call the
         :attr:`addon`'s :meth:`~Addon.start_schedule` hook.
@@ -59,40 +89,32 @@ class AddonScheduler(Scheduler):
 
         This will also call the :attr:`addon`'s :meth:`~Addon.schedule`.
         """
-        schedule = super()._schedule(idx, time_slice, next_ready_time, rcu_copy)
         proceed, time_slice = self.addon.schedule(idx, time_slice, rcu_copy.data)
 
+        if not proceed:
+            rcu_copy.data.last_idx = idx
+            self._start_schedule_rcu_copy = rcu_copy
+            return
+
+        schedule = super()._schedule(idx, time_slice, next_ready_time, rcu_copy)
         answer = None
-        can_idle = True
-        # TODO: ideally we would avoid creating a new rcu_copy for the next schedule() call
         while True:
             try:
                 request = schedule.send(answer)
             except StopIteration:
-                return
+                break
 
             if request.rtype == CPURequestType.timer:
-                if not proceed:
-                    request = CPURequest.current_time()
-                else:
-                    delta = None
-                    if next_ready_time[0] != 0:
-                        if next_ready_time[0] is not None:
-                            current_time = yield CPURequest.current_time()
-                            delta = next_ready_time[0] - current_time
-                        # if this assumption does not hold we need to decide
-                        # whether we really want to override this
-                        assert delta == request.arg
-                    if time_slice is None or delta is None:
-                        request.arg = time_slice
-            elif request.rtype == CPURequestType.resume_chain:
-                assert can_idle
-                if not proceed:
-                    answer = request.arg
-                    can_idle = False
-                    continue
-            else:
-                assert can_idle or request.rtype != CPURequestType.idle
+                delta = None
+                if next_ready_time[0] != 0:
+                    if next_ready_time[0] is not None:
+                        current_time = yield CPURequest.current_time()
+                        delta = next_ready_time[0] - current_time
+                    # if this assumption does not hold we need to decide
+                    # whether we really want to override this
+                    assert delta == request.arg
+                if time_slice is None or delta is None:
+                    request.arg = time_slice
 
             answer = yield request
 
