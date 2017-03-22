@@ -147,7 +147,8 @@ class GraphLog:
         If `canvas` is :obj:`None`, :attr:`self.canvas` is used.
         """
         if dx == 0:
-            assert dy == 0
+            #assert dy == 0
+            self._draw_line(color, 0, dy, canvas)
             return
 
         if canvas is None:
@@ -207,9 +208,9 @@ class GraphLog:
         """Step down a level."""
         assert self.level % LEVEL == 0
         # we can't be at the bottom and step down
-        assert self.level > 0
+        assert self.level > 0 or level_step == 0
 
-        if not self.task_executed:
+        if not self.task_executed and time != 0:
             self._draw_block(EXEC_COLORS, names[0], 0)
             self.task_executed = True
 
@@ -223,7 +224,8 @@ class GraphLog:
             self._draw_background_tasks(time, int(level_step / LEVEL) - 1)
         else:
             self._update_background_tasks(time)
-            self._draw_recent()
+            if level_step > 0:
+                self._draw_recent()
         return -level_step
 
     def _ctx_up(self, names, time, level_step):
@@ -235,10 +237,11 @@ class GraphLog:
         self._draw_slope(CTXSW_COLORS, time, level_step)
 
         self._update_background_tasks(time)
-        assert len(names) > 0
-        self.background_tasks.extend(_Background(name, 0) for name in names)
-        # the thread on the bottom records context switching as background execution
-        self.background_tasks[-len(names)].time = time
+        if level_step > 0:
+            assert len(names) > 0
+            self.background_tasks.extend(_Background(name, 0) for name in names)
+            # the thread on the bottom records context switching as background execution
+            self.background_tasks[-len(names)].time = time
 
         return level_step
 
@@ -265,15 +268,6 @@ class GraphLog:
             # reversed because we go from the top to the bottom
             thread_diff = (ctx.thread for ctx in reversed(cpu.status.chain.contexts[split_index:]))
 
-        if time == 0:
-            top = next(thread_diff)
-            bottom = top
-            for bottom in thread_diff:
-                pass
-            if top.module is not bottom.module:
-                self._ctx_zero(_name_thread(cpu.status.chain.top))
-            return
-
         # calculate depth of the hierarchy that is appended/removed
         current = cpu.status.chain.top
         levels = 0
@@ -284,6 +278,9 @@ class GraphLog:
                 levels += LEVEL
                 names.append(_name_thread(current))
                 current = thread
+
+        if time == 0 and levels > 0:
+            self._ctx_zero(names[0])
 
         self.level += ctx_func(names, time, levels)
 
