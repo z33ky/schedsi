@@ -48,6 +48,12 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
         """See :meth:`Addon.transmute_rcu_data`."""
         super().transmute_rcu_data(original, PenalizerData, *addon_data)
 
+    def add_thread(self, thread, rcu_data):
+        """See :meth:`Addon.add_thread`."""
+        assert not thread in rcu_data.niceness
+        if not thread.is_finished():
+            rcu_data.niceness[id(thread)] = 0
+
     def start_schedule(self, prev_run_time, rcu_data, last_chain_queue, last_chain_idx):
         """See :meth:`Addon.start_schedule`."""
         super().start_schedule(prev_run_time, rcu_data, last_chain_queue, last_chain_idx)
@@ -101,7 +107,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
 
         tid = id(rcu_data.ready_chains[idx].bottom)
 
-        niceness = rcu_data.niceness.setdefault(tid, 0)
+        niceness = rcu_data.niceness[tid]
 
         if time_slice is not None and niceness < self.threshold(time_slice):
             if tid in rcu_data.sat_out_threads:
@@ -112,8 +118,8 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
             else:
                 # only nicest thread may run
                 nicest_tid = max((id(c.bottom) for c in rcu_data.ready_chains),
-                                 key=lambda tid: rcu_data.niceness.get(tid, 0))
-                assert niceness <= rcu_data.niceness.get(nicest_tid, 0)
+                                 key=lambda tid: rcu_data.niceness[tid])
+                assert niceness <= rcu_data.niceness[nicest_tid]
                 if tid != nicest_tid:
                     rcu_data.sat_out_threads.append(tid)
                     rcu_data.last_timeslice = None

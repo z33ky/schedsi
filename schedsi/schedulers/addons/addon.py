@@ -74,6 +74,17 @@ class AddonScheduler(AddonSchedulerBase):
         self._repeat = (None, None)
         self._prev_run_time = 0
 
+    def add_thread(self, thread, rcu_data=None, **kwargs):
+        """See :meth:`Scheduler.add_thread`."""
+        super_add_thread = super().add_thread
+        def appliance(data):
+            self.addon.add_thread(thread, data)
+            super_add_thread(thread, data, **kwargs)
+        if rcu_data is None:
+            self._rcu.apply(appliance)
+        else:
+            appliance(rcu_data)
+
     def _check_repeat(self, prev_run_time):
         """Check if the :attr:`addon` wants to repeat.
 
@@ -244,6 +255,10 @@ class Addon():
         original.__class__ = AddonData
         for data in addon_data:
             data.__init__(original)
+
+    def add_thread(self, thread, rcu_data):
+        """Called on :meth:`Scheduler.add_thread`."""
+        return
 
     def _get_last_chain(self, rcu_data, last_chain_queue, last_chain_idx):
         """Return the last scheduled thread of :attr:`scheduler`.
