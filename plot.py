@@ -184,7 +184,8 @@ def get_stats(filename):
     with open(filename, 'rb') as log:
         # check if were dealing with a text log or a binary log
         testbuf = log.read(64)
-        if not all((c in string.printable.encode('utf-8')) for c in testbuf):
+        printable = string.printable.encode('utf-8')
+        if not all(c in printable for c in testbuf):
             log.seek(0)
             return get_binary_stats(log)
 
@@ -192,19 +193,40 @@ def get_stats(filename):
         return get_text_stats(log)
 
 
+def plot_spec(stats, keyslist, spec):
+    """Plot `stats` filtered by `spec`."""
+    for keys in keyslist:
+        threads = keys[::4]
+        if len(threads) != len(spec):
+            continue
+        for thread, name in zip(threads, spec):
+            if not thread.startswith(name + '|'):
+                break
+        else:
+            do_scheduler(stats, keys)
+            return
+    print('Module not found:', spec, file=sys.stderr)
+
+
 def main():
     """Plot the statistics in `sys.argv[1]`."""
     matplotlib.rcParams.update({'figure.max_open_warning': 0})
 
-    if len(sys.argv) != 2:
-        print('Usage: {0} stats.json or {0} schedsi.log'.format(sys.argv[0]), file=sys.stderr)
+    if len(sys.argv) < 2:
+        print('Usage: {0} stats.json or {0} schedsi.log'.format(sys.argv[0]),
+              '       |-separated module lists can specified to only plot these modules.',
+              sep='\n', file=sys.stderr)
         sys.exit(1)
 
     stats = get_stats(sys.argv[1])
 
     keyslist = get_scheduler_keyslist(stats)
     with multiprocessing.Pool() as pool:
-        pool.map(functools.partial(do_scheduler, stats), keyslist)
+        if len(sys.argv) > 2:
+            speclist = (arg.split('|') for arg in sys.argv[2:])
+            pool.map(functools.partial(plot_spec, stats, keyslist), speclist)
+        else:
+            pool.map(functools.partial(do_scheduler, stats), keyslist)
 
 
 if __name__ == '__main__':
