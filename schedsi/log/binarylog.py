@@ -229,7 +229,7 @@ class _Thread:  # pylint: disable=too-few-public-methods
 
     def __init__(self, tid, module):
         """Create a :class:`_Thread`."""
-        self.tid = tid
+        self.tid = str(tid)
         self.module = module
 
 

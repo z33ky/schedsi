@@ -1,281 +1,281 @@
-cpu 0 @   0.0000000000000000: module 0         selects 1.
-cpu 0 @   0.0000000000000000: thread 0-1       runs for 9.0000000000000000 units.
-cpu 0 @   9.0000000000000000: module 0         timer elapsed.
-cpu 0 @   9.0000000000000000: module 0         selects 1.
-cpu 0 @   9.0000000000000000: thread 0-1       runs for 9.0000000000000000 units.
-cpu 0 @  18.0000000000000000: module 0         timer elapsed.
-cpu 0 @  18.0000000000000000: module 0         selects 3.
-cpu 0 @  18.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @  19.0000000000000000: module 0.0       selects 1.
-cpu 0 @  19.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @  27.0000000000000000: module 0         timer elapsed.
-cpu 0 @  27.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @  28.0000000000000000: module 0         selects 3.
-cpu 0 @  28.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @  29.0000000000000000: module 0.0       selects 1.
-cpu 0 @  29.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @  37.0000000000000000: module 0         timer elapsed.
-cpu 0 @  37.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @  38.0000000000000000: module 0         selects 2.
-cpu 0 @  38.0000000000000000: thread 0-2       runs for 9.0000000000000000 units.
-cpu 0 @  47.0000000000000000: module 0         timer elapsed.
-cpu 0 @  47.0000000000000000: module 0         selects 2.
-cpu 0 @  47.0000000000000000: thread 0-2       runs for 6.0000000000000000 units.
-cpu 0 @  53.0000000000000000: thread 0-2       yields.
-cpu 0 @  53.0000000000000000: module 0         selects 1.
-cpu 0 @  53.0000000000000000: thread 0-1       runs for 9.0000000000000000 units.
-cpu 0 @  62.0000000000000000: module 0         timer elapsed.
-cpu 0 @  62.0000000000000000: module 0         selects 1.
-cpu 0 @  62.0000000000000000: thread 0-1       runs for 9.0000000000000000 units.
-cpu 0 @  71.0000000000000000: module 0         timer elapsed.
-cpu 0 @  71.0000000000000000: module 0         selects 3.
-cpu 0 @  71.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @  72.0000000000000000: module 0.0       selects 1.
-cpu 0 @  72.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @  80.0000000000000000: module 0         timer elapsed.
-cpu 0 @  80.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @  81.0000000000000000: module 0         selects 3.
-cpu 0 @  81.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @  82.0000000000000000: module 0.0       selects 2.
-cpu 0 @  82.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.0.
-cpu 0 @  83.0000000000000000: module 0.0.0     selects 1.
-cpu 0 @  83.0000000000000000: thread 0.0.0-1   runs for 7.0000000000000000 units.
-cpu 0 @  90.0000000000000000: module 0         timer elapsed.
-cpu 0 @  90.0000000000000000: module 0.0.0     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @  91.0000000000000000: module 0         selects 2.
-cpu 0 @  91.0000000000000000: thread 0-2       runs for 9.0000000000000000 units.
-cpu 0 @ 100.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 100.0000000000000000: module 0         selects 2.
-cpu 0 @ 100.0000000000000000: thread 0-2       runs for 1.0000000000000000 unit.
-cpu 0 @ 101.0000000000000000: thread 0-2       yields.
-cpu 0 @ 101.0000000000000000: module 0         selects 1.
-cpu 0 @ 101.0000000000000000: thread 0-1       runs for 9.0000000000000000 units.
-cpu 0 @ 110.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 110.0000000000000000: module 0         selects 1.
-cpu 0 @ 110.0000000000000000: thread 0-1       runs for 5.0000000000000000 units.
-cpu 0 @ 115.0000000000000000: thread 0-1       yields.
-cpu 0 @ 115.0000000000000000: module 0         selects 3.
-cpu 0 @ 115.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 116.0000000000000000: module 0.0       selects 2.
-cpu 0 @ 116.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.0.
-cpu 0 @ 117.0000000000000000: module 0.0.0     selects 1.
-cpu 0 @ 117.0000000000000000: thread 0.0.0-1   runs for 3.0000000000000000 units.
-cpu 0 @ 120.0000000000000000: thread 0.0.0-1   yields.
-cpu 0 @ 120.0000000000000000: module 0.0.0     selects 2.
-cpu 0 @ 120.0000000000000000: thread 0.0.0-2   runs for 4.0000000000000000 units.
-cpu 0 @ 124.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 124.0000000000000000: module 0.0.0     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 125.0000000000000000: module 0         selects 3.
-cpu 0 @ 125.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 126.0000000000000000: module 0.0       selects 2.
-cpu 0 @ 126.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.0.
-cpu 0 @ 127.0000000000000000: module 0.0.0     selects 2.
-cpu 0 @ 127.0000000000000000: thread 0.0.0-2   runs for 7.0000000000000000 units.
-cpu 0 @ 134.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 134.0000000000000000: module 0.0.0     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 135.0000000000000000: module 0         selects 2.
-cpu 0 @ 135.0000000000000000: thread 0-2       runs for 9.0000000000000000 units.
-cpu 0 @ 144.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 144.0000000000000000: module 0         selects 2.
-cpu 0 @ 144.0000000000000000: thread 0-2       runs for 6.0000000000000000 units.
-cpu 0 @ 150.0000000000000000: thread 0-2       yields.
-cpu 0 @ 150.0000000000000000: module 0         selects 3.
-cpu 0 @ 150.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 151.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 151.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 152.0000000000000000: module 0.0.1     selects 1.
-cpu 0 @ 152.0000000000000000: thread 0.0.1-1   runs for 7.0000000000000000 units.
-cpu 0 @ 159.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 159.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 160.0000000000000000: module 0         selects 3.
-cpu 0 @ 160.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 161.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 161.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 162.0000000000000000: module 0.0.1     selects 1.
-cpu 0 @ 162.0000000000000000: thread 0.0.1-1   runs for 3.0000000000000000 units.
-cpu 0 @ 165.0000000000000000: thread 0.0.1-1   yields.
-cpu 0 @ 165.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 165.0000000000000000: thread 0.0.1-2   runs for 4.0000000000000000 units.
-cpu 0 @ 169.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 169.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 170.0000000000000000: module 0         selects 2.
-cpu 0 @ 170.0000000000000000: thread 0-2       runs for 5.0000000000000000 units.
-cpu 0 @ 175.0000000000000000: thread 0-2       yields.
-cpu 0 @ 175.0000000000000000: module 0         selects 3.
-cpu 0 @ 175.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 176.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 176.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 177.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 177.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 184.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 184.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 185.0000000000000000: module 0         selects 3.
-cpu 0 @ 185.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 186.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 186.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 194.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 194.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 195.0000000000000000: module 0         selects 2.
-cpu 0 @ 195.0000000000000000: thread 0-2       runs for 5.0000000000000000 units.
-cpu 0 @ 200.0000000000000000: thread 0-2       yields.
-cpu 0 @ 200.0000000000000000: module 0         selects 3.
-cpu 0 @ 200.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 201.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 201.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 209.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 209.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 210.0000000000000000: module 0         selects 3.
-cpu 0 @ 210.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 211.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 211.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 219.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 219.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 220.0000000000000000: module 0         selects 3.
-cpu 0 @ 220.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 221.0000000000000000: module 0.0       selects 2.
-cpu 0 @ 221.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.0.
-cpu 0 @ 222.0000000000000000: module 0.0.0     selects 2.
-cpu 0 @ 222.0000000000000000: thread 0.0.0-2   runs for 7.0000000000000000 units.
-cpu 0 @ 229.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 229.0000000000000000: module 0.0.0     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 230.0000000000000000: module 0         selects 3.
-cpu 0 @ 230.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 231.0000000000000000: module 0.0       selects 2.
-cpu 0 @ 231.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.0.
-cpu 0 @ 232.0000000000000000: module 0.0.0     selects 2.
-cpu 0 @ 232.0000000000000000: thread 0.0.0-2   runs for 7.0000000000000000 units.
-cpu 0 @ 239.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 239.0000000000000000: module 0.0.0     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 240.0000000000000000: module 0         selects 3.
-cpu 0 @ 240.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 241.0000000000000000: module 0.0       selects 2.
-cpu 0 @ 241.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.0.
-cpu 0 @ 242.0000000000000000: thread 0.0.0-0   yields.
-cpu 0 @ 242.0000000000000000: module 0.0.0     spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 243.0000000000000000: thread 0.0-2     yields.
-cpu 0 @ 243.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 243.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 244.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 244.0000000000000000: thread 0.0.1-2   runs for 5.0000000000000000 units.
-cpu 0 @ 249.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 249.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 250.0000000000000000: module 0         selects 3.
-cpu 0 @ 250.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 251.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 251.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 252.0000000000000000: module 0.0.1     selects 3.
-cpu 0 @ 252.0000000000000000: thread 0.0.1-3   runs for 7.0000000000000000 units.
-cpu 0 @ 259.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 259.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 260.0000000000000000: module 0         selects 3.
-cpu 0 @ 260.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 261.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 261.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 262.0000000000000000: module 0.0.1     selects 3.
-cpu 0 @ 262.0000000000000000: thread 0.0.1-3   runs for 3.0000000000000000 units.
-cpu 0 @ 265.0000000000000000: thread 0.0.1-3   yields.
-cpu 0 @ 265.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 265.0000000000000000: thread 0.0.1-2   runs for 4.0000000000000000 units.
-cpu 0 @ 269.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 269.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 270.0000000000000000: module 0         selects 3.
-cpu 0 @ 270.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 271.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 271.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 279.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 279.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 280.0000000000000000: module 0         selects 3.
-cpu 0 @ 280.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 281.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 281.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 289.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 289.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 290.0000000000000000: module 0         selects 3.
-cpu 0 @ 290.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 291.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 291.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 299.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 299.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 300.0000000000000000: module 0         selects 3.
-cpu 0 @ 300.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 301.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 301.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 302.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 302.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 309.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 309.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 310.0000000000000000: module 0         selects 3.
-cpu 0 @ 310.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 311.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 311.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 312.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 312.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 319.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 319.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 320.0000000000000000: module 0         selects 3.
-cpu 0 @ 320.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 321.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 321.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 322.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 322.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 329.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 329.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 330.0000000000000000: module 0         selects 3.
-cpu 0 @ 330.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 331.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 331.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 339.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 339.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 340.0000000000000000: module 0         selects 3.
-cpu 0 @ 340.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 341.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 341.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 349.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 349.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 350.0000000000000000: module 0         selects 3.
-cpu 0 @ 350.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 351.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 351.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 359.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 359.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 360.0000000000000000: module 0         selects 3.
-cpu 0 @ 360.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 361.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 361.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 362.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 362.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 369.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 369.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 370.0000000000000000: module 0         selects 3.
-cpu 0 @ 370.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 371.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 371.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 372.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 372.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 379.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 379.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 380.0000000000000000: module 0         selects 3.
-cpu 0 @ 380.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 381.0000000000000000: module 0.0       selects 3.
-cpu 0 @ 381.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.0.1.
-cpu 0 @ 382.0000000000000000: module 0.0.1     selects 2.
-cpu 0 @ 382.0000000000000000: thread 0.0.1-2   runs for 7.0000000000000000 units.
-cpu 0 @ 389.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 389.0000000000000000: module 0.0.1     spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 390.0000000000000000: module 0         selects 3.
-cpu 0 @ 390.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
-cpu 0 @ 391.0000000000000000: module 0.0       selects 1.
-cpu 0 @ 391.0000000000000000: thread 0.0-1     runs for 8.0000000000000000 units.
-cpu 0 @ 399.0000000000000000: module 0         timer elapsed.
-cpu 0 @ 399.0000000000000000: module 0.0       spends 1.0000000000000000 unit to switch to 0.
-cpu 0 @ 400.0000000000000000: module 0         selects 3.
-cpu 0 @ 400.0000000000000000: module 0         spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @   0.0000000000000000: module 0                 selects 0.
+cpu 0 @   0.0000000000000000: thread 0|0               runs for 9.0000000000000000 units.
+cpu 0 @   9.0000000000000000: module 0                 timer elapsed.
+cpu 0 @   9.0000000000000000: module 0                 selects 0.
+cpu 0 @   9.0000000000000000: thread 0|0               runs for 9.0000000000000000 units.
+cpu 0 @  18.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  18.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @  18.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @  19.0000000000000000: module 0.0               selects 0.
+cpu 0 @  19.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @  27.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  27.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @  28.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @  28.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @  29.0000000000000000: module 0.0               selects 0.
+cpu 0 @  29.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @  37.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  37.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @  38.0000000000000000: module 0                 selects 1.
+cpu 0 @  38.0000000000000000: thread 0|1               runs for 9.0000000000000000 units.
+cpu 0 @  47.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  47.0000000000000000: module 0                 selects 1.
+cpu 0 @  47.0000000000000000: thread 0|1               runs for 6.0000000000000000 units.
+cpu 0 @  53.0000000000000000: thread 0|1               yields.
+cpu 0 @  53.0000000000000000: module 0                 selects 0.
+cpu 0 @  53.0000000000000000: thread 0|0               runs for 9.0000000000000000 units.
+cpu 0 @  62.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  62.0000000000000000: module 0                 selects 0.
+cpu 0 @  62.0000000000000000: thread 0|0               runs for 9.0000000000000000 units.
+cpu 0 @  71.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  71.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @  71.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @  72.0000000000000000: module 0.0               selects 0.
+cpu 0 @  72.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @  80.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  80.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @  81.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @  81.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @  82.0000000000000000: module 0.0               selects 0.0.0-VCPU0.
+cpu 0 @  82.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.0.
+cpu 0 @  83.0000000000000000: module 0.0.0             selects 0.
+cpu 0 @  83.0000000000000000: thread 0.0.0|0           runs for 7.0000000000000000 units.
+cpu 0 @  90.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  90.0000000000000000: module 0.0.0             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @  91.0000000000000000: module 0                 selects 1.
+cpu 0 @  91.0000000000000000: thread 0|1               runs for 9.0000000000000000 units.
+cpu 0 @ 100.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 100.0000000000000000: module 0                 selects 1.
+cpu 0 @ 100.0000000000000000: thread 0|1               runs for 1.0000000000000000 unit.
+cpu 0 @ 101.0000000000000000: thread 0|1               yields.
+cpu 0 @ 101.0000000000000000: module 0                 selects 0.
+cpu 0 @ 101.0000000000000000: thread 0|0               runs for 9.0000000000000000 units.
+cpu 0 @ 110.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 110.0000000000000000: module 0                 selects 0.
+cpu 0 @ 110.0000000000000000: thread 0|0               runs for 5.0000000000000000 units.
+cpu 0 @ 115.0000000000000000: thread 0|0               yields.
+cpu 0 @ 115.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 115.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 116.0000000000000000: module 0.0               selects 0.0.0-VCPU0.
+cpu 0 @ 116.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.0.
+cpu 0 @ 117.0000000000000000: module 0.0.0             selects 0.
+cpu 0 @ 117.0000000000000000: thread 0.0.0|0           runs for 3.0000000000000000 units.
+cpu 0 @ 120.0000000000000000: thread 0.0.0|0           yields.
+cpu 0 @ 120.0000000000000000: module 0.0.0             selects 1.
+cpu 0 @ 120.0000000000000000: thread 0.0.0|1           runs for 4.0000000000000000 units.
+cpu 0 @ 124.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 124.0000000000000000: module 0.0.0             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 125.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 125.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 126.0000000000000000: module 0.0               selects 0.0.0-VCPU0.
+cpu 0 @ 126.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.0.
+cpu 0 @ 127.0000000000000000: module 0.0.0             selects 1.
+cpu 0 @ 127.0000000000000000: thread 0.0.0|1           runs for 7.0000000000000000 units.
+cpu 0 @ 134.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 134.0000000000000000: module 0.0.0             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 135.0000000000000000: module 0                 selects 1.
+cpu 0 @ 135.0000000000000000: thread 0|1               runs for 9.0000000000000000 units.
+cpu 0 @ 144.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 144.0000000000000000: module 0                 selects 1.
+cpu 0 @ 144.0000000000000000: thread 0|1               runs for 6.0000000000000000 units.
+cpu 0 @ 150.0000000000000000: thread 0|1               yields.
+cpu 0 @ 150.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 150.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 151.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 151.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 152.0000000000000000: module 0.0.1             selects 0.
+cpu 0 @ 152.0000000000000000: thread 0.0.1|0           runs for 7.0000000000000000 units.
+cpu 0 @ 159.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 159.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 160.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 160.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 161.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 161.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 162.0000000000000000: module 0.0.1             selects 0.
+cpu 0 @ 162.0000000000000000: thread 0.0.1|0           runs for 3.0000000000000000 units.
+cpu 0 @ 165.0000000000000000: thread 0.0.1|0           yields.
+cpu 0 @ 165.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 165.0000000000000000: thread 0.0.1|1           runs for 4.0000000000000000 units.
+cpu 0 @ 169.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 169.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 170.0000000000000000: module 0                 selects 1.
+cpu 0 @ 170.0000000000000000: thread 0|1               runs for 5.0000000000000000 units.
+cpu 0 @ 175.0000000000000000: thread 0|1               yields.
+cpu 0 @ 175.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 175.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 176.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 176.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 177.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 177.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 184.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 184.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 185.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 185.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 186.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 186.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 194.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 194.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 195.0000000000000000: module 0                 selects 1.
+cpu 0 @ 195.0000000000000000: thread 0|1               runs for 5.0000000000000000 units.
+cpu 0 @ 200.0000000000000000: thread 0|1               yields.
+cpu 0 @ 200.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 200.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 201.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 201.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 209.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 209.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 210.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 210.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 211.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 211.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 219.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 219.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 220.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 220.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 221.0000000000000000: module 0.0               selects 0.0.0-VCPU0.
+cpu 0 @ 221.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.0.
+cpu 0 @ 222.0000000000000000: module 0.0.0             selects 1.
+cpu 0 @ 222.0000000000000000: thread 0.0.0|1           runs for 7.0000000000000000 units.
+cpu 0 @ 229.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 229.0000000000000000: module 0.0.0             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 230.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 230.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 231.0000000000000000: module 0.0               selects 0.0.0-VCPU0.
+cpu 0 @ 231.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.0.
+cpu 0 @ 232.0000000000000000: module 0.0.0             selects 1.
+cpu 0 @ 232.0000000000000000: thread 0.0.0|1           runs for 7.0000000000000000 units.
+cpu 0 @ 239.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 239.0000000000000000: module 0.0.0             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 240.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 240.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 241.0000000000000000: module 0.0               selects 0.0.0-VCPU0.
+cpu 0 @ 241.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.0.
+cpu 0 @ 242.0000000000000000: thread 0.0.0|scheduler   yields.
+cpu 0 @ 242.0000000000000000: module 0.0.0             spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 243.0000000000000000: thread 0.0|0.0.0-VCPU0   yields.
+cpu 0 @ 243.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 243.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 244.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 244.0000000000000000: thread 0.0.1|1           runs for 5.0000000000000000 units.
+cpu 0 @ 249.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 249.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 250.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 250.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 251.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 251.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 252.0000000000000000: module 0.0.1             selects 2.
+cpu 0 @ 252.0000000000000000: thread 0.0.1|2           runs for 7.0000000000000000 units.
+cpu 0 @ 259.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 259.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 260.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 260.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 261.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 261.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 262.0000000000000000: module 0.0.1             selects 2.
+cpu 0 @ 262.0000000000000000: thread 0.0.1|2           runs for 3.0000000000000000 units.
+cpu 0 @ 265.0000000000000000: thread 0.0.1|2           yields.
+cpu 0 @ 265.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 265.0000000000000000: thread 0.0.1|1           runs for 4.0000000000000000 units.
+cpu 0 @ 269.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 269.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 270.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 270.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 271.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 271.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 279.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 279.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 280.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 280.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 281.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 281.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 289.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 289.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 290.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 290.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 291.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 291.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 299.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 299.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 300.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 300.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 301.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 301.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 302.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 302.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 309.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 309.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 310.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 310.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 311.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 311.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 312.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 312.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 319.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 319.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 320.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 320.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 321.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 321.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 322.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 322.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 329.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 329.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 330.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 330.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 331.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 331.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 339.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 339.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 340.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 340.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 341.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 341.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 349.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 349.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 350.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 350.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 351.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 351.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 359.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 359.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 360.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 360.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 361.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 361.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 362.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 362.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 369.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 369.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 370.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 370.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 371.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 371.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 372.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 372.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 379.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 379.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 380.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 380.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 381.0000000000000000: module 0.0               selects 0.0.1-VCPU0.
+cpu 0 @ 381.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.0.1.
+cpu 0 @ 382.0000000000000000: module 0.0.1             selects 1.
+cpu 0 @ 382.0000000000000000: thread 0.0.1|1           runs for 7.0000000000000000 units.
+cpu 0 @ 389.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 389.0000000000000000: module 0.0.1             spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 390.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 390.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
+cpu 0 @ 391.0000000000000000: module 0.0               selects 0.
+cpu 0 @ 391.0000000000000000: thread 0.0|0             runs for 8.0000000000000000 units.
+cpu 0 @ 399.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 399.0000000000000000: module 0.0               spends 1.0000000000000000 unit to switch to 0.
+cpu 0 @ 400.0000000000000000: module 0                 selects 0.0-VCPU0.
+cpu 0 @ 400.0000000000000000: module 0                 spends 1.0000000000000000 unit to switch to 0.0.
 Thread stats:
 {
-	"0-0": {
-		"bg": [[9], [9], [1, 0, 8], [1, 0, 8], [9], [6], [9], [9], [1, 0, 8], [1, 0, 1, 0, 7], [9], [1], [9], [5], [1, 0, 1, 0, 3, 0, 0, 4], [1, 0, 1, 0, 7], [9], [6], [1, 0, 1, 0, 7], [1, 0, 1, 0, 3, 0, 0, 4], [5], [1, 0, 1, 0, 7], [1, 0, 8], [5], [1, 0, 8], [1, 0, 8], [1, 0, 1, 0, 7], [1, 0, 1, 0, 7], [1, 0, 1, 1, 0, 0, 1, 0, 5], [1, 0, 1, 0, 7], [1, 0, 1, 0, 3, 0, 0, 4], [1, 0, 8], [1, 0, 8], [1, 0, 8], [1, 0, 1, 0, 7], [1, 0, 1, 0, 7], [1, 0, 1, 0, 7], [1, 0, 8], [1, 0, 8], [1, 0, 8], [1, 0, 1, 0, 7], [1, 0, 1, 0, 7], [1, 0, 1, 0, 7], [1, 0, 8], [1]],
+	"0|scheduler": {
+		"bg": [[9], [], [9], [], [1, 0, 8], [], [1, 0, 8], [], [9], [], [6], [9], [], [9], [], [1, 0, 8], [], [1, 0, 1, 0, 7], [], [9], [], [1], [9], [], [5], [1, 0, 1, 0, 3, 0, 0, 4], [], [1, 0, 1, 0, 7], [], [9], [], [6], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 3, 0, 0, 4], [], [5], [1, 0, 1, 0, 7], [], [1, 0, 8], [], [5], [1, 0, 8], [], [1, 0, 8], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 1, 0, 0, 1, 0, 5], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 3, 0, 0, 4], [], [1, 0, 8], [], [1, 0, 8], [], [1, 0, 8], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 7], [], [1, 0, 8], [], [1, 0, 8], [], [1, 0, 8], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 7], [], [1, 0, 1, 0, 7], [], [1, 0, 8], [], [1]],
 		"children": {
-			"0-1": {
+			"0|0": {
 				"ctxsw": [],
 				"finished_time": 115,
 				"remaining": 0,
@@ -283,15 +283,7 @@ Thread stats:
 				"run": [[9], [9], [9], [9], [9], [5]],
 				"wait": [[0], [0], [35], [0], [30], [0]]
 			},
-			"0-2": {
-				"ctxsw": [],
-				"finished_time": 200,
-				"remaining": 0,
-				"response_time": null,
-				"run": [[9], [6], [9], [1], [9], [6], [5], [5]],
-				"wait": [[33], [0], [26], [0], [30], [0], [5], [10]]
-			},
-			"0-3": {
+			"0|0.0-VCPU0": {
 				"bg": [[0, 8], [0, 8], [0, 8], [0, 1, 0, 7], [0, 1, 0, 3, 0, 0, 4], [0, 1, 0, 7], [0, 1, 0, 7], [0, 1, 0, 3, 0, 0, 4], [0, 1, 0, 7], [0, 8], [0, 8], [0, 8], [0, 1, 0, 7], [0, 1, 0, 7], [0, 1, 1, 0, 0, 1, 0, 5], [0, 1, 0, 7], [0, 1, 0, 3, 0, 0, 4], [0, 8], [0, 8], [0, 8], [0, 1, 0, 7], [0, 1, 0, 7], [0, 1, 0, 7], [0, 8], [0, 8], [0, 8], [0, 1, 0, 7], [0, 1, 0, 7], [0, 1, 0, 7], [0, 8]],
 				"ctxsw": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 				"finished_time": null,
@@ -299,10 +291,10 @@ Thread stats:
 				"response_time": null,
 				"run": [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []],
 				"scheduler": {
-					"0.0-0": {
+					"0.0|scheduler": {
 						"bg": [[8], [8], [8], [1, 0, 7], [1, 0, 3, 0, 0, 4], [1, 0, 7], [1, 0, 7], [1, 0, 3, 0, 0, 4], [1, 0, 7], [8], [8], [8], [1, 0, 7], [1, 0, 7], [1, 1], [1, 0, 5], [1, 0, 7], [1, 0, 3, 0, 0, 4], [8], [8], [8], [1, 0, 7], [1, 0, 7], [1, 0, 7], [8], [8], [8], [1, 0, 7], [1, 0, 7], [1, 0, 7], [8]],
 						"children": {
-							"0.0-1": {
+							"0.0|0": {
 								"ctxsw": [],
 								"finished_time": null,
 								"remaining": 146,
@@ -311,7 +303,7 @@ Thread stats:
 								"wait": [[19], [2], [35], [106], [7], [2], [52], [2], [2], [32], [2], [2], [32]],
 								"waiting": 2
 							},
-							"0.0-2": {
+							"0.0|0.0.0-VCPU0": {
 								"bg": [[0, 7], [0, 3, 0, 0, 4], [0, 7], [0, 7], [0, 7], [], []],
 								"ctxsw": [1, 1, 1, 1, 1, 1, 1],
 								"finished_time": null,
@@ -319,10 +311,10 @@ Thread stats:
 								"response_time": null,
 								"run": [[], [], [], [], [], []],
 								"scheduler": {
-									"0.0.0-0": {
+									"0.0.0|scheduler": {
 										"bg": [[7], [3], [4], [7], [7], [7], []],
 										"children": {
-											"0.0.0-1": {
+											"0.0.0|0": {
 												"ctxsw": [],
 												"finished_time": 120,
 												"remaining": 0,
@@ -330,7 +322,7 @@ Thread stats:
 												"run": [[7], [3]],
 												"wait": [[83], [27]]
 											},
-											"0.0.0-2": {
+											"0.0.0|1": {
 												"ctxsw": [],
 												"finished_time": 239,
 												"remaining": 0,
@@ -349,7 +341,7 @@ Thread stats:
 								},
 								"wait": [[82], [26], [2], [87], [2], [2]]
 							},
-							"0.0-3": {
+							"0.0|0.0.1-VCPU0": {
 								"bg": [[0, 7], [0, 3, 0, 0, 4], [0, 7], [0, 5], [0, 7], [0, 3, 0, 0, 4], [0, 7], [0, 7], [0, 7], [0, 7], [0, 7], [0, 7]],
 								"ctxsw": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 								"finished_time": null,
@@ -357,10 +349,10 @@ Thread stats:
 								"response_time": null,
 								"run": [[], [], [], [], [], [], [], [], [], [], [], []],
 								"scheduler": {
-									"0.0.1-0": {
+									"0.0.1|scheduler": {
 										"bg": [[7], [3], [4], [7], [5], [7], [3], [4], [7], [7], [7], [7], [7], [7]],
 										"children": {
-											"0.0.1-1": {
+											"0.0.1|0": {
 												"ctxsw": [],
 												"finished_time": 165,
 												"remaining": 0,
@@ -368,7 +360,7 @@ Thread stats:
 												"run": [[7], [3]],
 												"wait": [[152], [3]]
 											},
-											"0.0.1-2": {
+											"0.0.1|1": {
 												"ctxsw": [],
 												"finished_time": null,
 												"remaining": null,
@@ -377,7 +369,7 @@ Thread stats:
 												"wait": [[165], [8], [60], [16], [33], [3], [3], [33], [3], [3]],
 												"waiting": 12
 											},
-											"0.0.1-3": {
+											"0.0.1|2": {
 												"ctxsw": [],
 												"finished_time": 265,
 												"remaining": 0,
@@ -410,6 +402,14 @@ Thread stats:
 				},
 				"wait": [[18], [1], [34], [1], [25], [1], [16], [1], [6], [1], [6], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1]],
 				"waiting": 1
+			},
+			"0|1": {
+				"ctxsw": [],
+				"finished_time": 200,
+				"remaining": 0,
+				"response_time": null,
+				"run": [[9], [6], [9], [1], [9], [6], [5], [5]],
+				"wait": [[33], [0], [26], [0], [30], [0], [5], [10]]
 			}
 		},
 		"ctxsw": [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],

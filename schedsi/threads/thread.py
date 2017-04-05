@@ -38,7 +38,7 @@ class Thread:
 
         self.module = module
         if tid is None:
-            tid = module.num_threads()
+            tid = str(module.num_work_threads())
         self.tid = tid
         self.ready_time = ready_time
         self.response_units = response_units

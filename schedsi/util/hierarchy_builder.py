@@ -57,8 +57,9 @@ class ModuleBuilder:
         Returns `self`.
         """
         for child, vcpu_add_args in self.vcpus:
-            for add_args in vcpu_add_args:
-                self.add_thread(threads.VCPUThread, add_args, child=child)
+            for i, add_args in enumerate(vcpu_add_args):
+                tid = child.name + '-VCPU' + str(i)
+                self.add_thread(threads.VCPUThread, add_args, child=child, tid=tid)
         self.vcpus.clear()
         return self
 

@@ -20,12 +20,8 @@ class Module:
         """Create a :class:`Module`."""
         self.name = name
         self.parent = parent
-        self._scheduler_thread = threads.SchedulerThread(0, scheduler=scheduler(self))
+        self._scheduler_thread = threads.SchedulerThread("scheduler", scheduler=scheduler(self))
         self._vcpus = []
-        # HACK: VCPUs are usually added after other threads, but we need it sooner
-        #       to get a num_threads count for naming threads.
-        #       In particular, this is a problem for Cores, which are added in World.
-        self._vcpus = [(None, self._scheduler_thread)]
         self._children = []
         if parent is not None:
             parent.attach_module(self)
@@ -38,9 +34,6 @@ class Module:
 
         Returns the scheduler thread.
         """
-        # HACK: see __init__ for self._vcpus
-        if self._vcpus == [(None, self._scheduler_thread)]:
-            self._vcpus = []
         if len(self._vcpus) == 1:
             raise RuntimeError('Does not support more than 1 vcpu yet.')
         if not isinstance(vcpu, (threads.VCPUThread, core.Core)):
@@ -57,9 +50,9 @@ class Module:
         """Return the number of children."""
         return len(self._children)
 
-    def num_threads(self):
-        """Return number of threads managed by this module."""
-        return sum(s[1].num_threads() for s in self._vcpus) + len(self._vcpus)
+    def num_work_threads(self):
+        """Return number of work threads managed by this module."""
+        return self._scheduler_thread.num_threads()
 
     def add_thread(self, thread, **kwargs):
         """Add threads.

@@ -45,7 +45,7 @@ class TextLog:
         thread = cpu.status.chain.top
         module = thread.module
         align = max(0, self.align.thread + self.align.module - len(module.name))
-        return self._ct(cpu) + 'thread {}-{:<{thread_align}} '.format(module.name, thread.tid,
+        return self._ct(cpu) + 'thread {}|{:<{thread_align}} '.format(module.name, thread.tid,
                                                                       thread_align=align)
 
     def _ctm(self, cpu, module=None):
@@ -107,7 +107,7 @@ class TextLog:
                 # thread keys are (module-name, thread-id) tuples
                 # convert to string
                 if isinstance(key, tuple):
-                    key = '{}-{}'.format(key[0], key[1])
+                    key = '{}|{}'.format(key[0], key[1])
 
                 values.append('"' + key + '": ' + cls.to_json(value, next_sep_indent))
 

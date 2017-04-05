@@ -15,7 +15,7 @@ class TestExample(unittest.TestCase):
 
     Comparison is done via the text log, so that divergences can easily be checked.
     """
-    textlog_align = textlog.Align(cpu=1, time=3, module=7, thread=1)
+    textlog_align = textlog.Align(cpu=1, time=3, module=7, thread=9)
 
     @staticmethod
     def _get_kernel(name):

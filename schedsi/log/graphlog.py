@@ -38,7 +38,7 @@ class _Background:  # pylint: disable=too-few-public-methods
 
 def _name_thread(thread):
     """Return a string identifying the thread."""
-    return thread.module.name + '-' + str(thread.tid)
+    return thread.module.name + '$|$' + thread.tid
 
 
 class GraphLog:
@@ -277,7 +277,7 @@ class GraphLog:
             if thread.module is not current.module:
                 levels += LEVEL
                 names.append(_name_thread(current))
-                current = thread
+            current = thread
 
         if time == 0 and levels > 0:
             self._ctx_zero(names[0])

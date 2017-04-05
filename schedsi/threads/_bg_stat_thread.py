@@ -4,14 +4,19 @@ This should be used in favor of :class:`Thread` for non-worker threads.
 """
 
 from schedsi.threads.thread import Thread
+import sys
 
 
 class _BGStatThread(Thread):
     """Base class for threads recording background time."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, module, tid=None, **kwargs):
         """Create a :class:`_BGStatThread`."""
-        super().__init__(*args, **kwargs)
+        super().__init__(module, tid=tid, **kwargs)
+        if tid is None:
+            print('Warning: Did not specify tid for non-worker thread', self.module.name, self.tid,
+                  '. Usually automatic naming is not desired here.', file=sys.stderr)
+
         self.bg_times = [[]]
 
     def run_background(self, current_time, run_time):

@@ -102,7 +102,7 @@ def plot_scheduler(name, stats):
         figures.plot_thread(key, values)
 
     # strip the thread-id from the name
-    figures.save(name[:name.rindex('-') + 1])
+    figures.save(name[:name.rindex('|') + 1])
 
     print('Scheduler {} plotted.'.format(name))
 
@@ -173,7 +173,7 @@ def fix_keys(stats):
         # thread keys are (module-name, thread-id) tuples
         # convert to string
         if isinstance(key, tuple):
-            key = '{}-{}'.format(key[0], key[1])
+            key = '{}|{}'.format(key[0], key[1])
         new[key] = fix_keys(value)
 
     return new
