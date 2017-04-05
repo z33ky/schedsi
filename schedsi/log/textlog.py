@@ -44,7 +44,7 @@ class TextLog:
         """Stringify CPU, time and the current thread."""
         thread = cpu.status.chain.top
         module = thread.module
-        align = self.align.thread + self.align.module - len(module.name)
+        align = max(0, self.align.thread + self.align.module - len(module.name))
         return self._ct(cpu) + 'thread {}-{:<{thread_align}} '.format(module.name, thread.tid,
                                                                       thread_align=align)
 
