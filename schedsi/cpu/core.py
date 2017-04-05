@@ -93,11 +93,12 @@ class _Status:
 
         Resets the timer and jumps back to the kernel.
         """
-        assert self.chain.next_timeout <= 0
+        next_timeout = self.chain.next_timeout
+        assert next_timeout <= 0
 
         idx = self.chain.find_elapsed_timer()
-        self.cpu.log.timer_interrupt(self.cpu, idx, -self.chain.next_timeout)
-        self.stats.timer_delay += -self.chain.next_timeout
+        self.cpu.log.timer_interrupt(self.cpu, idx, -next_timeout)
+        self.stats.timer_delay += -next_timeout
 
         if len(self.chain) > 1:
             _, time = self._context_switch(split_index=idx)
@@ -225,7 +226,8 @@ class _Status:
         # For multi-core emulation this should become a coroutine.
         # It should yield whenever current_time is updated.
 
-        if self.chain.next_timeout is not None and self.chain.next_timeout <= 0:
+        next_timeout = self.chain.next_timeout
+        if next_timeout is not None and next_timeout <= 0:
             self._timer_interrupt()
             return
 
