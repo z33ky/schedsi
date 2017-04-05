@@ -67,7 +67,8 @@ def main():
                     align = log.TextLogAlign(*(int(x) for x in fileparam))
 
             if align is None:
-                align = log.TextLogAlign(cpu=1, time=3, module=7, thread=9)
+                align = log.TextLogAlign(cpu=1, time=3,
+                                         module=len('0.0.0.0'), thread=len('scheduler'))
 
             if not filename:
                 filename = NOW + '.log'
