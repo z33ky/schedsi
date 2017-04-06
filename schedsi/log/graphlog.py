@@ -9,16 +9,17 @@ def _outlined_fill(color, amount):
 
     Outline is full color (1.0), fill is graded.
     """
-    return [pyx.deco.stroked([color.getcolor(1.0)]), pyx.deco.filled([color.getcolor(amount)])]
+    return [pyx.style.linewidth.Thick,
+            pyx.deco.stroked([color.getcolor(1.0)]), pyx.deco.filled([color.getcolor(amount)])]
 
 
-CTXSW_COLORS = _outlined_fill(pyx.color.gradient.WhiteRed, 0.5)
-CTXSW_ZERO_COLOR = [pyx.style.linewidth.Thick, pyx.deco.stroked([pyx.color.rgb.red])]
+CTXSW_COLORS = _outlined_fill(pyx.color.gradient.WhiteRed, 0.5) + [pyx.style.linejoin.bevel]
+CTXSW_ZERO_COLOR = [pyx.style.linewidth.THICk, pyx.deco.stroked([pyx.color.rgb.red])]
 EXEC_COLORS = _outlined_fill(pyx.color.gradient.WhiteBlue, 0.5)
 IDLE_COLOR = [pyx.deco.stroked([pyx.color.gray(0.5)])]
 INACTIVE_COLOR = _outlined_fill(pyx.color.gradient.WhiteBlue, 0.3)
-TIMER_COLOR = [pyx.style.linewidth.Thick, pyx.deco.stroked([pyx.color.gray(0.0)])]
-TEXT_ATTR = [pyx.text.halign.boxcenter, pyx.color.rgb.black]
+TIMER_COLOR = [pyx.style.linewidth.THICk, pyx.deco.stroked([pyx.color.rgb(1.0, 0.1, 0.1)])]
+TEXT_ATTR = [pyx.text.mathmode, pyx.text.halign.boxcenter, pyx.color.rgb.black]
 
 # height in graph for context switch
 LEVEL = 3
@@ -38,7 +39,7 @@ class _Background:  # pylint: disable=too-few-public-methods
 
 def _name_thread(thread):
     """Return a string identifying the thread."""
-    return thread.module.name + '$|$' + thread.tid
+    return thread.module.name + '|' + thread.tid
 
 
 class GraphLog:
@@ -57,14 +58,19 @@ class GraphLog:
     so that we can draw a single contiguous block when the children finish.
     """
 
-    def __init__(self):
+    def __init__(self, *, text_scale=1):
         """Create a :class:`GraphLog`."""
+        pyx.text.set(cls=pyx.text.LatexRunner)
+        pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
         self.canvas = pyx.canvas.canvas()
         self.top = pyx.canvas.canvas()
         self.cursor = [0, 0]
         self.level = 0
         self.background_tasks = []
         self.task_executed = False
+        # TODO: the translation is not brilliant
+        self.text_attr = TEXT_ATTR + [pyx.trafo.scale(text_scale),
+                                      pyx.trafo.translate(0, -text_scale / 10)]
 
     def write(self, stream):
         """Generate SVG output of the current graph."""
@@ -84,11 +90,12 @@ class GraphLog:
 
         # draw axes
         path = pyx.path.path(pyx.path.moveto(0, 0), pyx.path.rlineto(self.cursor[0], 0))
-        canvas.stroke(path, [pyx.color.rgb.black])
+        canvas.stroke(path, [pyx.style.linecap.square, pyx.style.linewidth.THICk,
+                             pyx.color.rgb.black])
         for point in range(0, int(self.cursor[0] + 1), 5):
             line = pyx.path.line(point, 0, point, -0.5)
-            canvas.stroke(line, [pyx.color.rgb.black])
-            canvas.text(point, -1, point, TEXT_ATTR)
+            canvas.stroke(line, [pyx.style.linewidth.THICk, pyx.color.rgb.black])
+            canvas.text(point, -1.1, point, self.text_attr)
 
         # and done
         canvas.writeSVGfile(stream)
@@ -135,7 +142,7 @@ class GraphLog:
             linepos[1] += height
             textpos[1] = linepos[1] + 0.5
             self.top.stroke(pyx.path.line(*linepos, *textpos), color)
-        self.top.text(*textpos, text, TEXT_ATTR)
+        self.top.text(*textpos, text, self.text_attr)
 
         self._move(length, 0)
 
@@ -249,7 +256,7 @@ class GraphLog:
         """Context switch with zero time."""
         self._move(0, LEVEL - 0.5)
         self._draw_line(CTXSW_ZERO_COLOR, 0, 1, self.top)
-        self.top.text(*self.cursor, name, TEXT_ATTR)
+        self.top.text(*self.cursor, name, self.text_attr)
         self._move(0, -LEVEL - 0.5)
 
     def init_core(self, _cpu):
@@ -311,8 +318,8 @@ class GraphLog:
                 current = thread
         timer_level_offset = idx * LEVEL
 
-        self._move(-delay, -timer_level_offset)
-        self._draw_line(TIMER_COLOR, 0, 1, self.top)
+        self._move(-delay, -timer_level_offset - 0.5)
+        self._draw_line(TIMER_COLOR, 0, 1.5, self.top)
         self._move(delay, timer_level_offset - 1)
 
     def thread_statistics(self, stats):
