@@ -52,6 +52,7 @@ class Module:
 
     def num_work_threads(self):
         """Return number of work threads managed by this module."""
+        #FIXME: this includes VCPU threads
         return self._scheduler_thread.num_threads()
 
     def add_thread(self, thread, **kwargs):
@@ -60,6 +61,10 @@ class Module:
         See :meth:`SchedulerThread.add_threads() <schedsi.threads.SchedulerThread.add_threads>`.
         """
         self._scheduler_thread.add_thread(thread, **kwargs)
+
+    def all_threads(self):
+        """Return a generator yielding every thread."""
+        return self._scheduler_thread.all_threads()
 
     def get_thread_statistics(self, current_time):
         """Obtain statistics of threads managed by this module."""

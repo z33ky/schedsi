@@ -4,7 +4,10 @@
 import pyx
 
 
-def _outlined_fill(color, amount):
+pyx_color = pyx.color
+
+
+def outlined_fill(color, amount):
     """Create an outlined, filled pyx attribute.
 
     Outline is full color (1.0), fill is graded.
@@ -13,11 +16,11 @@ def _outlined_fill(color, amount):
             pyx.deco.stroked([color.getcolor(1.0)]), pyx.deco.filled([color.getcolor(amount)])]
 
 
-CTXSW_COLORS = _outlined_fill(pyx.color.gradient.WhiteRed, 0.5) + [pyx.style.linejoin.bevel]
+CTXSW_COLORS = outlined_fill(pyx.color.gradient.WhiteRed, 0.5) + [pyx.style.linejoin.bevel]
 CTXSW_ZERO_COLOR = [pyx.style.linewidth.THICk, pyx.deco.stroked([pyx.color.rgb.red])]
-EXEC_COLORS = _outlined_fill(pyx.color.gradient.WhiteBlue, 0.5)
+EXEC_COLORS = outlined_fill(pyx.color.gradient.WhiteBlue, 0.5)
 IDLE_COLOR = [pyx.deco.stroked([pyx.color.gray(0.5)])]
-INACTIVE_COLOR = _outlined_fill(pyx.color.gradient.WhiteBlue, 0.3)
+INACTIVE_COLOR = outlined_fill(pyx.color.gradient.WhiteBlue, 0.3)
 TIMER_COLOR = [pyx.style.linewidth.THICk, pyx.deco.stroked([pyx.color.rgb(1.0, 0.1, 0.1)])]
 TEXT_ATTR = [pyx.text.mathmode, pyx.text.halign.boxcenter, pyx.color.rgb.black]
 
@@ -31,9 +34,9 @@ class _Background:  # pylint: disable=too-few-public-methods
     Simply accumulates the time spent waiting while children are executing.
     """
 
-    def __init__(self, name, time):
+    def __init__(self, thread, time):
         """Create a :class:`_Background`."""
-        self.name = name
+        self.thread = thread
         self.time = time
 
 
@@ -53,7 +56,7 @@ class GraphLog:
     so that we can draw a single contiguous block when the children finish.
     """
 
-    def __init__(self, *, text_scale=1, name_module=True):
+    def __init__(self, *, text_scale=1, exec_colors=None, bg_colors=None, name_module=True):
         """Create a :class:`GraphLog`."""
         pyx.text.set(cls=pyx.text.LatexRunner)
         pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
@@ -70,6 +73,8 @@ class GraphLog:
             self._name_thread = self._name_thread_module
         else:
             self._name_thread = self._name_thread_only
+        self.exec_colors = exec_colors or {}
+        self.bg_colors = bg_colors or {}
 
     @staticmethod
     def _name_thread_only(thread):
@@ -127,7 +132,7 @@ class GraphLog:
         path = pyx.path.line(*begin, *self.cursor)
         canvas.stroke(path, color)
 
-    def _draw_block(self, color, text, length, height=LEVEL, canvas=None):
+    def _draw_block(self, color, thread, length, height=LEVEL, canvas=None):
         """Draw a solid block.
 
         Usually we want to draw a process, so `height` defaults to :const:`LEVEL`.
@@ -136,6 +141,10 @@ class GraphLog:
         """
         if canvas is None:
             canvas = self.canvas
+        if color is EXEC_COLORS:
+            color = self.exec_colors.get(thread, color)
+        if color is INACTIVE_COLOR:
+            color = self.bg_colors.get(thread, color)
 
         path = pyx.path.rect(*self.cursor, length, height)
         canvas.draw(path, color)
@@ -151,7 +160,7 @@ class GraphLog:
             linepos[1] += height
             textpos[1] = linepos[1] + 0.5
             self.top.stroke(pyx.path.line(*linepos, *textpos), color)
-        self.top.text(*textpos, text, self.text_attr)
+        self.top.text(*textpos, self._name_thread(thread), self.text_attr)
 
         self._move(length, 0)
 
@@ -200,7 +209,7 @@ class GraphLog:
         else:
             task = self.background_tasks.pop()
         self._move(-task.time, 0)
-        self._draw_block(INACTIVE_COLOR, task.name, task.time, canvas=canvas)
+        self._draw_block(INACTIVE_COLOR, task.thread, task.time, canvas=canvas)
 
     def _draw_background_tasks(self, time, amount=None):
         """Draw all active background tasks."""
@@ -220,14 +229,14 @@ class GraphLog:
         self._move(time, -LEVEL)
         self._draw_recent()
 
-    def _ctx_down(self, names, time, level_step):
+    def _ctx_down(self, threads, time, level_step):
         """Step down a level."""
         assert self.level % LEVEL == 0
         # we can't be at the bottom and step down
         assert self.level > 0 or level_step == 0
 
         if not self.task_executed and time != 0:
-            self._draw_block(EXEC_COLORS, names[0], 0)
+            self._draw_block(EXEC_COLORS, threads[0], 0)
             self.task_executed = True
 
         self._draw_slope(CTXSW_COLORS, time, -level_step)
@@ -244,7 +253,7 @@ class GraphLog:
                 self._draw_recent()
         return -level_step
 
-    def _ctx_up(self, names, time, level_step):
+    def _ctx_up(self, threads, time, level_step):
         """Step up a level."""
         assert self.level % LEVEL == 0
 
@@ -254,18 +263,18 @@ class GraphLog:
 
         self._update_background_tasks(time)
         if level_step > 0:
-            assert len(names) > 0
-            self.background_tasks.extend(_Background(name, 0) for name in names)
+            assert len(threads) > 0
+            self.background_tasks.extend(_Background(thread, 0) for thread in threads)
             # the thread on the bottom records context switching as background execution
-            self.background_tasks[-len(names)].time = time
+            self.background_tasks[-len(threads)].time = time
 
         return level_step
 
-    def _ctx_zero(self, name):
+    def _ctx_zero(self, thread):
         """Context switch with zero time."""
         self._move(0, LEVEL - 0.5)
         self._draw_line(CTXSW_ZERO_COLOR, 0, 1, self.top)
-        self.top.text(*self.cursor, name, self.text_attr)
+        self.top.text(*self.cursor, self._name_thread(thread), self.text_attr)
         self._move(0, -LEVEL - 0.5)
 
     def init_core(self, _cpu):
@@ -287,24 +296,23 @@ class GraphLog:
         # calculate depth of the hierarchy that is appended/removed
         current = cpu.status.chain.top
         levels = 0
-        # names of the threads at module-border
-        names = []
+        # threads at module-border
+        border_threads = []
         for thread in thread_diff:
             if thread.module is not current.module:
                 levels += LEVEL
-                names.append(self._name_thread(current))
+                border_threads.append(current)
             current = thread
 
         if time == 0 and levels > 0:
-            self._ctx_zero(names[0])
+            self._ctx_zero(border_threads[0])
 
-        self.level += ctx_func(names, time, levels)
+        self.level += ctx_func(border_threads, time, levels)
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
         self._update_background_tasks(runtime)
-        current_thread_name = self._name_thread(cpu.status.chain.top)
-        self._draw_block(EXEC_COLORS, current_thread_name, runtime)
+        self._draw_block(EXEC_COLORS, cpu.status.chain.top, runtime)
         self.task_executed = True
 
     def thread_yield(self, _cpu):
