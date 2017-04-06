@@ -37,11 +37,6 @@ class _Background:  # pylint: disable=too-few-public-methods
         self.time = time
 
 
-def _name_thread(thread):
-    """Return a string identifying the thread."""
-    return thread.module.name + '|' + thread.tid
-
-
 class GraphLog:
     """Graphical logger.
 
@@ -58,7 +53,7 @@ class GraphLog:
     so that we can draw a single contiguous block when the children finish.
     """
 
-    def __init__(self, *, text_scale=1):
+    def __init__(self, *, text_scale=1, name_module=True):
         """Create a :class:`GraphLog`."""
         pyx.text.set(cls=pyx.text.LatexRunner)
         pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
@@ -71,6 +66,20 @@ class GraphLog:
         # TODO: the translation is not brilliant
         self.text_attr = TEXT_ATTR + [pyx.trafo.scale(text_scale),
                                       pyx.trafo.translate(0, -text_scale / 10)]
+        if name_module:
+            self._name_thread = self._name_thread_module
+        else:
+            self._name_thread = self._name_thread_only
+
+    @staticmethod
+    def _name_thread_only(thread):
+        """Return a string identifying the thread."""
+        return thread.tid
+
+    @classmethod
+    def _name_thread_module(cls, thread):
+        """Return a string identifying the thread with module."""
+        return thread.module.name + '|' + cls._name_thread_only(thread)
 
     def write(self, stream):
         """Generate SVG output of the current graph."""
@@ -283,7 +292,7 @@ class GraphLog:
         for thread in thread_diff:
             if thread.module is not current.module:
                 levels += LEVEL
-                names.append(_name_thread(current))
+                names.append(self._name_thread(current))
             current = thread
 
         if time == 0 and levels > 0:
@@ -294,7 +303,7 @@ class GraphLog:
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
         self._update_background_tasks(runtime)
-        current_thread_name = _name_thread(cpu.status.chain.top)
+        current_thread_name = self._name_thread(cpu.status.chain.top)
         self._draw_block(EXEC_COLORS, current_thread_name, runtime)
         self.task_executed = True
 
