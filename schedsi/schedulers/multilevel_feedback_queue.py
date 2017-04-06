@@ -85,29 +85,13 @@ class MLFQ(scheduler.Scheduler):
         else:
             appliance(rcu_data)
 
-    def num_threads(self):
-        """Return total number of threads.
-
-        See :meth:`Thread.num_threads`.
-        """
-        def count_threads(rcu_data):
-            """Count the threads in all queues."""
-            chains = itertools.chain(rcu_data.ready_queues, rcu_data.waiting_queues,
-                                     (rcu_data.finished_chains,))
-            return sum(len(x) for x in chains)
-        return self._rcu.look(count_threads)
-
-    def get_thread_statistics(self, current_time):
-        """Obtain statistics of all threads.
-
-        See `Scheduler.get_thread_statistics`.
-        """
+    def all_threads(self):
+        """See :meth:`Scheduler.all_threads`."""
         rcu_data = self._rcu.read()
-        all_threads = (ctx.bottom for queue in itertools.chain(rcu_data.ready_queues,
-                                                               rcu_data.waiting_queues,
-                                                               (rcu_data.finished_chains,))
-                       for ctx in queue)
-        return self._get_thread_statistics(current_time, all_threads)
+        return (ctx.bottom for queue in itertools.chain(rcu_data.ready_queues,
+                                                        rcu_data.waiting_queues,
+                                                        (rcu_data.finished_chains,))
+                for ctx in queue)
 
     @classmethod
     def _update_ready_chains(cls, time, rcu_data):

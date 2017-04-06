@@ -63,9 +63,7 @@ class Scheduler:
 
         Includes both running and finished threads.
         """
-        return self._rcu.look(lambda d:
-                              sum(len(x) for x in
-                                  [d.ready_chains, d.waiting_chains, d.finished_chains]))
+        return sum(1 for _ in self.all_threads())
 
     def add_thread(self, thread, rcu_data=None):
         """Add threads to schedule."""
@@ -101,19 +99,18 @@ class Scheduler:
             if waiting_queue[i].bottom.ready_time <= time:
                 ready_queue.append(waiting_queue.pop(i))
 
+    def all_threads(self):
+        """Return a generator yielding every thread."""
+        rcu_data = self._rcu.read()
+        return (ctx.bottom for ctx in
+                itertools.chain(rcu_data.finished_chains, rcu_data.waiting_chains,
+                                rcu_data.ready_chains))
+
     def get_thread_statistics(self, current_time):
         """Obtain statistics of all threads."""
-        rcu_data = self._rcu.read()
-        all_threads = (ctx.bottom for ctx in
-                       itertools.chain(rcu_data.finished_chains, rcu_data.waiting_chains,
-                                       rcu_data.ready_chains))
-        return self._get_thread_statistics(current_time, all_threads)
-
-    @staticmethod
-    def _get_thread_statistics(current_time, all_threads):
-        """Obtain statistics of `all_threads`."""
         return {tid: stats for tid, stats in
-                (((t.module.name, t.tid), t.get_statistics(current_time)) for t in all_threads)}
+                (((t.module.name, t.tid), t.get_statistics(current_time))
+                 for t in self.all_threads())}
 
     def get_next_waiting(self, rcu_data):  # pylint: disable=no-self-use
         """Return (one of) the thread(s) that is next in line to become ready."""
