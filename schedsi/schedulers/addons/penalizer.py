@@ -88,11 +88,18 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
                     niceness = max(niceness, rcu_data.niceness[tid])
                 rcu_data.sat_out_threads.clear()
 
-        if niceness > 0 or \
-           niceness < 0 and max(rcu_data.niceness.values()) == niceness:
-            # shift back to 0
+        # shift back to 0
+        max_niceness = None
+        if niceness < 0:
+            max_niceness = max(rcu_data.niceness.values())
+            if max_niceness < niceness:
+                # no shifting required
+                max_niceness = None
+        if niceness > 0:
+            max_niceness = niceness
+        if max_niceness is not None:
             for k in rcu_data.niceness.keys():
-                rcu_data.niceness[k] -= niceness
+                rcu_data.niceness[k] -= max_niceness
         assert not rcu_data.niceness or 0 in rcu_data.niceness.values()
         assert all(v <= 0 for v in rcu_data.niceness.values())
 
