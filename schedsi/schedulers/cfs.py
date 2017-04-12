@@ -156,7 +156,7 @@ class CFS(scheduler.Scheduler):
         try:
             thread = ready_chains[1].bottom
         except IndexError:
-            return
+            return min_vruntime
         return min(min_vruntime, vruntimes[thread])
 
     @staticmethod
