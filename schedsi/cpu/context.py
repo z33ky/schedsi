@@ -68,7 +68,7 @@ class Chain:
     def __init__(self, *, chain, next_timeout_idx=None):
         """Create a :class:`Chain`."""
         self.contexts = chain
-        if next_timeout_idx:
+        if next_timeout_idx is not None:
             self.next_timeout_idx = next_timeout_idx
         else:
             self._update_timeout()
@@ -213,7 +213,7 @@ class Chain:
         assert idx > 0, 'Index for split is out of bounds.'
 
         tail_timeout_idx = None
-        if idx <= self.next_timeout_idx:
+        if self.next_timeout_idx is not None and idx <= self.next_timeout_idx:
             tail_timeout_idx = self.next_timeout_idx - idx
 
         tail = Chain(chain=self.contexts[idx:], next_timeout_idx=tail_timeout_idx)
