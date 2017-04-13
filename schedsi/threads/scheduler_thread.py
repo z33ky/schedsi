@@ -57,13 +57,6 @@ class SchedulerThread(_BGStatThread):
         self.last_bg_time += run_time
         super().run_background(current_time, run_time)
 
-    def run_ctxsw(self, current_time, run_time):
-        """Update runtime state.
-
-        See :meth:`Thread.run_ctxsw`.
-        """
-        super().run_ctxsw(current_time, run_time)
-
     def num_threads(self):
         """Return number of threads in :attr:`_scheduler`."""
         return self._scheduler.num_threads()
