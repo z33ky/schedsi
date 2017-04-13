@@ -44,7 +44,9 @@ class VCPUThread(_BGStatThread):
         while True:
             self._update_ready_time(current_time)
             self._chain = yield cpurequest.Request.resume_chain(self._chain)
-            current_time = yield cpurequest.Request.idle()
+            current_time = yield cpurequest.Request.current_time()
+            if self._thread.ready_time > current_time:
+                current_time = yield cpurequest.Request.idle()
 
     def suspend(self, current_time):
         """Become suspended.
