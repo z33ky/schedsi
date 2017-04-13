@@ -204,9 +204,9 @@ class MLFQ(scheduler.Scheduler):
             rcu_data.ready_chains = rcu_data.ready_queues[0]
             prev_ready_queue_idx = 0
             for queue in rcu_data.ready_queues[1:]:
-                if queue is not rcu_data.ready_chains:
-                    rcu_data.ready_chains.extend(queue)
-                    del queue[:]
+                assert queue is not rcu_data.ready_chains
+                rcu_data.ready_chains.extend(queue)
+                del queue[:]
             rcu_data.prio_boost_time = self.prio_boost_time - (delta - rcu_data.prio_boost_time)
         else:
             rcu_data.prio_boost_time -= delta
