@@ -83,12 +83,6 @@ class _Status:
         self.current_time += time
         self.chain.elapse(time)
 
-    def _run_background(self, time):
-        """Call :meth:`context.Chain.run_background <schedsi.context.Chain.run_background>` \
-        on :attr:`chain`.
-        """
-        self.chain.run_background(self.current_time, time)
-
     def _timer_interrupt(self):
         """Call when :attr:`chain.next_timeout` arrives.
 
@@ -151,7 +145,7 @@ class _Status:
         assert self._calc_runtime(cost) == cost or self.chain.next_timeout <= cost
         self._update_time(cost)
 
-        self._run_background(cost)
+        self.chain.run_background_other(self.current_time, cost)
         if split_index is not None:
             self.chain.top.run_ctxsw(self.current_time, cost)
             self.chain.top.resume(self.current_time, True)
@@ -205,7 +199,7 @@ class _Status:
             self.cpu.log.thread_execute(self.cpu, time)
             self._update_time(time)
             self.stats.crunch_time += time
-            self._run_background(time)
+            self.chain.run_background_all(self.current_time, time)
             self.chain.top.run_crunch(self.current_time, time)
         elif request.rtype == RequestType.idle:
             self.cpu.log.thread_yield(self.cpu)

@@ -231,10 +231,20 @@ class Chain:
         for ctx in self.contexts:
             ctx.thread.finish(current_time)
 
-    def run_background(self, current_time, time):
+    def run_background_all(self, current_time, time, end=-1):
         """Call :meth:`Thread.run_background <schedsi.threads.Thread.run_background>` \
         on every :class:`~schedsi.threads.Thread` in the :class:`Chain` \
         except :attr:`current_context`.
         """
-        for ctx in self.contexts[:-1]:
+        for ctx in self.contexts[:end]:
             ctx.thread.run_background(current_time, time)
+
+    def run_background_other(self, current_time, time):
+        """Call :meth:`Thread.run_background <schedsi.threads.Thread.run_background>` \
+        on every :class:`~schedsi.threads.Thread` in the :class:`Chain` \
+        except on threads in the :attr:`current_context`s :class:`Module`.
+        """
+        module = self.current_context.thread.module
+        end = next((-i for i, c in enumerate(reversed(self.contexts))
+                    if c.thread.module is not module), 0)
+        self.run_background_all(current_time, time, end)
