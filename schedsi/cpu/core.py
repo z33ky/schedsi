@@ -4,7 +4,8 @@
 from . import context
 from .request import Type as RequestType
 
-CTXSW_COST = 1
+MODULE_CTXSW_COST = 1
+THREAD_CTXSW_COST = 0
 
 
 class _ContextSwitchStats:  # pylint: disable=too-few-public-methods
@@ -131,10 +132,10 @@ class _Status:
         thread_to = appendix and appendix.top or self.chain.thread_at(split_index)
 
         if thread_to.module == thread_from.module:
-            cost = 0
+            cost = THREAD_CTXSW_COST
             self.ctxsw_stats.thread_time += cost
         else:
-            cost = CTXSW_COST
+            cost = MODULE_CTXSW_COST
             self.ctxsw_stats.module_time += cost
 
         self.cpu.log.context_switch(self.cpu, split_index, appendix, cost)
