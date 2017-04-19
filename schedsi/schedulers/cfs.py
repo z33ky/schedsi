@@ -191,7 +191,7 @@ class CFS(scheduler.Scheduler):
         """
         chain = ready_chains.pop(0)
         idx = bisect.bisect([runtimes[c.bottom] for c in ready_chains], runtimes[chain.bottom])
-        if idx == 0:
+        if idx == 0 and len(ready_chains) > 1:
             # force reschedule
             idx = 1
         ready_chains[idx:idx] = [chain]
