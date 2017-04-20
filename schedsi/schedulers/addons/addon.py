@@ -100,7 +100,7 @@ class AddonScheduler(AddonSchedulerBase):
         repeat, time_slice = self.addon.repeat(rcu_data, prev_run_time)
         if not repeat:
             return
-        assert time_slice > 0
+        assert time_slice is None or time_slice > 0
 
         chain = rcu_data.ready_chains[rcu_data.last_idx]
         current_time = yield CPURequest.current_time()

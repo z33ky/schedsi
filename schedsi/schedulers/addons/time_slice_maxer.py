@@ -31,6 +31,10 @@ class TimeSliceMaxer(time_slice_fixer.TimeSliceFixer):
         """See :meth:`Addon.repeat`."""
         idx = rcu_data.last_idx
         time_slice = rcu_data.repeat_time_slices[idx]
+
+        if time_slice is None:
+            return True, time_slice
+
         time_slice -= prev_run_time
         if time_slice > self.threshold:
             rcu_data.repeat_time_slices[idx] = time_slice

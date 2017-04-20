@@ -41,7 +41,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
             # is there a reasonable default?
             def threshold(time_slice):  # pylint: disable=function-redefined
                 """Return the threshold for the `time_slice`."""
-                return -time_slice / 2
+                return -time_slice / 2 if time_slice else 0
         self.threshold = threshold
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
