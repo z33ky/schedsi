@@ -30,6 +30,7 @@ class MLFQData(scheduler.SchedulerData):  # pylint: disable=too-few-public-metho
 
         self.prio_boost_time = priority_boost_time
         self.last_prio_boost = None
+        self.last_finish_time = None
 
         self.previous_ready_queue = None
 
@@ -152,11 +153,12 @@ class MLFQ(scheduler.Scheduler):
         rcu_data.ready_chains = next((x for x in rcu_data.ready_queues if x),
                                      rcu_data.ready_chains)
 
-        if prev_has_run:
+        if prev_has_run and not last_queue[-1].bottom.is_finished():
             # and (rcu_data.last_prio_boost is None or rcu_data.last_prio_boost != current_time) ?
             last_queue, last_idx = self._priority_reduction(rcu_data,
                                                             last_queue, last_idx,
-                                                            prev_ready_queue, prev_ready_queue_idx)
+                                                            prev_ready_queue, prev_ready_queue_idx,
+                                                            prev_run_time)
         elif last_queue is rcu_data.waiting_chains:
             assert rcu_data.waiting_chains
             last_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
@@ -225,7 +227,7 @@ class MLFQ(scheduler.Scheduler):
         return last_queue, last_idx, prev_ready_queue_idx
 
     def _priority_reduction(self, rcu_data, last_queue, last_idx,  # pylint: disable=no-self-use
-                            prev_ready_queue, prev_ready_queue_idx):
+                            prev_ready_queue, prev_ready_queue_idx, prev_run_time):
         """Lower last thread's priority if it outran its time-slice.
 
         This represents the heuristic of the MLFQ scheduler.
@@ -242,23 +244,42 @@ class MLFQ(scheduler.Scheduler):
         by finding the index of `prev_ready_queue` in :attr:`ready_queues`,
         but it is passed in as an optimization.
         """
-        if last_queue is prev_ready_queue:
-            # previous thread outran its time-slice
-            next_idx = prev_ready_queue_idx + 1
-            if next_idx != len(rcu_data.ready_queues):
-                next_chain_queue = rcu_data.ready_queues[next_idx]
-                next_chain_queue.append(prev_ready_queue.pop(last_idx))
-                if not rcu_data.ready_chains:
-                    rcu_data.ready_chains = next_chain_queue
-                    last_idx = len(next_chain_queue) - 1
+        allowed_run_time = self.level_time_slices[prev_ready_queue_idx]
+        if allowed_run_time is None:
+            allowed_run_time = prev_run_time
+
+        next_queue_idx = prev_ready_queue_idx + 1
+
+        if rcu_data.last_finish_time is not None \
+           and prev_run_time >= allowed_run_time \
+           and (prev_run_time != allowed_run_time or last_queue[-1].bottom.ready_time == rcu_data.last_finish_time) \
+           and next_queue_idx < len(self.level_time_slices):
+            next_chain_queue = None
+            pop_idx = None
+            if last_queue is prev_ready_queue:
+                next_chain_queue = rcu_data.ready_queues[next_queue_idx]
+                pop_idx = last_idx
+            elif rcu_data.waiting_chains:
+                assert last_queue is rcu_data.waiting_chains
+                next_chain_queue = rcu_data.waiting_queues[next_queue_idx]
+                pop_idx = -1
+            else:
+                assert last_queue in (None, rcu_data.finished_chains)
+
+            if next_chain_queue is not None:
+                next_chain_queue.append(last_queue.pop(pop_idx))
                 last_queue = next_chain_queue
+
+                assert not rcu_data.waiting_chains
+
+                if not rcu_data.ready_chains:
+                    rcu_data.ready_chains = last_queue
+                    last_idx = len(last_queue) - 1
         elif rcu_data.waiting_chains:
             assert last_queue is rcu_data.waiting_chains
             last_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
             last_queue.append(rcu_data.waiting_chains.pop())
             assert not rcu_data.waiting_chains
-        else:
-            assert last_queue is None or last_queue is rcu_data.finished_chains
 
         return last_queue, last_idx
 
@@ -286,6 +307,9 @@ class MLFQ(scheduler.Scheduler):
         level = next(i for i, v in enumerate(rcu_data.ready_queues)
                      if v is rcu_data.ready_chains)
 
-        return idx, self.level_time_slices[level]
-        # needs to be a coroutine
-        yield  # pylint: disable=unreachable
+        time_slice = self.level_time_slices[level]
+        rcu_data.last_finish_time = None
+        if time_slice is not None:
+            rcu_data.last_finish_time = (yield cpurequest.Request.current_time()) + time_slice
+
+        return idx, time_slice
