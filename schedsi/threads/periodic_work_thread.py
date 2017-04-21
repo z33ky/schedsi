@@ -68,7 +68,12 @@ class PeriodicWorkThread(Thread):
                 self.current_burst_left = quota_left
             else:
                 # FIXME: this is a crutch resulting from floating point inaccuracies
-                assert math.isclose(self.current_burst_left, 0, abs_tol=1e-10)
+                if math.isclose(current_time,
+                               self._calc_activations(current_time) * self.period
+                               + self.original_ready_time, abs_tol=1e-10):
+                    self.current_burst_left = self.burst
+                else:
+                    assert math.isclose(self.current_burst_left, 0, abs_tol=1e-10)
                 quota_left = self.current_burst_left
 
             current_time = yield from super()._execute(current_time, quota_left)
