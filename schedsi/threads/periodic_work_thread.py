@@ -1,6 +1,5 @@
 """Define the :class:`PeriodicWorkThread`."""
 
-import math
 from schedsi.cpu import request as cpurequest
 from schedsi.threads.thread import Thread
 
@@ -18,32 +17,25 @@ class PeriodicWorkThread(Thread):
         self.original_ready_time = self.ready_time
         self.period = period
         self.burst = burst
-        self.current_burst_left = None
         self.total_run_time = 0
 
-    def _calc_activations(self, current_time):
-        """Calculate the number activations at `current_time`."""
+    def ideal_activations(self, current_time):
+        """Return ideal number of activations at `current_time`."""
         return int((current_time - self.original_ready_time) / self.period) + 1
-
-    def _get_quota(self, current_time):
-        """Calculate the quota at `current_time`.
-
-        Won't return more than :attr:`remaining`.
-        """
-        quota_left = self._calc_activations(current_time) * self.burst - self.total_run_time
-        if self.remaining is not None:
-            quota_left = min(self.remaining, quota_left)
-        return quota_left
 
     def _update_ready_time(self, current_time):
         """Update :attr:`ready_time` if the current burst is finished.
 
         Requires :attr:`current_burst_left` to be up-to-date.
         """
-        assert self.current_burst_left is not None
-        if self.current_burst_left == 0:
-            self.ready_time = self._calc_activations(current_time) * self.period \
-                            + self.original_ready_time
+        assert current_time >= self.original_ready_time
+        act_actual = self.total_run_time / self.burst
+
+        if self.ideal_activations(current_time) != act_actual:
+            assert (self.ready_time is None and self.remaining == 0) \
+                or self.ready_time <= current_time
+        else:
+            self.ready_time = int(act_actual) * self.period + self.original_ready_time
 
     # will run as long as the summed up bursts require
     def execute(self):
@@ -56,29 +48,30 @@ class PeriodicWorkThread(Thread):
 
         current_time = yield cpurequest.Request.current_time()
         while True:
-            quota_left = self._get_quota(current_time)
-            if quota_left != 0:
-                if quota_left < 0:
-                    raise RuntimeError('Executed too much')
-                quota_plus = self._get_quota(current_time + quota_left)
-                # TODO: be smarter
-                while quota_plus > quota_left:
-                    quota_left = quota_plus
-                    quota_plus = self._get_quota(current_time + quota_left)
-                self.current_burst_left = quota_left
-            else:
-                # FIXME: this is a crutch resulting from floating point inaccuracies
-                if math.isclose(current_time,
-                               self._calc_activations(current_time) * self.period
-                               + self.original_ready_time, abs_tol=1e-10):
-                    self.current_burst_left = self.burst
-                else:
-                    assert math.isclose(self.current_burst_left, 0, abs_tol=1e-10)
-                quota_left = self.current_burst_left
+            assert current_time >= self.original_ready_time
 
-            current_time = yield from super()._execute(current_time, quota_left)
-            if self.current_burst_left == 0:
+            def act_ideal_in(delta):
+                """Return ideal number of activations after `delta` units."""
+                return self.ideal_activations(current_time + delta)
+
+            ideal_run_time = act_ideal_in(0) * self.burst
+            if self.total_run_time > ideal_run_time:
+                raise RuntimeError('Executed too much')
+
+            quota = 0
+            # loop until ideal_run_time no longer increases
+            while self.total_run_time + quota < ideal_run_time:
+                quota = ideal_run_time - self.total_run_time
+                ideal_run_time = act_ideal_in(quota) * self.burst
+
+            if quota == 0:
                 current_time = yield cpurequest.Request.idle()
+                continue
+
+            if self.remaining is not None:
+                quota = min(self.remaining, quota)
+
+            current_time = yield from super()._execute(current_time, quota)
 
     def run_crunch(self, current_time, run_time):
         """Update runtime state.
@@ -86,17 +79,6 @@ class PeriodicWorkThread(Thread):
         See :meth:`Thread.run`.
         """
         super().run_crunch(current_time, run_time)
-        assert self.current_burst_left >= run_time
-        self.current_burst_left -= run_time
-        self._update_ready_time(current_time)
         self.total_run_time += run_time
-        assert self.total_run_time == sum([sum(x) for x in self.stats.run])
-
-    def finish(self, current_time):
-        """Become inactive.
-
-        See :meth:`Thread.finish`.
-        """
         self._update_ready_time(current_time)
-        self.current_burst_left = None
-        super().finish(current_time)
+        assert self.total_run_time == sum([sum(x) for x in self.stats.run])
