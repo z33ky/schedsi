@@ -61,7 +61,7 @@ class MLFQ(scheduler.Scheduler):
 
         self.level_time_slices = level_time_slices
         if level_time_slices is None:
-            self.level_time_slices = [self.time_slice] * levels
+            self.level_time_slices = (self.time_slice,) * levels
         self.prio_boost_time = priority_boost_time
 
         if priority_boost_time is None:

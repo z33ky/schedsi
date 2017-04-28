@@ -3,6 +3,7 @@
 
 import collections
 import itertools
+from schedsi.cpu.time import TimeType
 
 Align = collections.namedtuple('Align', 'cpu time module thread')
 
@@ -23,10 +24,12 @@ class TextLog:
 
     def _timespan(self, cost):
         """Stringify a timespan."""
+        cost = float(cost)
         return '{:.{prec}f} unit{}'.format(cost, '' if cost == 1 else 's', prec=self.time_prec)
 
     def _ctxsw(self, module_to, time):
         """Stringify a context switch."""
+        time = float(time)
         return 'spends {} to switch to {}'.format(self._timespan(time), module_to.name)
 
     def _ct(self, cpu):
@@ -34,8 +37,9 @@ class TextLog:
 
         This should be the start of pretty much every message.
         """
+        current_time = float(cpu.status.current_time)
         return 'cpu {:>{cpu_align}} @ {:>{time_align}.{prec}f}: '.format(cpu.uid,
-                                                                         cpu.status.current_time,
+                                                                         current_time,
                                                                          cpu_align=self.align.cpu,
                                                                          time_align=self.align.time,
                                                                          prec=self.time_prec)
@@ -92,6 +96,12 @@ class TextLog:
             self.stream.write(' ({} delay)'.format(self._timespan(delay)))
         self.stream.write('.\n')
 
+    @staticmethod
+    def intify(val):
+        """`int(val)` if `val` can be exactly represented as an `int`, otherwise `float(val)`."""
+        val = float(val)
+        return int(val) if val.is_integer() else val
+
     @classmethod
     def to_json(cls, stats, sep_indent='\n'):
         """Convert stats to JSON.
@@ -113,11 +123,20 @@ class TextLog:
 
             return '{' + next_sep_indent + (',' + next_sep_indent).join(values) + sep_indent + '}'
 
+        if isinstance(stats, TimeType):
+            return str(cls.intify(stats))
+
         if isinstance(stats, (float, int)):
             return str(stats)
 
+        def intify_list(lst):
+            """:meth:`intify` the list `list."""
+            if isinstance(lst, collections.Sequence):
+                return list(map(cls.intify, lst))
+            return cls.intify(lst)
+
         if isinstance(stats, (list, tuple)):
-            return str([list(stat) if isinstance(stat, tuple) else stat for stat in stats])
+            return str([intify_list(stat) for stat in stats])
 
         if stats is None:
             return 'null'
@@ -134,4 +153,4 @@ class TextLog:
         for sstats, core in zip(sorted(stat.items() for stat in stats), itertools.count()):
             self.stream.write('Core {}\n'.format(core))
             for name, stat in sorted(sstats):
-                self.stream.write('\t{}: {}\n'.format(name, stat))
+                self.stream.write('\t{}: {}\n'.format(name, self.intify(stat)))

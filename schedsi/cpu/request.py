@@ -2,6 +2,7 @@
 """Defines a :class:`Request`."""
 
 import enum
+import numbers
 from schedsi.cpu import context
 
 Type = enum.Enum('Type', ['current_time', 'resume_chain', 'idle', 'execute', 'timer'])
@@ -16,12 +17,8 @@ class Request:
             assert arg is None
         elif rtype == Type.resume_chain:
             assert isinstance(arg, context.Chain)
-        elif rtype == Type.idle:
-            assert arg is None or arg > 0
-        elif rtype == Type.execute:
-            assert arg is None or arg > 0
-        elif rtype == Type.timer:
-            assert arg is None or arg > 0
+        elif rtype in (Type.idle, Type.execute, Type.timer):
+            assert arg is None or isinstance(arg, numbers.Rational) and arg > 0
         else:
             assert False, 'Unknown Type'
         self.rtype = rtype

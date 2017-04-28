@@ -5,6 +5,7 @@ The design is influenced by Linux's CFS scheduler.
 """
 
 import bisect
+from gmpy2 import mpq as Fraction
 from schedsi.schedulers import scheduler
 
 
@@ -80,7 +81,7 @@ class CFS(scheduler.Scheduler):
 
     def _get_vruntime_fact(self, thread, rcu_data):
         """Get factor for the `thread`'s vruntime."""
-        return self.default_shares / rcu_data.shares[thread]
+        return Fraction(self.default_shares, rcu_data.shares[thread])
 
     def _get_last_chain(self, rcu_data, last_queue, _last_idx):
         """See :meth:`Scheduler._get_last_chain`."""
@@ -228,8 +229,8 @@ class CFS(scheduler.Scheduler):
     @staticmethod
     def _get_ratio(thread, rcu_data):
         """Calculate the share ratio of a thread."""
-        return rcu_data.shares[thread] / sum(rcu_data.shares[c.bottom]
-                                             for c in rcu_data.ready_chains)
+        return Fraction(rcu_data.shares[thread], sum(rcu_data.shares[c.bottom]
+                                                     for c in rcu_data.ready_chains))
 
     def _get_slice(self, thread, rcu_data):
         """Calculate the slice for the thread."""

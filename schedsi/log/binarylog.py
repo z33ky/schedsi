@@ -4,6 +4,7 @@
 import collections
 import enum
 import msgpack
+from schedsi.cpu.time import Time, TimeType
 
 _EntryType = enum.Enum('_EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
 _Event = enum.Enum('_Event', [
@@ -18,11 +19,15 @@ _Event = enum.Enum('_Event', [
 _GenericEvent = collections.namedtuple('_GenericEvent', 'cpu event')
 
 
+def _encode_time(frac):
+    """Encode :class:`~schedsi.cpu.time.Time`."""
+    return {'numerator': int(frac.numerator), 'denominator': int(frac.denominator)}
+
 def _encode_cpu(cpu):
     """Encode a :class:`~schedsi.cpu.Core` to a :obj:`dict`."""
     return {
         'uid': cpu.uid,
-        'status': {'current_time': cpu.status.current_time}
+        'status': {'current_time': _encode_time(cpu.status.current_time)}
     }
 
 
@@ -88,7 +93,7 @@ def _encode_ctxsw(cpu, split_index, appendix, time):
         assert split_index is None
         param = {'appendix': _encode_contexts(appendix.contexts, cpu.status.chain.current_context)}
 
-    param['time'] = time
+    param['time'] = _encode_time(time)
 
     return _encode_event(cpu, _Event.context_switch.name, param)
 
@@ -97,6 +102,25 @@ def _encode_coreinit(cpu):
     """Encode a init_core event to a :obj:`dict`."""
     return _encode_event(cpu, _Event.init_core.name,
                          {'context': _encode_contexts(cpu.status.chain.contexts, None)})
+
+
+def _encode_time_sequence(times):
+    """Encode a (potentially nested) sequence of `Time`s."""
+    if isinstance(times, collections.Sequence):
+        return times.__class__(map(_encode_time_sequence, times))
+    return _encode_time(times)
+
+
+def _encode_stats(stats):
+    """Encode stats."""
+    for key, value in stats.items():
+        if isinstance(value, dict):
+            stats[key] = _encode_stats(value)
+        elif isinstance(value, collections.Sequence):
+            stats[key] = _encode_time_sequence(value)
+        elif isinstance(value, TimeType):
+            stats[key] = _encode_time(value)
+    return stats
 
 
 class BinaryLog:
@@ -128,7 +152,7 @@ class BinaryLog:
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
-        self._encode(cpu, _Event.thread_execute, {'runtime': runtime})
+        self._encode(cpu, _Event.thread_execute, {'runtime': _encode_time(runtime)})
 
     def thread_yield(self, cpu):
         """Log an thread yielded event."""
@@ -136,19 +160,20 @@ class BinaryLog:
 
     def cpu_idle(self, cpu, idle_time):
         """Log an CPU idle event."""
-        self._encode(cpu, _Event.cpu_idle, {'idle_time': idle_time})
+        self._encode(cpu, _Event.cpu_idle, {'idle_time': _encode_time(idle_time)})
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
-        self._encode(cpu, _Event.timer_interrupt, {'idx': idx, 'delay': delay})
+        self._encode(cpu, _Event.timer_interrupt, {'idx': idx, 'delay': _encode_time(delay)})
 
     def thread_statistics(self, stats):
         """Log thread statistics."""
-        self._write({'type': _EntryType.thread_statistics.name, 'stats': stats})
+        self._write({'type': _EntryType.thread_statistics.name, 'stats': _encode_stats(stats)})
 
     def cpu_statistics(self, stats):
         """Log CPU statistics."""
-        self._write({'type': _EntryType.cpu_statistics.name, 'stats': list(stats)})
+        self._write({'type': _EntryType.cpu_statistics.name,
+                     'stats': list(map(_encode_stats, stats))})
 
 
 # types emulating schedsi classes for other logs
@@ -270,9 +295,14 @@ def _decode_core(entry):
     return _Core(core['uid'], _decode_status(core['status']))
 
 
+def _decode_time(entry):
+    """Decode :class:`~schedsi.cpu.time.Time` from a :obj:`dict`-entry."""
+    return Time(entry['numerator'], entry['denominator'])
+
+
 def _decode_status(entry):
     """Extract :class:`_CPUStatus` from a :obj:`dict`-entry."""
-    return _CPUStatus(entry['current_time'])
+    return _CPUStatus(_decode_time(entry['current_time']))
 
 
 def _decode_thread(entry):
@@ -313,6 +343,41 @@ def _decode_ctxsw(cpu, entry):
     return (split_index, appendix)
 
 
+class TimeDecodeFail(ValueError):
+    pass
+
+
+def _try_decode_time(entry):
+    """Try to decode `entry` as `Time`.
+
+    Return None if unsuccessful.
+    """
+    try:
+        return _decode_time(entry)
+    except (KeyError, TypeError):
+        raise TimeDecodeFail()
+
+
+def _decode_time_sequence(times):
+    """Decode a (potentially nested) sequence of `Time`s."""
+    if isinstance(times, dict):
+        return _decode_time(times)
+    return times.__class__(map(_decode_time_sequence, times))
+
+
+def _decode_stats(stats):
+    """Decode stats."""
+    for key, value in stats.items():
+        if isinstance(value, collections.Sequence):
+            stats[key] = _decode_time_sequence(value)
+        elif isinstance(value, dict):
+            try:
+                stats[key] = _try_decode_time(value)
+            except TimeDecodeFail:
+                stats[key] = _decode_stats(value)
+    return stats
+
+
 def replay(binary, log):
     """Play a MessagePack file to another log."""
     contexts = {}
@@ -330,26 +395,26 @@ def replay(binary, log):
                 log.init_core(event.cpu)
             elif event.event == _Event.context_switch.name:
                 split_index, appendix = _decode_ctxsw(event.cpu, entry)
-                log.context_switch(event.cpu, split_index, appendix, entry['time'])
+                log.context_switch(event.cpu, split_index, appendix, _decode_time(entry['time']))
                 chain = event.cpu.status.chain
                 if split_index is not None:
                     del chain.contexts[split_index + 1:]
                 else:
                     chain.contexts += appendix.contexts
             elif event.event == _Event.thread_execute.name:
-                log.thread_execute(event.cpu, entry['runtime'])
+                log.thread_execute(event.cpu, _decode_time(entry['runtime']))
             elif event.event == _Event.thread_yield.name:
                 log.thread_yield(event.cpu)
             elif event.event == _Event.cpu_idle.name:
-                log.cpu_idle(event.cpu, entry['idle_time'])
+                log.cpu_idle(event.cpu, _decode_time(entry['idle_time']))
             elif event.event == _Event.timer_interrupt.name:
-                log.timer_interrupt(event.cpu, entry['idx'], entry['delay'])
+                log.timer_interrupt(event.cpu, entry['idx'], _decode_time(entry['delay']))
             else:
                 print('Unknown event:', event)
         elif entry['type'] == _EntryType.thread_statistics.name:
-            log.thread_statistics(entry['stats'])
+            log.thread_statistics(_decode_stats(entry['stats']))
         elif entry['type'] == _EntryType.cpu_statistics.name:
-            log.cpu_statistics(entry['stats'])
+            log.cpu_statistics(_decode_stats(stat) for stat in entry['stats'])
         else:
             print('Unknown entry:', entry)
 
