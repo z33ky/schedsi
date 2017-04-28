@@ -208,20 +208,22 @@ class CFS(scheduler.Scheduler):
         if rcu_data.min_vruntime is None:
             rcu_data.min_vruntime = time
 
+        # we include ready_chains[0] only if it is not executing
+        idx = 1
+        if rcu_data.last_idx != 0:
+            idx = 0
+        def insertion_index(vruntime):
+            """Calculate insertion index for `vruntime`."""
+            return next((i + 1 for i, c in enumerate(ready_chains[idx:])
+                         if rcu_data.vruntimes[c.bottom] > vruntime), len(ready_chains))
         for chain in new_chains:
-            if rcu_data.vruntimes[chain.bottom] is None:
+            vruntime = rcu_data.vruntimes[chain.bottom]
+            if vruntime is None:
                 # FIXME: subtract ((time - ready_time) * _get_vruntime_fact()) from vruntime
-                rcu_data.vruntimes[chain.bottom] = 0
-            rcu_data.vruntimes[chain.bottom] += rcu_data.min_vruntime
-
-        # figure out insertion point
-        idx = next((i for i, c in enumerate(rcu_data.ready_chains)
-                    if rcu_data.vruntimes[c.bottom] > rcu_data.min_vruntime), 0)
-        if idx == 0 and rcu_data.last_idx == 0:
-            # the ready_chains[0] is executing, so we need to insert past it
-            idx = 1
-
-        ready_chains[idx:idx] = new_chains
+                vruntime = 0
+            vruntime += rcu_data.min_vruntime
+            rcu_data.vruntimes[chain.bottom] = vruntime
+            ready_chains.insert(insertion_index(vruntime), chain)
 
     @staticmethod
     def _get_ratio(thread, rcu_data):

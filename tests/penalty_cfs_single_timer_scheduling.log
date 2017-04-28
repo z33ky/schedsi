@@ -1,18 +1,18 @@
 cpu 0 @   0.0000000000000000: module 0                 selects 0.
 cpu 0 @   0.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @  10.0000000000000000: module 0                 timer elapsed.
-cpu 0 @  10.0000000000000000: module 0                 selects 1.
-cpu 0 @  10.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
-cpu 0 @  14.0000000000000000: thread 0|1               yields.
-cpu 0 @  14.0000000000000000: module 0                 selects 4.
-cpu 0 @  14.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
-cpu 0 @  24.0000000000000000: module 0                 timer elapsed.
-cpu 0 @  24.0000000000000000: module 0                 selects 5.
-cpu 0 @  24.0000000000000000: thread 0|5               runs for 10.0000000000000000 units.
-cpu 0 @  34.0000000000000000: module 0                 timer elapsed.
-cpu 0 @  34.0000000000000000: module 0                 selects 6.
-cpu 0 @  34.0000000000000000: thread 0|6               runs for 10.0000000000000000 units.
-cpu 0 @  44.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  10.0000000000000000: module 0                 selects 4.
+cpu 0 @  10.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
+cpu 0 @  20.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  20.0000000000000000: module 0                 selects 5.
+cpu 0 @  20.0000000000000000: thread 0|5               runs for 10.0000000000000000 units.
+cpu 0 @  30.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  30.0000000000000000: module 0                 selects 6.
+cpu 0 @  30.0000000000000000: thread 0|6               runs for 10.0000000000000000 units.
+cpu 0 @  40.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  40.0000000000000000: module 0                 selects 1.
+cpu 0 @  40.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
+cpu 0 @  44.0000000000000000: thread 0|1               yields.
 cpu 0 @  44.0000000000000000: module 0                 selects 4.
 cpu 0 @  44.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  54.0000000000000000: module 0                 timer elapsed.
@@ -25,11 +25,11 @@ cpu 0 @  68.0000000000000000: module 0                 timer elapsed.
 cpu 0 @  68.0000000000000000: module 0                 selects 4.
 cpu 0 @  68.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  78.0000000000000000: module 0                 timer elapsed.
-cpu 0 @  78.0000000000000000: module 0                 selects 4.
-cpu 0 @  78.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
+cpu 0 @  78.0000000000000000: module 0                 selects 0.
+cpu 0 @  78.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @  88.0000000000000000: module 0                 timer elapsed.
-cpu 0 @  88.0000000000000000: module 0                 selects 0.
-cpu 0 @  88.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @  88.0000000000000000: module 0                 selects 4.
+cpu 0 @  88.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  98.0000000000000000: module 0                 timer elapsed.
 cpu 0 @  98.0000000000000000: module 0                 selects 4.
 cpu 0 @  98.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
@@ -52,29 +52,29 @@ cpu 0 @ 158.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 158.0000000000000000: module 0                 selects 4.
 cpu 0 @ 158.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 168.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 168.0000000000000000: module 0                 selects 1.
-cpu 0 @ 168.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
-cpu 0 @ 172.0000000000000000: thread 0|1               yields.
-cpu 0 @ 172.0000000000000000: module 0                 selects 4.
-cpu 0 @ 172.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
-cpu 0 @ 182.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 168.0000000000000000: module 0                 selects 0.
+cpu 0 @ 168.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @ 178.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 178.0000000000000000: module 0                 selects 1.
+cpu 0 @ 178.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
+cpu 0 @ 182.0000000000000000: thread 0|1               yields.
 cpu 0 @ 182.0000000000000000: module 0                 selects 4.
 cpu 0 @ 182.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 192.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 192.0000000000000000: module 0                 selects 2.
-cpu 0 @ 192.0000000000000000: thread 0|2               runs for 4.0000000000000000 units.
-cpu 0 @ 196.0000000000000000: thread 0|2               yields.
-cpu 0 @ 196.0000000000000000: module 0                 selects 4.
-cpu 0 @ 196.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
-cpu 0 @ 206.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 192.0000000000000000: module 0                 selects 0.
+cpu 0 @ 192.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @ 202.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 202.0000000000000000: module 0                 selects 2.
+cpu 0 @ 202.0000000000000000: thread 0|2               runs for 4.0000000000000000 units.
+cpu 0 @ 206.0000000000000000: thread 0|2               yields.
 cpu 0 @ 206.0000000000000000: module 0                 selects 4.
 cpu 0 @ 206.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 216.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 216.0000000000000000: module 0                 selects 4.
 cpu 0 @ 216.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 226.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 226.0000000000000000: module 0                 selects 0.
-cpu 0 @ 226.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @ 226.0000000000000000: module 0                 selects 4.
+cpu 0 @ 226.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 236.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 236.0000000000000000: module 0                 selects 4.
 cpu 0 @ 236.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
@@ -82,8 +82,8 @@ cpu 0 @ 246.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 246.0000000000000000: module 0                 selects 0.
 cpu 0 @ 246.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 256.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 256.0000000000000000: module 0                 selects 0.
-cpu 0 @ 256.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @ 256.0000000000000000: module 0                 selects 4.
+cpu 0 @ 256.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 266.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 266.0000000000000000: module 0                 selects 0.
 cpu 0 @ 266.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
@@ -103,8 +103,8 @@ cpu 0 @ 316.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 316.0000000000000000: module 0                 selects 5.
 cpu 0 @ 316.0000000000000000: thread 0|5               runs for 10.0000000000000000 units.
 cpu 0 @ 326.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 326.0000000000000000: module 0                 selects 0.
-cpu 0 @ 326.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @ 326.0000000000000000: module 0                 selects 4.
+cpu 0 @ 326.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 336.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 336.0000000000000000: module 0                 selects 4.
 cpu 0 @ 336.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
@@ -115,24 +115,24 @@ cpu 0 @ 356.0000000000000000: module 0                 timer elapsed.
 cpu 0 @ 356.0000000000000000: module 0                 selects 0.
 cpu 0 @ 356.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 366.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 366.0000000000000000: module 0                 selects 4.
-cpu 0 @ 366.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
+cpu 0 @ 366.0000000000000000: module 0                 selects 0.
+cpu 0 @ 366.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 376.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 376.0000000000000000: module 0                 selects 1.
-cpu 0 @ 376.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
-cpu 0 @ 380.0000000000000000: thread 0|1               yields.
-cpu 0 @ 380.0000000000000000: module 0                 selects 0.
-cpu 0 @ 380.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
-cpu 0 @ 390.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 376.0000000000000000: module 0                 selects 0.
+cpu 0 @ 376.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
+cpu 0 @ 386.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 386.0000000000000000: module 0                 selects 2.
+cpu 0 @ 386.0000000000000000: thread 0|2               runs for 4.0000000000000000 units.
+cpu 0 @ 390.0000000000000000: thread 0|2               yields.
 cpu 0 @ 390.0000000000000000: module 0                 selects 4.
 cpu 0 @ 390.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 400.0000000000000000: module 0                 timer elapsed.
-cpu 0 @ 400.0000000000000000: module 0                 selects 2.
-cpu 0 @ 400.0000000000000000: thread 0|2               runs for 4.0000000000000000 units.
+cpu 0 @ 400.0000000000000000: module 0                 selects 1.
+cpu 0 @ 400.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
 Thread stats:
 {
 	"0|scheduler": {
-		"bg": [[10], [], [4], [10], [], [10], [], [10], [], [10], [], [4], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [4], [10], [], [10], [], [4], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [4], [10], [], [10], [], [4]],
+		"bg": [[10], [], [10], [], [10], [], [10], [], [4], [10], [], [4], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [4], [10], [], [10], [], [4], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [10], [], [4], [10], [], [4]],
 		"children": {
 			"0|0": {
 				"ctxsw": [],
@@ -140,8 +140,8 @@ Thread stats:
 				"remaining": null,
 				"response_time": null,
 				"run": [[10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10]],
-				"wait": [[0], [78], [30], [88], [10], [0], [0], [0], [0], [0], [20], [20], [14]],
-				"waiting": 14
+				"wait": [[0], [68], [40], [30], [14], [44], [10], [0], [0], [0], [50], [0], [0]],
+				"waiting": 18
 			},
 			"0|1": {
 				"ctxsw": [],
@@ -149,7 +149,7 @@ Thread stats:
 				"remaining": 244,
 				"response_time": null,
 				"run": [[4], [4], [4]],
-				"wait": [[5], [3], [51]]
+				"wait": [[35], [13], [75]]
 			},
 			"0|2": {
 				"ctxsw": [],
@@ -157,7 +157,7 @@ Thread stats:
 				"remaining": 244,
 				"response_time": null,
 				"run": [[4], [4], [4]],
-				"wait": [[29], [7], [55]]
+				"wait": [[29], [17], [41]]
 			},
 			"0|3": {
 				"ctxsw": [],
@@ -173,7 +173,7 @@ Thread stats:
 				"remaining": null,
 				"response_time": null,
 				"run": [[10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10], [10]],
-				"wait": [[14], [20], [4], [0], [0], [10], [0], [0], [10], [0], [0], [4], [0], [4], [0], [0], [10], [90], [0], [10], [14]],
+				"wait": [[10], [24], [4], [0], [10], [0], [0], [0], [10], [0], [0], [14], [14], [0], [0], [0], [10], [60], [0], [0], [34]],
 				"waiting": 4
 			},
 			"0|5": {
@@ -182,7 +182,7 @@ Thread stats:
 				"remaining": null,
 				"response_time": null,
 				"run": [[10], [10]],
-				"wait": [[24], [282]],
+				"wait": [[20], [286]],
 				"waiting": 78
 			},
 			"0|6": {
@@ -191,7 +191,7 @@ Thread stats:
 				"remaining": null,
 				"response_time": null,
 				"run": [[10], [10]],
-				"wait": [[34], [262]],
+				"wait": [[30], [266]],
 				"waiting": 88
 			}
 		},

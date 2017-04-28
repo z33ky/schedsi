@@ -69,7 +69,7 @@ class TestExample(unittest.TestCase):
                         local_timer_scheduling=False)
 
     def test_cfs(self):
-        """Test that the penalty scheduler executes as expected."""
+        """Test that the CFS scheduler executes as expected."""
         self.exec_world('cfs_scheduling.log', 1, self._get_kernel('cfs'),
                         local_timer_scheduling=True)
 
