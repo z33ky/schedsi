@@ -290,7 +290,9 @@ class _KernelTimerOnlyStatus(_Status):
             if self.chain.top.module != self.cpu.kernel:
                 if request.arg is None:
                     return False
-                raise RuntimeError('Received timer request from non-kernel scheduler.')
+                raise RuntimeError('Received timer request from non-kernel thread '
+                                   + str(request.arg) + ' '
+                                   + self.chain.top.tid + '(' + self.chain.top.module.name + ')')
             # let super() handle the rest of this request
         return super()._handle_request(request)
 
