@@ -122,7 +122,7 @@ class ModuleBuilderThread(threads.Thread):
         """
         assert self.init_args is not None, \
             '_late_init called after super() as already initialized.'
-        super().__init__(parent, *self.init_args[0], **self.init_kwargs[1])
+        super().__init__(parent, *self.init_args[0], **self.init_args[1])
         self.init_args = None
 
     def disable_spawning(self):
@@ -262,7 +262,7 @@ class ModuleBuilderThread(threads.Thread):
         if time is None:
             time = self.spawn_time
 
-        thread = ModuleBuilderThread(time, self, name, *args, scheduler=scheduler, **kwargs)
+        thread = ModuleBuilderThread(self, name, *args, time=time, scheduler=scheduler, **kwargs)
         self.threads.append((thread, None, None))
 
         return thread
