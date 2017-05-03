@@ -11,8 +11,24 @@ from schedsi.schedulers.addons import addon
 import {addon_cls_module}
 import {scheduler_cls_module}
 
+class {typename}Meta(type):
+    '''Metaclass of :class:`{typename}`.
+
+    Provides a custom method resolution order.
+    '''
+    def mro(cls):
+        'Return the mro of :class:`{typename}`.'
+        order = super().mro()
+        # put AddonSchedulerBase just before Scheduler
+        base = order.index(addon.AddonSchedulerBase)
+        superbaseidx = order.index(addon.AddonSchedulerBase.__base__)
+        order = order[:base] + order[base + 1:superbaseidx] \\
+              + [addon.AddonSchedulerBase] + order[superbaseidx:]
+        return order
+
+
 class {typename}(addon.AddonScheduler, {scheduler_cls_module}.{scheduler_cls},
-                 addon.AddonSchedulerBase):
+                 metaclass={typename}Meta):
     ':class:`{scheduler_cls}` with :class:`~{addon_cls}` attached.'
 
     def __init__({init_args}):
