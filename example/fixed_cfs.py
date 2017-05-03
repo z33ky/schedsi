@@ -7,7 +7,7 @@ from schedsi import schedulers, threads, world
 from schedsi.log import binarylog
 from schedsi.util import hierarchy_builder
 
-FCFS = schedulers.addons.FixedTimeSliceSchedulerAddon.attach("FCFS", schedulers.CFS)
+FCFS = schedulers.addons.TimeSliceFixer.attach("FCFS", schedulers.CFS)
 KERNEL = hierarchy_builder.ModuleBuilder(scheduler=FCFS.builder(default_shares=400,
                                                                 min_period=30,
                                                                 min_slice=6,
