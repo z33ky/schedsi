@@ -131,6 +131,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
             if self.block(nicenesses[tid], nicenesses, rcu_data.sat_out_threads):
                 rcu_data.sat_out_threads.append(tid)
                 rcu_data.last_timeslice = None
+                super().schedule(-1, None, rcu_data)
                 return False, None
 
         rcu_data.last_time_slice = time_slice

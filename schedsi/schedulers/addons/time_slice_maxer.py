@@ -14,6 +14,7 @@ class TimeSliceMaxerData():  # pylint: disable=too-few-public-methods
     def __init__(self):
         """Create a :class:`TimeSliceMaxerData`."""
         self.repeat_time_slices = {}
+        self.blocked = False
 
 class TimeSliceMaxer(time_slice_fixer.TimeSliceFixer):
     """Maximizing time-slice scheduler-addon."""
@@ -30,6 +31,10 @@ class TimeSliceMaxer(time_slice_fixer.TimeSliceFixer):
     def repeat(self, rcu_data, prev_run_time):
         """See :meth:`Addon.repeat`."""
         idx = rcu_data.last_idx
+        if idx == -1 or rcu_data.blocked:
+            assert not rcu_data.repeat_time_slices
+            return None, None
+
         time_slice = rcu_data.repeat_time_slices[idx]
 
         if time_slice is None:
@@ -45,5 +50,18 @@ class TimeSliceMaxer(time_slice_fixer.TimeSliceFixer):
 
     def schedule(self, idx, time_slice, rcu_data):
         """See :meth:`Addon.schedule`."""
-        rcu_data.repeat_time_slices[idx] = time_slice
-        return super().schedule(idx, time_slice, rcu_data)
+        if idx in rcu_data.repeat_time_slices:
+            proceed, *rest = super().schedule(-1, time_slice, rcu_data)
+        else:
+            if idx == -1:
+                rcu_data.repeat_time_slices.clear()
+            assert not rcu_data.repeat_time_slices
+            proceed, *rest = super().schedule(idx, time_slice, rcu_data)
+
+        if proceed and idx != -1:
+            rcu_data.repeat_time_slices[idx] = time_slice
+            rcu_data.blocked = False
+        else:
+            assert not rcu_data.repeat_time_slices
+            rcu_data.blocked = True
+        return (proceed, *rest)
