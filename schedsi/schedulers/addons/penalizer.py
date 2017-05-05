@@ -22,25 +22,31 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
     """Penalty tracking scheduler-addon.
 
     `niceness` is always <= 0 and represents how much longer the chain ran
-    than the time-slice specified.  When a chain's `niceness` falls behind
-    the :attr:`threshold` and is selected by the scheduler, it is blocked
-    and the scheduler gets rerun until it either repeats a decision or
-    selects a chain that has a `niceness` above the :attr:`threshold`.
+    than the time-slice specified.
+
+    A function :attr:`block` determines whether the `niceness` of a :class:`Thread`
+    warrants blocking it from being scheduled.
     """
 
-    def __init__(self, *args, override_time_slice=None, threshold=None):
+    def __init__(self, *args, override_time_slice=None, block=None):
         """Create a :class:`Penalizer`.
 
-        `threshold` is a function that takes the time-slice to be used
-        and returns the amount the niceness values may differ for that
-        time-slice.
+        `block` is a function that takes the niceness of the scheduled thread
+        as selected by the :class:`Scheduler`, a `dict` of the `niceness`es of all
+        ready threads and a `list` of :class:`Thread`-ids currently blocked and returns
+        a `bool` indicating whether to block the selected :class:`Thread`.
+        The `dict` of `niceness`es has :class:`Thread`-id's as keys.
         """
         super().__init__(*args, override_time_slice=override_time_slice)
-        if threshold is None:
-            def threshold(time_slice):  # pylint: disable=function-redefined
-                """Return the threshold for the `time_slice`."""
-                return 0
-        self.threshold = threshold
+        if block is None:
+            def block(niceness, nicenesses, _blocked):  # pylint: disable=function-redefined
+                """Check if `tid` should be blocked.
+
+                Default: Just block the worst one.
+                """
+                worst = min(list(nicenesses.values()))
+                return worst != 0 and niceness == worst
+        self.block = block
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
         """See :meth:`Addon.transmute_rcu_data`."""
@@ -73,18 +79,20 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
                     # probably was blocked by another addon
                     rcu_data.sat_out_threads.append(last_id)
                 else:
-                    rcu_data.niceness[last_id] += rcu_data.last_time_slice - prev_run_time
+                    #rcu_data.niceness[last_id] += rcu_data.last_time_slice - prev_run_time
+                    rcu_data.niceness[last_id] += (rcu_data.last_time_slice - prev_run_time) / rcu_data.last_time_slice
                     niceness = rcu_data.niceness[last_id]
-                rcu_data.last_time_slice = None
 
         if rcu_data.sat_out_threads:
             assert last_chain
-            if not last_id == rcu_data.sat_out_threads[-1]:
+            if last_id != rcu_data.sat_out_threads[-1]:
                 assert prev_run_time > 0
                 for tid in rcu_data.sat_out_threads:
-                    rcu_data.niceness[tid] += prev_run_time
+                    #rcu_data.niceness[tid] += prev_run_time
+                    rcu_data.niceness[tid] += prev_run_time / rcu_data.last_time_slice
                     niceness = max(niceness, rcu_data.niceness[tid])
                 rcu_data.sat_out_threads.clear()
+        rcu_data.last_time_slice = None
 
         # shift back to 0
         max_niceness = None
@@ -112,23 +120,18 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
 
         tid = id(rcu_data.ready_chains[idx].bottom)
 
-        niceness = rcu_data.niceness[tid]
-
-        if time_slice is not None and niceness < self.threshold(time_slice):
-            if tid in rcu_data.sat_out_threads:
-                # scheduler selected a thread that we wanted to stall again
-                # allow it to run then
-                # TODO: retry & count retries to self.max_retries
-                rcu_data.sat_out_threads.clear()
-            else:
-                # only nicest thread may run
-                nicest_tid = max((id(c.bottom) for c in rcu_data.ready_chains),
-                                 key=lambda tid: rcu_data.niceness[tid])
-                assert niceness <= rcu_data.niceness[nicest_tid]
-                if tid != nicest_tid:
-                    rcu_data.sat_out_threads.append(tid)
-                    rcu_data.last_timeslice = None
-                    return False, None
+        if tid in rcu_data.sat_out_threads:
+            # scheduler selected a thread that we wanted to stall again
+            # allow it to run then
+            # TODO: retry & count retries to self.max_retries
+            rcu_data.sat_out_threads.clear()
+        elif len(rcu_data.ready_chains) > 1:
+            nicenesses = {tid: rcu_data.niceness[tid] for tid in
+                          (id(t.bottom) for t in rcu_data.ready_chains)}
+            if self.block(nicenesses[tid], nicenesses, rcu_data.sat_out_threads):
+                rcu_data.sat_out_threads.append(tid)
+                rcu_data.last_timeslice = None
+                return False, None
 
         rcu_data.last_time_slice = time_slice
 
