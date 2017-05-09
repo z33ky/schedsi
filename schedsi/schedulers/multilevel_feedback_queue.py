@@ -261,7 +261,12 @@ class MLFQ(scheduler.Scheduler):
             assert not rcu_data.waiting_chains
 
             if not rcu_data.ready_chains:
-                rcu_data.ready_chains = last_queue
+                if prev_still_ready:
+                    rcu_data.ready_chains = last_queue
+                else:
+                    candidates = rcu_data.ready_queues[next_queue_idx:]
+                    rcu_data.ready_chains = next((x for x in candidates if x),
+                                                 rcu_data.ready_queues[0])
 
         return last_queue
 
