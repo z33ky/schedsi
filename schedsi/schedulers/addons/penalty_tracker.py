@@ -64,7 +64,9 @@ class PenaltyTracker(time_slice_fixer.TimeSliceFixer):
     def start_schedule(self, prev_run_time, rcu_data, last_chain_queue, last_chain_idx):
         """See :meth:`Addon.start_schedule`."""
         super().start_schedule(prev_run_time, rcu_data, last_chain_queue, last_chain_idx)
-        if prev_run_time and rcu_data.last_time_slice is None:
+        if rcu_data.last_time_slice is None:
+            # FIXME: None is a perfectly valid time-slice, but it doesn't make for a good
+            #        scaling coefficient
             assert not rcu_data.sat_out_threads
             return
         last_chain = self._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)
@@ -133,7 +135,9 @@ class PenaltyTracker(time_slice_fixer.TimeSliceFixer):
                           (id(t.bottom) for t in rcu_data.ready_chains)}
             if self.block(nicenesses[tid], nicenesses, rcu_data.sat_out_threads):
                 rcu_data.sat_out_threads.append(tid)
-                rcu_data.last_timeslice = None
+                # we don't set it to None because another addon may have
+                # repeated the thread previously, so we need to keep the time-slice
+                # rcu_data.last_time_slice = None
                 super().schedule(-1, None, rcu_data)
                 return False, None
 
