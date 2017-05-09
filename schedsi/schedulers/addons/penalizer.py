@@ -76,9 +76,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
                     if delta < 0:
                         rcu_data.niceness[last_id] += delta
                     niceness = rcu_data.niceness[last_id]
-            rcu_data.last_time_slice = None
-        else:
-            assert rcu_data.last_time_slice is None
+        rcu_data.last_time_slice = None
 
         if rcu_data.sat_out_threads:
             assert last_chain
@@ -119,7 +117,9 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
         elif len(rcu_data.ready_chains) > 1:
             if rcu_data.niceness[tid] < self.tolerance:
                 rcu_data.sat_out_threads.append(tid)
-                rcu_data.last_time_slice = None
+                # we don't set it to None because another addon may have
+                # repeated the thread previously, so we need to keep the time-slice
+                # rcu_data.last_time_slice = None
                 super().schedule(-1, None, rcu_data)
                 return False, None
 

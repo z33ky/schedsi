@@ -175,6 +175,9 @@ class AddonScheduler(AddonSchedulerBase):
         if not proceed:
             rcu_copy.data.last_idx = idx
             self._start_schedule_rcu_copy = rcu_copy
+            if self._repeat[0] is not None:
+                # block repeating
+                self.addon.repeat(rcu_copy.data, 0, True)
             return
 
         schedule = super()._schedule(idx, time_slice, next_ready_time, rcu_copy)
