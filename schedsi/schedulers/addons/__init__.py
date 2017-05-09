@@ -2,4 +2,5 @@
 
 from .time_slice_fixer import TimeSliceFixer
 from .time_slice_maxer import TimeSliceMaxer
+from .penalizer import Penalizer
 #from .penalty_tracker import PenaltyTracker
