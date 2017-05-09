@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Defines a scheduler addon, that penalizes threads running more than their allotted time-slices.
+"""Defines a scheduler addon, that penalizes threads running more than their allotted time-slices
+and prefers threads running less.
 
-This allows approximation of time-slices without a local timer by recording the difference of
+This allows some adherence to time-slices without a local timer by recording the difference of
 debit and credit ("niceness").
+The Penalizer is however not perfectly suited for all configurations, due to the way penalized
+threads regain credit. This is likely not generally solvable with this limited addon interface.
 """
 
 from . import time_slice_fixer
 
 
-class PenalizerData():  # pylint: disable=too-few-public-methods
-    """Mutable data for the :class:`PenalizerAddon`."""
+class PenaltyTrackerData():  # pylint: disable=too-few-public-methods
+    """Mutable data for the :class:`PenaltyTracker`."""
 
     def __init__(self):
         """Create a :class:`PenalizerData`."""
@@ -18,7 +21,7 @@ class PenalizerData():  # pylint: disable=too-few-public-methods
         self.niceness = {}
 
 
-class Penalizer(time_slice_fixer.TimeSliceFixer):
+class PenaltyTracker(time_slice_fixer.TimeSliceFixer):
     """Penalty tracking scheduler-addon.
 
     `niceness` is always <= 0 and represents how much longer the chain ran
@@ -29,7 +32,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
     """
 
     def __init__(self, *args, override_time_slice=None, block=None):
-        """Create a :class:`Penalizer`.
+        """Create a :class:`PenaltyTracker`.
 
         `block` is a function that takes the niceness of the scheduled thread
         as selected by the :class:`Scheduler`, a `dict` of the `niceness`es of all
@@ -50,7 +53,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
 
     def transmute_rcu_data(self, original, *addon_data):  # pylint: disable=no-self-use
         """See :meth:`Addon.transmute_rcu_data`."""
-        super().transmute_rcu_data(original, PenalizerData, *addon_data)
+        super().transmute_rcu_data(original, PenaltyTrackerData, *addon_data)
 
     def add_thread(self, thread, rcu_data):
         """See :meth:`Addon.add_thread`."""
