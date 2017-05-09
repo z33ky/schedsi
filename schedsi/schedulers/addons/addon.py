@@ -108,7 +108,10 @@ class AddonScheduler(AddonSchedulerBase):
         """
         self._repeat = (None, None)
 
-        rcu_copy = self._rcu.copy()
+        rcu_copy = self._start_schedule_rcu_copy
+        if rcu_copy is None:
+            rcu_copy = self._rcu.copy()
+
         rcu_data = rcu_copy.data
         if rcu_data.last_idx == -1:
             return
