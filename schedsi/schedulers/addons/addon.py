@@ -116,15 +116,16 @@ class AddonScheduler(AddonSchedulerBase):
         if rcu_data.last_idx == -1:
             return
 
-        repeat, time_slice = self.addon.repeat(rcu_data, prev_run_time)
-        if not repeat:
-            return
-        assert time_slice is None or time_slice > 0
-
         chain = rcu_data.ready_chains[rcu_data.last_idx]
         current_time = yield CPURequest.current_time()
-        if chain.bottom.is_finished() or chain.bottom.ready_time > current_time:
+        done = chain.bottom.is_finished() or chain.bottom.ready_time > current_time
+
+        repeat, time_slice = self.addon.repeat(rcu_data, prev_run_time, done)
+        if not repeat:
             return
+        assert not done
+        assert time_slice is None or time_slice > 0
+
         self._repeat = (rcu_copy, time_slice)
 
     def _sched_loop(self, rcu_copy, last_chain_queue, last_chain_idx):
@@ -286,7 +287,7 @@ class Addon():
         """
         return self.scheduler._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)  # pylint: disable=protected-access
 
-    def repeat(self, _idx, _prev_run_time):
+    def repeat(self, _rcu_data, _prev_run_time, _done):
         """Called before :meth:`Scheduler._start_schedule`, :meth:`Scheduler._schedule`.
 
         Returns a tuple (
@@ -294,7 +295,9 @@ class Addon():
             * True if last scheduling decision should be repeated, False if not
             * time-slice (if first element is True, None otherwise)
 
-        )
+        ).
+
+        If `done` is true, this function must return `(False, None)` as first element.
         """
         return False, None
 
