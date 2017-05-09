@@ -54,9 +54,6 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
     def start_schedule(self, prev_run_time, rcu_data, last_chain_queue, last_chain_idx):
         """See :meth:`Addon.start_schedule`."""
         super().start_schedule(prev_run_time, rcu_data, last_chain_queue, last_chain_idx)
-        if prev_run_time and rcu_data.last_time_slice is None:
-            assert not rcu_data.sat_out_threads
-            return
         last_chain = self._get_last_chain(rcu_data, last_chain_queue, last_chain_idx)
         last_thread = last_chain and last_chain.bottom
         last_id = id(last_thread)
@@ -67,7 +64,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
                 last_niceness = rcu_data.niceness.pop(last_id)
                 if last_niceness >= 0 and rcu_data.niceness:
                     niceness = max(rcu_data.niceness.values())
-            else:
+            elif rcu_data.last_time_slice is not None:
                 if prev_run_time == 0:
                     # probably was blocked by another addon
                     rcu_data.sat_out_threads.append(last_id)
