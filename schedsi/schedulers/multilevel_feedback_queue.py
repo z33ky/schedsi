@@ -159,8 +159,9 @@ class MLFQ(scheduler.Scheduler):
                                                             last_queue, last_idx,
                                                             prev_ready_queue, prev_ready_queue_idx,
                                                             prev_run_time)
-        elif last_queue is rcu_data.waiting_chains:
-            assert rcu_data.waiting_chains
+
+        if rcu_data.waiting_chains:
+            assert last_queue is rcu_data.waiting_chains
             last_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
             last_queue.append(rcu_data.waiting_chains.pop())
             assert not rcu_data.waiting_chains
@@ -250,36 +251,33 @@ class MLFQ(scheduler.Scheduler):
 
         next_queue_idx = prev_ready_queue_idx + 1
 
-        if rcu_data.last_finish_time is not None \
-           and prev_run_time >= allowed_run_time \
-           and (prev_run_time != allowed_run_time or last_queue[-1].bottom.ready_time == rcu_data.last_finish_time) \
-           and next_queue_idx < len(self.level_time_slices):
-            next_chain_queue = None
-            pop_idx = None
-            if last_queue is prev_ready_queue:
-                next_chain_queue = rcu_data.ready_queues[next_queue_idx]
-                pop_idx = last_idx
-            elif rcu_data.waiting_chains:
-                assert last_queue is rcu_data.waiting_chains
-                next_chain_queue = rcu_data.waiting_queues[next_queue_idx]
-                pop_idx = -1
-            else:
-                assert last_queue in (None, rcu_data.finished_chains)
+        if rcu_data.last_finish_time is None \
+           or prev_run_time < allowed_run_time \
+           or prev_run_time == allowed_run_time and last_queue[-1].bottom.ready_time != rcu_data.last_finish_time \
+           or next_queue_idx == len(self.level_time_slices):
+            return last_queue, last_idx
 
-            if next_chain_queue is not None:
-                next_chain_queue.append(last_queue.pop(pop_idx))
-                last_queue = next_chain_queue
-
-                assert not rcu_data.waiting_chains
-
-                if not rcu_data.ready_chains:
-                    rcu_data.ready_chains = last_queue
-                    last_idx = len(last_queue) - 1
+        next_chain_queue = None
+        pop_idx = None
+        if last_queue is prev_ready_queue:
+            next_chain_queue = rcu_data.ready_queues[next_queue_idx]
+            pop_idx = last_idx
         elif rcu_data.waiting_chains:
             assert last_queue is rcu_data.waiting_chains
-            last_queue = rcu_data.waiting_queues[prev_ready_queue_idx]
-            last_queue.append(rcu_data.waiting_chains.pop())
+            next_chain_queue = rcu_data.waiting_queues[next_queue_idx]
+            pop_idx = -1
+        else:
+            assert last_queue in (None, rcu_data.finished_chains)
+
+        if next_chain_queue is not None:
+            next_chain_queue.append(last_queue.pop(pop_idx))
+            last_queue = next_chain_queue
+
             assert not rcu_data.waiting_chains
+
+            if not rcu_data.ready_chains:
+                rcu_data.ready_chains = last_queue
+                last_idx = len(last_queue) - 1
 
         return last_queue, last_idx
 
