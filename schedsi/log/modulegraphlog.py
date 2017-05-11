@@ -15,11 +15,18 @@ class ModuleGraphLog:
     specified, representing the root of the sub-hierarchy that is to be logged.
     """
 
-    def __init__(self, module, *, name_module=False, **kwargs):
-        """Create a :class:`ModuleGraphLog`."""
+    def __init__(self, module, *, name_module=False, draw_parent_interrupts=False, **kwargs):
+        """Create a :class:`ModuleGraphLog`.
+
+        If `draw_parent_interrupts` is `True`, red lines in the graph will indicate
+        interrupts from parent modules.
+        If it is `False`, only interrupts originating from timers of `module` will
+        have red lines drawn.
+        """
         self.graphlog = graphlog.GraphLog(name_module=name_module, **kwargs)
         self.module = module
         self.active = False
+        self.draw_parent_interrupts = draw_parent_interrupts
 
     def write(self, stream):
         """See :meth:`GraphLog.write`."""
@@ -89,8 +96,12 @@ class ModuleGraphLog:
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
-        if cpu.status.chain.contexts[idx].thread.module is self.module:
-            self._forward(self.graphlog.timer_interrupt, cpu, idx, delay)
+        if self.draw_parent_interrupts:
+            if self.module not in (ctx.thread.module for ctx in cpu.status.chain.contexts[idx:]):
+                return
+        elif cpu.status.chain.contexts[idx].thread.module is not self.module:
+            return
+        self._forward(self.graphlog.timer_interrupt, cpu, idx, delay)
 
     def thread_statistics(self, stats):
         """Log thread statistics.
