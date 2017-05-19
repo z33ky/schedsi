@@ -13,6 +13,7 @@ class _ThreadStats:  # pylint: disable=too-few-public-methods
         self.response_time = None
         self.ctxsw = []
         self.run = []
+        self.total_run = 0
         self.wait = [[]]
 
 
@@ -140,7 +141,9 @@ class Thread:
         """
         assert self.is_running.locked()
 
+        self.stats.total_run += run_time
         self.stats.run[-1].append(run_time)
+        assert self.stats.total_run == sum((sum(x) for x in self.stats.run))
 
         self.ready_time += run_time
         assert self.ready_time == current_time

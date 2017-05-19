@@ -17,7 +17,6 @@ class PeriodicWorkThread(Thread):
         self.original_ready_time = self.ready_time
         self.period = period
         self.burst = burst
-        self.total_run_time = 0
 
     def ideal_activations(self, current_time):
         """Return ideal number of activations at `current_time`."""
@@ -29,7 +28,7 @@ class PeriodicWorkThread(Thread):
         Requires :attr:`current_burst_left` to be up-to-date.
         """
         assert current_time >= self.original_ready_time
-        act_actual = self.total_run_time / self.burst
+        act_actual = self.stats.total_run / self.burst
 
         if self.ideal_activations(current_time) != act_actual:
             assert (self.ready_time is None and self.remaining == 0) \
@@ -55,13 +54,13 @@ class PeriodicWorkThread(Thread):
                 return self.ideal_activations(current_time + delta)
 
             ideal_run_time = act_ideal_in(0) * self.burst
-            if self.total_run_time > ideal_run_time:
+            if self.stats.total_run > ideal_run_time:
                 raise RuntimeError('Executed too much')
 
             quota = 0
             # loop until ideal_run_time no longer increases
-            while self.total_run_time + quota < ideal_run_time:
-                quota = ideal_run_time - self.total_run_time
+            while self.stats.total_run + quota < ideal_run_time:
+                quota = ideal_run_time - self.stats.total_run
                 ideal_run_time = act_ideal_in(quota) * self.burst
 
             if quota == 0:
@@ -79,6 +78,4 @@ class PeriodicWorkThread(Thread):
         See :meth:`Thread.run`.
         """
         super().run_crunch(current_time, run_time)
-        self.total_run_time += run_time
         self._update_ready_time(current_time)
-        assert self.total_run_time == sum([sum(x) for x in self.stats.run])

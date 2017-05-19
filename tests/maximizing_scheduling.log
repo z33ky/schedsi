@@ -399,6 +399,7 @@ Thread stats:
 				"remaining": 0,
 				"response_time": null,
 				"run": [[9], [9], [9], [9], [9], [5]],
+				"total_run": 50,
 				"wait": [[0], [0], [35], [0], [30], [0]]
 			},
 			"0|0.0-VCPU0": {
@@ -418,6 +419,7 @@ Thread stats:
 								"remaining": 154,
 								"response_time": null,
 								"run": [[8], [8], [8], [8], [8], [8], [8], [8], [8], [8], [8], [8]],
+								"total_run": 96,
 								"wait": [[19], [2], [35], [106], [7], [2], [62], [2], [2], [32], [2], [2]],
 								"waiting": 32
 							},
@@ -438,6 +440,7 @@ Thread stats:
 												"remaining": 0,
 												"response_time": null,
 												"run": [[7], [3]],
+												"total_run": 10,
 												"wait": [[83], [27]]
 											},
 											"0.0.0|1": {
@@ -446,6 +449,7 @@ Thread stats:
 												"remaining": 0,
 												"response_time": null,
 												"run": [[4], [7], [7], [7]],
+												"total_run": 25,
 												"wait": [[70], [3], [88], [3]]
 											}
 										},
@@ -454,9 +458,11 @@ Thread stats:
 										"remaining": 0,
 										"response_time": null,
 										"run": [[], [], [], [], [], []],
+										"total_run": 0,
 										"wait": [[83], [27], [3], [88], [3], [3], [], [], []]
 									}
 								},
+								"total_run": 0,
 								"wait": [[82], [26], [2], [87], [2], [2]]
 							},
 							"0.0|0.0.1-VCPU0": {
@@ -476,6 +482,7 @@ Thread stats:
 												"remaining": 0,
 												"response_time": null,
 												"run": [[7], [3]],
+												"total_run": 10,
 												"wait": [[152], [3]]
 											},
 											"0.0.1|1": {
@@ -484,6 +491,7 @@ Thread stats:
 												"remaining": null,
 												"response_time": null,
 												"run": [[4], [7], [7], [4], [7], [7], [7], [7], [7], [7]],
+												"total_run": 64,
 												"wait": [[165], [8], [68], [16], [33], [3], [3], [33], [3], [3]],
 												"waiting": 2
 											},
@@ -493,6 +501,7 @@ Thread stats:
 												"remaining": 0,
 												"response_time": null,
 												"run": [[7], [3]],
+												"total_run": 10,
 												"wait": [[252], [3]]
 											}
 										},
@@ -501,10 +510,12 @@ Thread stats:
 										"remaining": null,
 										"response_time": null,
 										"run": [[], [], [], [], [], [], [], [], [], [], [], []],
+										"total_run": 0,
 										"wait": [[152], [3], [8], [68], [3], [3], [33], [3], [3], [33], [3], [3]],
 										"waiting": 2
 									}
 								},
+								"total_run": 0,
 								"wait": [[151], [2], [7], [67], [2], [2], [32], [2], [2], [32], [2], [2]],
 								"waiting": 2
 							}
@@ -514,10 +525,12 @@ Thread stats:
 						"remaining": null,
 						"response_time": null,
 						"run": [[], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], [], []],
+						"total_run": 0,
 						"wait": [[19], [2], [35], [2], [26], [2], [17], [2], [7], [2], [7], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2]],
 						"waiting": 0
 					}
 				},
+				"total_run": 0,
 				"wait": [[18], [1], [34], [1], [25], [1], [16], [1], [6], [1], [6], [1], [1], [1], [1], [9], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1], [1]],
 				"waiting": 1
 			},
@@ -527,6 +540,7 @@ Thread stats:
 				"remaining": 0,
 				"response_time": null,
 				"run": [[9], [6], [9], [1], [9], [6], [5], [5]],
+				"total_run": 50,
 				"wait": [[33], [0], [26], [0], [30], [0], [5], [10]]
 			}
 		},
@@ -535,6 +549,7 @@ Thread stats:
 		"remaining": null,
 		"response_time": null,
 		"run": [],
+		"total_run": 0,
 		"wait": [],
 		"waiting": 1
 	}
