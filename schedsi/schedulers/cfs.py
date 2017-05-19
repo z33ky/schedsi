@@ -171,6 +171,7 @@ class CFS(scheduler.Scheduler):
         """
         # sorted reinsertion
         chain = waiting_chains.pop()
+        # the min_vruntime will be added back when the chain is reinserted into the ready queue
         runtimes[chain.bottom] -= min_runtime
         runtime = runtimes[chain.bottom]
 

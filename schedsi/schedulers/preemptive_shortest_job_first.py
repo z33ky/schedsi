@@ -8,8 +8,10 @@ from . import shortest_job_first
 class PSJF(shortest_job_first.SJF):
     """Preemptive shortest job first scheduler.
 
-    Will only preempt for already waiting threads.
-    Threads that are just added will be regarded on then next reschedule.
+    Only sets up preemption on reschedule.
+    Threads that are added will be regarded on the next reschedule, but never cause preemption.
+    The local timer strategy may suspend and resume scheduling chains without scheduler
+    invocations, which can result in delayed preemption.
     """
 
     def _sched_loop(self, rcu_copy, last_chain_queue, last_chain_idx):  # pylint: disable=no-self-use
