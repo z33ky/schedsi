@@ -1,133 +1,220 @@
 cpu 0 @   0.0000000000000000: module 0                 selects 0.
+cpu 0 @   0.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @   0.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @  10.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  10.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  10.0000000000000000: module 0                 selects 4.
+cpu 0 @  10.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @  10.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  20.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  20.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  20.0000000000000000: module 0                 selects 5.
+cpu 0 @  20.0000000000000000: module 0                 switches to thread 5.
 cpu 0 @  20.0000000000000000: thread 0|5               runs for 10.0000000000000000 units.
 cpu 0 @  30.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  30.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  30.0000000000000000: module 0                 selects 6.
+cpu 0 @  30.0000000000000000: module 0                 switches to thread 6.
 cpu 0 @  30.0000000000000000: thread 0|6               runs for 10.0000000000000000 units.
 cpu 0 @  40.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  40.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  40.0000000000000000: module 0                 selects 1.
+cpu 0 @  40.0000000000000000: module 0                 switches to thread 1.
 cpu 0 @  40.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
 cpu 0 @  44.0000000000000000: thread 0|1               yields.
+cpu 0 @  44.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  44.0000000000000000: module 0                 selects 2.
+cpu 0 @  44.0000000000000000: module 0                 switches to thread 2.
 cpu 0 @  44.0000000000000000: thread 0|2               runs for 4.0000000000000000 units.
 cpu 0 @  48.0000000000000000: thread 0|2               yields.
+cpu 0 @  48.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  48.0000000000000000: module 0                 selects 4.
+cpu 0 @  48.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @  48.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  58.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  58.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  58.0000000000000000: module 0                 selects 0.
+cpu 0 @  58.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @  58.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @  68.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  68.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  68.0000000000000000: module 0                 selects 4.
+cpu 0 @  68.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @  68.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  78.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  78.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  78.0000000000000000: module 0                 selects 0.
+cpu 0 @  78.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @  78.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @  88.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  88.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  88.0000000000000000: module 0                 selects 4.
+cpu 0 @  88.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @  88.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @  98.0000000000000000: module 0                 timer elapsed.
+cpu 0 @  98.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @  98.0000000000000000: module 0                 selects 0.
+cpu 0 @  98.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @  98.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 108.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 108.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 108.0000000000000000: module 0                 selects 4.
+cpu 0 @ 108.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 108.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 118.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 118.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 118.0000000000000000: module 0                 selects 0.
+cpu 0 @ 118.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 118.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 128.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 128.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 128.0000000000000000: module 0                 selects 4.
+cpu 0 @ 128.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 128.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 138.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 138.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 138.0000000000000000: module 0                 selects 0.
+cpu 0 @ 138.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 138.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 148.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 148.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 148.0000000000000000: module 0                 selects 4.
+cpu 0 @ 148.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 148.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 158.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 158.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 158.0000000000000000: module 0                 selects 0.
+cpu 0 @ 158.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 158.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 168.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 168.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 168.0000000000000000: module 0                 selects 4.
+cpu 0 @ 168.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 168.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 178.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 178.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 178.0000000000000000: module 0                 selects 1.
+cpu 0 @ 178.0000000000000000: module 0                 switches to thread 1.
 cpu 0 @ 178.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
 cpu 0 @ 182.0000000000000000: thread 0|1               yields.
+cpu 0 @ 182.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 182.0000000000000000: module 0                 selects 4.
+cpu 0 @ 182.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 182.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 192.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 192.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 192.0000000000000000: module 0                 selects 2.
+cpu 0 @ 192.0000000000000000: module 0                 switches to thread 2.
 cpu 0 @ 192.0000000000000000: thread 0|2               runs for 4.0000000000000000 units.
 cpu 0 @ 196.0000000000000000: thread 0|2               yields.
+cpu 0 @ 196.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 196.0000000000000000: module 0                 selects 4.
+cpu 0 @ 196.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 196.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 206.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 206.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 206.0000000000000000: module 0                 selects 0.
+cpu 0 @ 206.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 206.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 216.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 216.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 216.0000000000000000: module 0                 selects 4.
+cpu 0 @ 216.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 216.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 226.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 226.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 226.0000000000000000: module 0                 selects 0.
+cpu 0 @ 226.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 226.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 236.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 236.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 236.0000000000000000: module 0                 selects 4.
+cpu 0 @ 236.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 236.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 246.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 246.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 246.0000000000000000: module 0                 selects 0.
+cpu 0 @ 246.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 246.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 256.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 256.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 256.0000000000000000: module 0                 selects 4.
+cpu 0 @ 256.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 256.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 266.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 266.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 266.0000000000000000: module 0                 selects 4.
+cpu 0 @ 266.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 266.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 276.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 276.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 276.0000000000000000: module 0                 selects 4.
+cpu 0 @ 276.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 276.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 286.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 286.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 286.0000000000000000: module 0                 selects 0.
+cpu 0 @ 286.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 286.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 296.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 296.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 296.0000000000000000: module 0                 selects 4.
+cpu 0 @ 296.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 296.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 306.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 306.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 306.0000000000000000: module 0                 selects 5.
+cpu 0 @ 306.0000000000000000: module 0                 switches to thread 5.
 cpu 0 @ 306.0000000000000000: thread 0|5               runs for 10.0000000000000000 units.
 cpu 0 @ 316.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 316.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 316.0000000000000000: module 0                 selects 6.
+cpu 0 @ 316.0000000000000000: module 0                 switches to thread 6.
 cpu 0 @ 316.0000000000000000: thread 0|6               runs for 10.0000000000000000 units.
 cpu 0 @ 326.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 326.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 326.0000000000000000: module 0                 selects 4.
+cpu 0 @ 326.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 326.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 336.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 336.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 336.0000000000000000: module 0                 selects 0.
+cpu 0 @ 336.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 336.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 346.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 346.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 346.0000000000000000: module 0                 selects 4.
+cpu 0 @ 346.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 346.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 356.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 356.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 356.0000000000000000: module 0                 selects 4.
+cpu 0 @ 356.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 356.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 366.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 366.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 366.0000000000000000: module 0                 selects 0.
+cpu 0 @ 366.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 366.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 cpu 0 @ 376.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 376.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 376.0000000000000000: module 0                 selects 4.
+cpu 0 @ 376.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 376.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 386.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 386.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 386.0000000000000000: module 0                 selects 1.
+cpu 0 @ 386.0000000000000000: module 0                 switches to thread 1.
 cpu 0 @ 386.0000000000000000: thread 0|1               runs for 4.0000000000000000 units.
 cpu 0 @ 390.0000000000000000: thread 0|1               yields.
+cpu 0 @ 390.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 390.0000000000000000: module 0                 selects 4.
+cpu 0 @ 390.0000000000000000: module 0                 switches to thread 4.
 cpu 0 @ 390.0000000000000000: thread 0|4               runs for 10.0000000000000000 units.
 cpu 0 @ 400.0000000000000000: module 0                 timer elapsed.
+cpu 0 @ 400.0000000000000000: module 0                 switches to thread scheduler.
 cpu 0 @ 400.0000000000000000: module 0                 selects 0.
+cpu 0 @ 400.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @ 400.0000000000000000: thread 0|0               runs for 10.0000000000000000 units.
 Thread stats:
 {

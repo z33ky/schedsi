@@ -27,10 +27,13 @@ class TextLog:
         cost = float(cost)
         return '{:.{prec}f} unit{}'.format(cost, '' if cost == 1 else 's', prec=self.time_prec)
 
-    def _ctxsw(self, module_to, time):
+    def _ctxsw(self, destination, time):
         """Stringify a context switch."""
         time = float(time)
-        return 'spends {} to switch to {}'.format(self._timespan(time), module_to.name)
+        fmt = 'switches to {}'
+        if time != 0:
+            fmt = 'spends {} to switch to {}'.format(self._timespan(time), '{}')
+        return fmt.format(destination)
 
     def _ct(self, cpu):
         """Stringify CPU and time.
@@ -72,10 +75,14 @@ class TextLog:
         if appendix is not None and appendix.bottom.module == cpu.status.chain.top.module:
             self.stream.write(self._ctm(cpu) + 'selects {}.\n'.format(appendix.bottom.tid))
 
-        if time != 0:
-            thread_to = appendix and appendix.top or cpu.status.chain.thread_at(split_index)
+        thread_to = appendix and appendix.top or cpu.status.chain.thread_at(split_index)
+        module_to = thread_to.module
 
-            self.stream.write(self._ctm(cpu) + '{}.\n'.format(self._ctxsw(thread_to.module, time)))
+        destination = 'module ' + module_to.name
+        if module_to == cpu.status.chain.top.module:
+            destination = 'thread ' + thread_to.tid
+
+        self.stream.write(self._ctm(cpu) + '{}.\n'.format(self._ctxsw(destination, time)))
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
