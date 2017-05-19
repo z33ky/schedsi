@@ -1,112 +1,185 @@
 cpu 0 @   0.0000000000000000: module 0                 selects 0.
+cpu 0 @   0.0000000000000000: module 0                 switches to thread 0.
 cpu 0 @   0.0000000000000000: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @  10.7142857142857135: module 0                 timer elapsed.
+cpu 0 @  10.7142857142857135: module 0                 switches to thread scheduler.
 cpu 0 @  10.7142857142857135: module 0                 selects 4.
+cpu 0 @  10.7142857142857135: module 0                 switches to thread 4.
 cpu 0 @  10.7142857142857135: thread 0|4               runs for 15.7377049180327866 units.
 cpu 0 @  26.4519906323184983: module 0                 timer elapsed.
+cpu 0 @  26.4519906323184983: module 0                 switches to thread scheduler.
 cpu 0 @  26.4519906323184983: module 0                 selects 5.
+cpu 0 @  26.4519906323184983: module 0                 switches to thread 5.
 cpu 0 @  26.4519906323184983: thread 0|5               runs for 6.0000000000000000 units.
 cpu 0 @  32.4519906323184983: module 0                 timer elapsed.
+cpu 0 @  32.4519906323184983: module 0                 switches to thread scheduler.
 cpu 0 @  32.4519906323184983: module 0                 selects 6.
+cpu 0 @  32.4519906323184983: module 0                 switches to thread 6.
 cpu 0 @  32.4519906323184983: thread 0|6               runs for 6.0000000000000000 units.
 cpu 0 @  38.4519906323184983: module 0                 timer elapsed.
+cpu 0 @  38.4519906323184983: module 0                 switches to thread scheduler.
 cpu 0 @  38.4519906323184983: module 0                 selects 1.
+cpu 0 @  38.4519906323184983: module 0                 switches to thread 1.
 cpu 0 @  38.4519906323184983: thread 0|1               runs for 4.0000000000000000 units.
 cpu 0 @  42.4519906323184983: thread 0|1               yields.
+cpu 0 @  42.4519906323184983: module 0                 switches to thread scheduler.
 cpu 0 @  42.4519906323184983: module 0                 selects 2.
+cpu 0 @  42.4519906323184983: module 0                 switches to thread 2.
 cpu 0 @  42.4519906323184983: thread 0|2               runs for 4.0000000000000000 units.
 cpu 0 @  46.4519906323184983: thread 0|2               yields.
+cpu 0 @  46.4519906323184983: module 0                 switches to thread scheduler.
 cpu 0 @  46.4519906323184983: module 0                 selects 4.
+cpu 0 @  46.4519906323184983: module 0                 switches to thread 4.
 cpu 0 @  46.4519906323184983: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @  63.5948477751756371: module 0                 timer elapsed.
+cpu 0 @  63.5948477751756371: module 0                 switches to thread scheduler.
 cpu 0 @  63.5948477751756371: module 0                 selects 0.
+cpu 0 @  63.5948477751756371: module 0                 switches to thread 0.
 cpu 0 @  63.5948477751756371: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @  74.3091334894613453: module 0                 timer elapsed.
+cpu 0 @  74.3091334894613453: module 0                 switches to thread scheduler.
 cpu 0 @  74.3091334894613453: module 0                 selects 4.
+cpu 0 @  74.3091334894613453: module 0                 switches to thread 4.
 cpu 0 @  74.3091334894613453: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @  91.4519906323184983: module 0                 timer elapsed.
+cpu 0 @  91.4519906323184983: module 0                 switches to thread scheduler.
 cpu 0 @  91.4519906323184983: module 0                 selects 0.
+cpu 0 @  91.4519906323184983: module 0                 switches to thread 0.
 cpu 0 @  91.4519906323184983: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @ 102.1662763466042065: module 0                 timer elapsed.
+cpu 0 @ 102.1662763466042065: module 0                 switches to thread scheduler.
 cpu 0 @ 102.1662763466042065: module 0                 selects 4.
+cpu 0 @ 102.1662763466042065: module 0                 switches to thread 4.
 cpu 0 @ 102.1662763466042065: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @ 119.3091334894613453: module 0                 timer elapsed.
+cpu 0 @ 119.3091334894613453: module 0                 switches to thread scheduler.
 cpu 0 @ 119.3091334894613453: module 0                 selects 0.
+cpu 0 @ 119.3091334894613453: module 0                 switches to thread 0.
 cpu 0 @ 119.3091334894613453: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @ 130.0234192037470677: module 0                 timer elapsed.
+cpu 0 @ 130.0234192037470677: module 0                 switches to thread scheduler.
 cpu 0 @ 130.0234192037470677: module 0                 selects 4.
+cpu 0 @ 130.0234192037470677: module 0                 switches to thread 4.
 cpu 0 @ 130.0234192037470677: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @ 147.1662763466042065: module 0                 timer elapsed.
+cpu 0 @ 147.1662763466042065: module 0                 switches to thread scheduler.
 cpu 0 @ 147.1662763466042065: module 0                 selects 0.
+cpu 0 @ 147.1662763466042065: module 0                 switches to thread 0.
 cpu 0 @ 147.1662763466042065: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @ 157.8805620608899289: module 0                 timer elapsed.
+cpu 0 @ 157.8805620608899289: module 0                 switches to thread scheduler.
 cpu 0 @ 157.8805620608899289: module 0                 selects 4.
+cpu 0 @ 157.8805620608899289: module 0                 switches to thread 4.
 cpu 0 @ 157.8805620608899289: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @ 175.0234192037470677: module 0                 timer elapsed.
+cpu 0 @ 175.0234192037470677: module 0                 switches to thread scheduler.
 cpu 0 @ 175.0234192037470677: module 0                 selects 0.
+cpu 0 @ 175.0234192037470677: module 0                 switches to thread 0.
 cpu 0 @ 175.0234192037470677: thread 0|0               runs for 9.8360655737704903 units.
 cpu 0 @ 184.8594847775175367: module 0                 timer elapsed.
+cpu 0 @ 184.8594847775175367: module 0                 switches to thread scheduler.
 cpu 0 @ 184.8594847775175367: module 0                 selects 5.
+cpu 0 @ 184.8594847775175367: module 0                 switches to thread 5.
 cpu 0 @ 184.8594847775175367: thread 0|5               runs for 6.0000000000000000 units.
 cpu 0 @ 190.8594847775175367: module 0                 timer elapsed.
+cpu 0 @ 190.8594847775175367: module 0                 switches to thread scheduler.
 cpu 0 @ 190.8594847775175367: module 0                 selects 6.
+cpu 0 @ 190.8594847775175367: module 0                 switches to thread 6.
 cpu 0 @ 190.8594847775175367: thread 0|6               runs for 6.0000000000000000 units.
 cpu 0 @ 196.8594847775175367: module 0                 timer elapsed.
+cpu 0 @ 196.8594847775175367: module 0                 switches to thread scheduler.
 cpu 0 @ 196.8594847775175367: module 0                 selects 4.
+cpu 0 @ 196.8594847775175367: module 0                 switches to thread 4.
 cpu 0 @ 196.8594847775175367: thread 0|4               runs for 17.4545454545454533 units.
 cpu 0 @ 214.3140302320630042: module 0                 timer elapsed.
+cpu 0 @ 214.3140302320630042: module 0                 switches to thread scheduler.
 cpu 0 @ 214.3140302320630042: module 0                 selects 0.
+cpu 0 @ 214.3140302320630042: module 0                 switches to thread 0.
 cpu 0 @ 214.3140302320630042: thread 0|0               runs for 10.9090909090909083 units.
 cpu 0 @ 225.2231211411539107: module 0                 timer elapsed.
+cpu 0 @ 225.2231211411539107: module 0                 switches to thread scheduler.
 cpu 0 @ 225.2231211411539107: module 0                 selects 1.
+cpu 0 @ 225.2231211411539107: module 0                 switches to thread 1.
 cpu 0 @ 225.2231211411539107: thread 0|1               runs for 4.0000000000000000 units.
 cpu 0 @ 229.2231211411539107: thread 0|1               yields.
+cpu 0 @ 229.2231211411539107: module 0                 switches to thread scheduler.
 cpu 0 @ 229.2231211411539107: module 0                 selects 4.
+cpu 0 @ 229.2231211411539107: module 0                 switches to thread 4.
 cpu 0 @ 229.2231211411539107: thread 0|4               runs for 15.7377049180327866 units.
 cpu 0 @ 244.9608260591867008: module 0                 timer elapsed.
+cpu 0 @ 244.9608260591867008: module 0                 switches to thread scheduler.
 cpu 0 @ 244.9608260591867008: module 0                 selects 0.
+cpu 0 @ 244.9608260591867008: module 0                 switches to thread 0.
 cpu 0 @ 244.9608260591867008: thread 0|0               runs for 9.8360655737704903 units.
 cpu 0 @ 254.7968916329571982: module 0                 timer elapsed.
+cpu 0 @ 254.7968916329571982: module 0                 switches to thread scheduler.
 cpu 0 @ 254.7968916329571982: module 0                 selects 2.
+cpu 0 @ 254.7968916329571982: module 0                 switches to thread 2.
 cpu 0 @ 254.7968916329571982: thread 0|2               runs for 4.0000000000000000 units.
 cpu 0 @ 258.7968916329571698: thread 0|2               yields.
+cpu 0 @ 258.7968916329571698: module 0                 switches to thread scheduler.
 cpu 0 @ 258.7968916329571698: module 0                 selects 4.
+cpu 0 @ 258.7968916329571698: module 0                 switches to thread 4.
 cpu 0 @ 258.7968916329571698: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @ 275.9397487758143370: module 0                 timer elapsed.
+cpu 0 @ 275.9397487758143370: module 0                 switches to thread scheduler.
 cpu 0 @ 275.9397487758143370: module 0                 selects 0.
+cpu 0 @ 275.9397487758143370: module 0                 switches to thread 0.
 cpu 0 @ 275.9397487758143370: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @ 286.6540344901000594: module 0                 timer elapsed.
+cpu 0 @ 286.6540344901000594: module 0                 switches to thread scheduler.
 cpu 0 @ 286.6540344901000594: module 0                 selects 4.
+cpu 0 @ 286.6540344901000594: module 0                 switches to thread 4.
 cpu 0 @ 286.6540344901000594: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @ 303.7968916329571698: module 0                 timer elapsed.
+cpu 0 @ 303.7968916329571698: module 0                 switches to thread scheduler.
 cpu 0 @ 303.7968916329571698: module 0                 selects 0.
+cpu 0 @ 303.7968916329571698: module 0                 switches to thread 0.
 cpu 0 @ 303.7968916329571698: thread 0|0               runs for 10.7142857142857135 units.
 cpu 0 @ 314.5111773472428922: module 0                 timer elapsed.
+cpu 0 @ 314.5111773472428922: module 0                 switches to thread scheduler.
 cpu 0 @ 314.5111773472428922: module 0                 selects 4.
+cpu 0 @ 314.5111773472428922: module 0                 switches to thread 4.
 cpu 0 @ 314.5111773472428922: thread 0|4               runs for 17.1428571428571423 units.
 cpu 0 @ 331.6540344901000594: module 0                 timer elapsed.
+cpu 0 @ 331.6540344901000594: module 0                 switches to thread scheduler.
 cpu 0 @ 331.6540344901000594: module 0                 selects 0.
+cpu 0 @ 331.6540344901000594: module 0                 switches to thread 0.
 cpu 0 @ 331.6540344901000594: thread 0|0               runs for 9.8360655737704903 units.
 cpu 0 @ 341.4901000638705000: module 0                 timer elapsed.
+cpu 0 @ 341.4901000638705000: module 0                 switches to thread scheduler.
 cpu 0 @ 341.4901000638705000: module 0                 selects 4.
+cpu 0 @ 341.4901000638705000: module 0                 switches to thread 4.
 cpu 0 @ 341.4901000638705000: thread 0|4               runs for 15.7377049180327866 units.
 cpu 0 @ 357.2278049819033185: module 0                 timer elapsed.
+cpu 0 @ 357.2278049819033185: module 0                 switches to thread scheduler.
 cpu 0 @ 357.2278049819033185: module 0                 selects 0.
+cpu 0 @ 357.2278049819033185: module 0                 switches to thread 0.
 cpu 0 @ 357.2278049819033185: thread 0|0               runs for 10.9090909090909083 units.
 cpu 0 @ 368.1368958909941966: module 0                 timer elapsed.
+cpu 0 @ 368.1368958909941966: module 0                 switches to thread scheduler.
 cpu 0 @ 368.1368958909941966: module 0                 selects 5.
+cpu 0 @ 368.1368958909941966: module 0                 switches to thread 5.
 cpu 0 @ 368.1368958909941966: thread 0|5               runs for 6.0000000000000000 units.
 cpu 0 @ 374.1368958909941966: module 0                 timer elapsed.
+cpu 0 @ 374.1368958909941966: module 0                 switches to thread scheduler.
 cpu 0 @ 374.1368958909941966: module 0                 selects 6.
+cpu 0 @ 374.1368958909941966: module 0                 switches to thread 6.
 cpu 0 @ 374.1368958909941966: thread 0|6               runs for 6.0000000000000000 units.
 cpu 0 @ 380.1368958909941966: module 0                 timer elapsed.
+cpu 0 @ 380.1368958909941966: module 0                 switches to thread scheduler.
 cpu 0 @ 380.1368958909941966: module 0                 selects 1.
+cpu 0 @ 380.1368958909941966: module 0                 switches to thread 1.
 cpu 0 @ 380.1368958909941966: thread 0|1               runs for 4.0000000000000000 units.
 cpu 0 @ 384.1368958909941966: thread 0|1               yields.
+cpu 0 @ 384.1368958909941966: module 0                 switches to thread scheduler.
 cpu 0 @ 384.1368958909941966: module 0                 selects 4.
+cpu 0 @ 384.1368958909941966: module 0                 switches to thread 4.
 cpu 0 @ 384.1368958909941966: thread 0|4               runs for 15.7377049180327866 units.
 cpu 0 @ 399.8746008090270152: module 0                 timer elapsed.
+cpu 0 @ 399.8746008090270152: module 0                 switches to thread scheduler.
 cpu 0 @ 399.8746008090270152: module 0                 selects 0.
+cpu 0 @ 399.8746008090270152: module 0                 switches to thread 0.
 cpu 0 @ 399.8746008090270152: thread 0|0               runs for 9.8360655737704903 units.
 Thread stats:
 {
