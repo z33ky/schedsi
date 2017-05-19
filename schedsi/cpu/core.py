@@ -3,6 +3,7 @@
 
 from . import context
 from .request import Type as RequestType
+from schedsi.threads import VCPUThread
 
 MODULE_CTXSW_COST = 1
 THREAD_CTXSW_COST = 0
@@ -130,6 +131,8 @@ class _Status:
             self.ctxsw_stats.thread_time += cost
         else:
             cost = MODULE_CTXSW_COST
+            if not isinstance(thread_to, VCPUThread):
+                cost += THREAD_CTXSW_COST
             self.ctxsw_stats.module_time += cost
 
         self.cpu.log.context_switch(self.cpu, split_index, appendix, cost)
