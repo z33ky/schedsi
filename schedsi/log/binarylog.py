@@ -54,11 +54,13 @@ def _encode_contexts(contexts, current_context):
     if current_context is not None:
         chain[0].update({'relationship': stringify_relationship(first, current_context.thread)})
 
-    for cur, prev in zip(contexts[1:], contexts):
+    prev = first
+    for cur in (c.thread for c in contexts[1:]):
         chain.append({
-            'thread': _encode_thread(cur.thread),
-            'relationship': stringify_relationship(cur.thread, prev.thread)
+            'thread': _encode_thread(cur),
+            'relationship': stringify_relationship(cur, prev)
         })
+        prev = cur
 
     return chain
 
@@ -269,13 +271,13 @@ def _decode_contexts(entries, current_context):
         assert 'relationship' not in entries[0]
         return contexts
     for prev, cur, ent in zip([current_context] + contexts, contexts, entries):
-        rel = ent.get('relationship', None)
+        rel = ent['relationship']
         if rel == 'child':
             cur.thread.module.parent = prev.thread.module
         elif rel == 'sibling':
             cur.thread.module = prev.thread.module
         else:
-            assert False
+            assert False, 'Invalid relationship: ' + rel
     return contexts
 
 
