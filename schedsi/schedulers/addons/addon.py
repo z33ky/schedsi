@@ -151,13 +151,13 @@ class AddonScheduler(AddonSchedulerBase):
         if self._repeat[0] is not None:
             self._prev_run_time += prev_run_time
             return (self._repeat[0], None, None)
+        assert self._repeat[1] is None
+
+        if prev_run_time is not None:
+            prev_run_time += self._prev_run_time
+            self._prev_run_time = 0
         else:
-            assert self._repeat[1] is None
-            if prev_run_time is not None:
-                prev_run_time += self._prev_run_time
-                self._prev_run_time = 0
-            else:
-                assert self._prev_run_time == 0
+            assert self._prev_run_time == 0
 
         rcu_copy, *rest = yield from super()._start_schedule(prev_run_time)
 
@@ -223,7 +223,7 @@ class Addon():
         with the addon attached.
         """
         signature = inspect.signature(cls.__init__)
-        init_args = ', '.join(str(v) for v in signature.parameters.values()) + ', **kwargs'
+        init_args = ', '.join(map(str, signature.parameters.values())) + ', **kwargs'
 
         parameters = signature.parameters.copy()
         # pop self-parameter

@@ -416,7 +416,7 @@ def replay(binary, log):
         elif entry['type'] == _EntryType.thread_statistics.name:
             log.thread_statistics(_decode_stats(entry['stats']))
         elif entry['type'] == _EntryType.cpu_statistics.name:
-            log.cpu_statistics(_decode_stats(stat) for stat in entry['stats'])
+            log.cpu_statistics(map(_decode_stats, entry['stats']))
         else:
             print('Unknown entry:', entry)
 

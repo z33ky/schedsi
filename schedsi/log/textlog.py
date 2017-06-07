@@ -143,7 +143,7 @@ class TextLog:
             return cls.intify(lst)
 
         if isinstance(stats, (list, tuple)):
-            return str([intify_list(stat) for stat in stats])
+            return str(list(map(intify_list, stats)))
 
         if stats is None:
             return 'null'

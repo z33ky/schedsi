@@ -143,7 +143,7 @@ class Thread:
 
         self.stats.total_run += run_time
         self.stats.run[-1].append(run_time)
-        assert self.stats.total_run == sum((sum(x) for x in self.stats.run))
+        assert self.stats.total_run == sum(map(sum, self.stats.run))
 
         self.ready_time += run_time
         assert self.ready_time == current_time

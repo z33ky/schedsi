@@ -19,19 +19,18 @@ class PSJF(shortest_job_first.SJF):
         idx, time_slice = yield from super()._sched_loop(rcu_copy, last_chain_queue, last_chain_idx)
         if idx != -1:
             assert idx == 0
-            waiting_chains = rcu_copy.data.waiting_chains
-            if waiting_chains:
-                threads = (c.bottom for c in waiting_chains)
-                next_thread = next(threads)
-                for thread in threads:
-                    if thread.ready_time < next_thread.ready_time or (
-                            thread.ready_time == next_thread.ready_time
-                            and thread.remaining < next_thread.remaining):
-                        next_thread = thread
-                current_remaining = rcu_copy.data.ready_chains[0].bottom.remaining
-                if next_thread.remaining is not None and (
-                        current_remaining is None or next_thread.remaining < current_remaining):
-                    current_time = yield CPURequest.current_time()
-                    time_slice = next_thread.ready_time - current_time
-                    assert time_slice > 0
+            threads = (c.bottom for c in rcu_copy.data.waiting_chains)
+            next_thread = next(threads, None)
+            for thread in threads:
+                if thread.ready_time < next_thread.ready_time or (
+                        thread.ready_time == next_thread.ready_time
+                        and thread.remaining < next_thread.remaining):
+                    next_thread = thread
+            current_remaining = rcu_copy.data.ready_chains[0].bottom.remaining
+            if next_thread is not None and next_thread.remaining is not None and (
+                    current_remaining is None or next_thread.remaining < current_remaining):
+                # calculate time to preemption
+                current_time = yield CPURequest.current_time()
+                time_slice = next_thread.ready_time - current_time
+                assert time_slice > 0
         return idx, time_slice
