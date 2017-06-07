@@ -50,7 +50,4 @@ class Request:
     @classmethod
     def timer(cls, time):
         """Create a :class:`Request` to set a timer for the current context."""
-        # TODO: allow to specify how much sooner a timer may elapse
-        #       this is to reduce frequent ctxswes if resumed chains have
-        #       timers that will elapse very soon
         return cls(Type.timer, time)

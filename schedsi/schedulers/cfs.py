@@ -57,7 +57,10 @@ class CFS(scheduler.Scheduler):
         self.min_slice = min_slice
 
     def add_thread(self, thread, rcu_data=None, *, shares=None):
-        """See :meth:`Scheduler.add_thread`."""
+        """See :meth:`Scheduler.add_thread`.
+
+        This override initializes the thread's vruntime and shares.
+        """
         if shares is None:
             shares = self.default_shares
         assert shares > 0
@@ -85,6 +88,7 @@ class CFS(scheduler.Scheduler):
 
     def _get_last_chain(self, rcu_data, last_queue, _last_idx):
         """See :meth:`Scheduler._get_last_chain`."""
+        # we have dedicated ready_idx and waiting_idx (see CFSData)
         if last_queue is rcu_data.ready_chains:
             return rcu_data.ready_chains[rcu_data.ready_idx]
         if last_queue is rcu_data.waiting_chains:

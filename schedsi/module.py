@@ -13,13 +13,14 @@ class Module:
         * a unique name
         * a parent (or None if kernel)
         * a scheduler thread
-        * an array of (VCPU, scheduler thread)
+        * an array of (VCPU, scheduler thread) pairs
     """
 
     def __init__(self, name, parent, scheduler):
         """Create a :class:`Module`."""
         self.name = name
         self.parent = parent
+        # for now every module just has a single scheduler
         self._scheduler_thread = threads.SchedulerThread("scheduler", scheduler=scheduler(self))
         self._vcpus = []
         self._children = []

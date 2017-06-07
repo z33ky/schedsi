@@ -93,4 +93,5 @@ class RCUCopy:  # pylint: disable=too-few-public-methods
         # pylint: disable=protected-access
         assert rcu._lock.locked
         self._uid = rcu._uid
+        # FIXME: deepcopy?
         self.data = copy.copy(rcu._data)

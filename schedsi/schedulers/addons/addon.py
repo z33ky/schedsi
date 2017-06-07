@@ -55,6 +55,8 @@ class AddonSchedulerBase(Scheduler):
 
         This skips :meth:`Scheduler._start_schedule`
         if :attr:`_start_schedule_rcu_copy` is set.
+
+        Resets :attr:`_start_schedule_rcu_copy` to `None`.
         """
         if self._start_schedule_rcu_copy is None:
             return (yield from super()._start_schedule(prev_run_time))
@@ -72,14 +74,8 @@ class AddonScheduler(AddonSchedulerBase):
     """Scheduler with addon.
 
     This can be used to add scheduler addons via multiple inheritance.
-    For instance, if we wanted the Addon `MyAddon` with the `BaseScheduler` scheduler,
-    you can do this::
-
-        class MyScheduler(AddonScheduler, BaseScheduler, AddonSchedulerBase):
-            def __init__(self, module):
-                super().__init__(module, MyAddon("addon-param"), "sched-param")
-
-    It may be convenient to use :meth:`Addon.attach` instead.
+    A metaclass is required to implement the desired MRO. Use :meth:`Addon.attach`
+    to generate a scheduler-class with an addon attached.
     """
 
     def __init__(self, module, addon, *args, **kwargs):
@@ -87,6 +83,7 @@ class AddonScheduler(AddonSchedulerBase):
         super().__init__(module, *args, **kwargs)
         self.addon = addon
         addon.transmute_rcu_data(self._rcu._data)
+        # this is a pair (rcu_copy, time_slice) for repeating scheduling decisions
         self._repeat = (None, None)
         self._prev_run_time = 0
 
