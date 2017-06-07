@@ -2,6 +2,11 @@
 
 import threading
 from schedsi.cpu import request as cpurequest
+from schedsi.cpu.time import Time
+
+
+#: Whether to log individual times, or only the sum
+LOG_INDIVIDUAL = True
 
 
 class _ThreadStats:  # pylint: disable=too-few-public-methods
@@ -13,7 +18,7 @@ class _ThreadStats:  # pylint: disable=too-few-public-methods
         self.response_time = None
         self.ctxsw = []
         self.run = []
-        self.total_run = 0
+        self.total_run = Time(0)
         self.wait = [[]]
 
 
@@ -120,7 +125,8 @@ class Thread:
             # and we now switch away from this thread
             locked = self.is_running.acquire(False)
             assert locked
-        self.stats.ctxsw.append(run_time)
+        if LOG_INDIVIDUAL:
+            self.stats.ctxsw.append(run_time)
 
     def run_background(self, _current_time, _run_time):
         """Update runtime state.
@@ -142,8 +148,9 @@ class Thread:
         assert self.is_running.locked()
 
         self.stats.total_run += run_time
-        self.stats.run[-1].append(run_time)
-        assert self.stats.total_run == sum(map(sum, self.stats.run))
+        if LOG_INDIVIDUAL:
+            self.stats.run[-1].append(run_time)
+            assert self.stats.total_run == sum(map(sum, self.stats.run))
 
         self.ready_time += run_time
         assert self.ready_time == current_time
@@ -181,8 +188,9 @@ class Thread:
         away from this thread.
         """
         if self.is_running.locked():
-            # only record waiting time if the thread has executed
-            self.stats.wait.append([])
+            if LOG_INDIVIDUAL:
+                # only record waiting time if the thread has executed
+                self.stats.wait.append([])
             if self.ready_time is not None:
                 self.ready_time = max(self.ready_time, current_time)
             else:
@@ -204,9 +212,10 @@ class Thread:
             self._update_ready_time(current_time)
         else:
             if current_time >= self.ready_time:
-                # we only want to record waiting time if the thread is ready to execute
-                self.stats.wait[-1].append(current_time - self.ready_time)
-                self.stats.run.append([])
+                if LOG_INDIVIDUAL:
+                    # we only want to record waiting time if the thread is ready to execute
+                    self.stats.wait[-1].append(current_time - self.ready_time)
+                    self.stats.run.append([])
                 # we can't use _update_ready_time() here because we might not yet be executing
                 self.ready_time = current_time
 

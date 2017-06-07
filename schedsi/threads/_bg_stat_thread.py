@@ -3,7 +3,7 @@
 This should be used in favor of :class:`Thread` for non-worker threads.
 """
 
-from schedsi.threads.thread import Thread
+from schedsi.threads.thread import Thread, LOG_INDIVIDUAL
 import sys
 
 
@@ -24,11 +24,12 @@ class _BGStatThread(Thread):
 
         See :meth:`Thread.run_background`.
         """
-        self.bg_times[-1].append(run_time)
+        if LOG_INDIVIDUAL:
+            self.bg_times[-1].append(run_time)
         self._update_ready_time(current_time)
 
     def resume(self, current_time, returning):
-        if returning:
+        if LOG_INDIVIDUAL and returning:
             self.bg_times.append([])
         super().resume(current_time, returning)
 
@@ -38,7 +39,8 @@ class _BGStatThread(Thread):
         See :meth:`Thread.finish`.
         """
         if self.module.parent is not None or self.tid != 0:
-            self.bg_times.append([])
+            if LOG_INDIVIDUAL:
+                self.bg_times.append([])
         else:
             # in single timer scheduling the kernel is restarted
             # but we already got a new list from resume() after the context switch
