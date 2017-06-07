@@ -19,7 +19,7 @@ if not MaxPen:
             self.threshold = maximizer_threshold
             self.tolerance = penalizer_tolerance
 
-if not MaxPen:
+if MaxPen:
     class PenalizingMaximizer(time_slice_maxer.TimeSliceMaxer, penalizer.Penalizer):
         """Combination of :class:`Penalizer` and :class:`TimeSliceMaxer`.
 
