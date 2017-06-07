@@ -29,11 +29,15 @@ class ModuleBuilder:
         """
         if name is None:
             name = self.module.name + '.' + str(self.module.num_children())
+
         madder = ModuleBuilder(name, self.module, scheduler=scheduler)
+
         if not isinstance(vcpu_add_args, collections.abc.Sequence):
             vcpu_add_args = [vcpu_add_args] * vcpus
         assert len(vcpu_add_args) == vcpus
+
         self.vcpus.append((madder.module, vcpu_add_args))
+
         return madder
 
     def add_thread(self, thread, add_args=None, **kwargs):

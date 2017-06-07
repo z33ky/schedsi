@@ -31,6 +31,7 @@ class MLFQData(scheduler.SchedulerData):  # pylint: disable=too-few-public-metho
 
         self.prio_boost_time = priority_boost_time
         self.last_prio_boost = None
+        # this is used for priority reduction
         self.last_finish_time = None
 
 
@@ -260,6 +261,7 @@ class MLFQ(scheduler.Scheduler):
 
             assert not rcu_data.waiting_chains
 
+            # do not leave an empty ready_chains
             if not rcu_data.ready_chains:
                 if prev_still_ready:
                     rcu_data.ready_chains = last_queue

@@ -250,6 +250,7 @@ class _KernelTimerOnlyStatus(_Status):
         # kernel scheduler gets restarted
         current_context = self.chain.current_context
 
+        # the tail gets finished, so it can be restarted later
         prev_chain = current_context.buffer
         if prev_chain:
             current_context.reply(None)
@@ -267,11 +268,13 @@ class _KernelTimerOnlyStatus(_Status):
         to let it be rebuild.
         """
         super()._switch_to_parent()
+        # finish the tail so it can be restarted later
         current_context = self.chain.current_context
         prev_chain = current_context.buffer
         if prev_chain is not None:
             prev_chain.finish(self.current_time)
             current_context.reply(None)
+            # reply with just a single thread, to reestablish the context chain when resuming
             current_context.reply(context.Chain.from_thread(prev_chain.bottom))
 
     def _handle_request(self, request):

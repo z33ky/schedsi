@@ -23,3 +23,6 @@
 	* basically we just want to jump back to the kernel to "handle" some interrupts
 * simulate message-passing
 	* synchronous message-passing should be the most interesting thing here, since it puts threads to sleep until the message round-tripped back and wakes it again
+* timer coalescing
+	* allow specifying a timer resolution/tolerance to elapse earlier and/or sooner
+	* this can reduce context switches when timers in a chain that is resumed would elapse very soon, at the cost of precision

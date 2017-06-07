@@ -51,7 +51,9 @@ class _BGStatThread(Thread):
         See :meth:`Thread.get_statistics`.
         """
         stats = super().get_statistics(current_time)
+
         stats['bg'] = self.bg_times
         if stats['bg'][-1] == []:
             stats['bg'].pop()
+
         return stats

@@ -51,8 +51,8 @@ class Context:
 
         Calls :meth:`Thread.finish()` and then starts a new coroutine.
         """
-        assert self.buffer is None
-        assert self.started
+        assert self.buffer is None, 'Cannot restart with pending reply.'
+        assert self.started, 'Cannot restart if context never executed.'
         self.thread.finish(current_time)
         self.execution = self.thread.execute()
         self.started = False
