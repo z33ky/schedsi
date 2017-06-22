@@ -255,9 +255,12 @@ class _KernelTimerOnlyStatus(_Status):
         if prev_chain:
             current_context.reply(None)
 
-            if not prev_chain.current_context.started:
-                prev_chain.split(-1)
-            prev_chain.finish(self.current_time)
+            if len(prev_chain) > 1:
+                if not prev_chain.current_context.started:
+                    prev_chain.split(-1)
+                prev_chain.finish(self.current_time)
+            elif prev_chain.current_context.started:
+                prev_chain.finish(self.current_time)
 
         current_context.restart(self.current_time)
 
