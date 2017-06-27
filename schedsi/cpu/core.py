@@ -128,11 +128,14 @@ class _Status:
 
         if thread_to.module == thread_from.module:
             cost = THREAD_CTXSW_COST
+            if isinstance(thread_to, VCPUThread):
+                # schedulers witch to the VCPUThread, which then switches to the child-thread
+                # instead of two context switches, actual implementation would likely directly
+                # switch to the child-thread, hence we do this switch "for free"
+                cost = 0
             self.ctxsw_stats.thread_time += cost
         else:
             cost = MODULE_CTXSW_COST
-            if not isinstance(thread_to, VCPUThread):
-                cost += THREAD_CTXSW_COST
             self.ctxsw_stats.module_time += cost
 
         self.cpu.log.context_switch(self.cpu, split_index, appendix, cost)
