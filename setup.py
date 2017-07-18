@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import setuptools
+from Cython.Build import cythonize
 
 setuptools.setup(
     name="schedsi",
@@ -15,5 +16,6 @@ setuptools.setup(
             'schedsi-replay = replay:main'
             'schedsi-plot = plot:main'
             ]
-    }
+    },
+    ext_modules=cythonize("schedsi/cpu/context.pyx")
 )
