@@ -84,7 +84,9 @@ class AddonScheduler(AddonSchedulerBase):
         self.addon = addon
         addon.transmute_rcu_data(self._rcu._data)
         # this is a pair (rcu_copy, time_slice) for repeating scheduling decisions
+        # we don't need this in rcu_copy because we only use this within a single schedule() call
         self._repeat = (None, None)
+        # FIXME: this should probably be in a rcu_copy though
         self._prev_run_time = 0
 
     def add_thread(self, thread, rcu_data=None, **kwargs):
