@@ -34,7 +34,6 @@ class _Status:
     The Status consists of:
         * a reference to the :class:`Core` that owns it
         * a :class:`context.Chain`
-        * the current time slice (or what's left of it)
         * the current time
         * :class:`_TimeStats`
         * :class:`_ContextSwitchStats`
@@ -44,7 +43,6 @@ class _Status:
         """Create a :class:`_Status`."""
         self.cpu = cpu
         self.chain = chain
-        self.prev_chain = None
         self.current_time = 0
         self.stats = _TimeStats()
         self.ctxsw_stats = _ContextSwitchStats()

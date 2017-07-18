@@ -8,7 +8,9 @@ class Context:
     The context has
         * the current :class:`Thread`
         * the execution coroutine of the :class:`Thread`
+        * a flag indicating whether the coroutine has run
         * timeout of the local timer
+        * an object to send to the execution coroutine (:attr:`buffer`)
     """
 
     def __init__(self, thread):

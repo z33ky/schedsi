@@ -1,32 +1,37 @@
 The simulation is kicked off in `World.step()` (`schedsi/world.py`).
-From there, `execute()` of each `Core` (`schedsi/cpu.py`) is invoked, which will proceed one step, meaning one operation that consumes time.
+From there, `execute()` of each `Core` (`schedsi/cpu/core.py`) is invoked, which will proceed one step, meaning one operation that consumes time.
 
-The `Core` has a stack of contexts representing the scheduling chain (`schedsi/context.py`), where the first element is the kernel scheduler
-and each successive element is either a `Thread` (`schedsi/thread.py`) from the same module or the scheduler `Thread` of a child module.
+The `Core` has a stack of contexts representing the scheduling chain (`schedsi/cpu/context.py`), where the first element is the kernel scheduler
+and each successive element is either a `Thread` (`schedsi/threads/thread.py`) from the same module or the VCPU of a child module.
+The VCPU is also a kind of thread: `VCPUThread` (`schedsi/threads/vcpu_thread.py`).
 It is imaginable that child threads run directly on the parent, but this is currently not used.
 
-The scheduler is a coroutine that yields a `cpu.Request` (`schedsi/cpurequest.py`).
+The scheduler's `schedule()` method is a coroutine that yields a `Request` (`schedsi/cpu/request.py`).
 It may be an execution request containing a number > 0 to indicate that it's using some processor time. -1 is also valid and stands for execution as long as possible (the remaining time-slice).
 The timer request is used to set the time-slice of the current context.
 When a time-slice is used up, the `Core` will split the `context.Chain` where the timer has elapsed and execution resumes at the point of the split.
 An idle request means that the scheduler currently has no `Thread`s to schedule, meaning that the `Core` will return execution to the parent,
 or if the kernel scheduler yields, the `Core` will idle the remaining time-slice.
 Schedulers may also yield a resume-chain request containing a `context.Chain`, which is appended to the `context.Chain` of the `Core`.
+There is also the current-time request, which returns the current time.
 
-A `Thread` yields the same requests as a scheduler. In fact, schedulers are represented as `Thread`s via the `SchedulerThread` class (`schedsi/threads.py`).
+The `Thread.execute()` method is also a coroutine. It can yield the same requests as a scheduler.
+In fact, schedulers are represented as `Thread`s via the `SchedulerThread` class (`schedsi/threads.py`), so essentially every request from the schedulers is routed through a `SchedulerThread` to the `Core`.
 
-Whenever the `Core` receives the request to spend time executing the `Thread` it will check how long it can run and call the `run()` function of the `Thread` and pass the current time and the time it runs for.
-This allows the `Thread` to gather how long it has actually run.
+Whenever the `Core` receives the request to spend processing time, it checks how long it can run with the current timers and call `Thread.run()`, passing the current time and the time it runs for.
+This allows the `Thread` to know how long it has actually run.
+Additionally, for all other `Thread`s in the `context.Chain`, `Thread.run_background()` is called, which is used to gather statistics.
 
 The `Core` is split into two parts:
 	* `Core`, which itself contains mostly invariant information, like the `uid`
-	* `_Status (`schedsi/cpu.py`)`, which contains variable information, such as the current `time_slice` and `current_time`
-There's also the `Context` class (`schedsi/context.py`), which contains an operation context.
-On a real machine it would contain a register dump, in the simulator this is represented by storing a reference to the `Thread`.
+	* `_Status` (`schedsi/cpu/core.py`), which contains variable information, such as the current `context.Chain` and `current_time`
+There's also the `Context` class (`schedsi/cpu/context.py`), which contains an operation context.
+On a real machine it would contain a register dump, in the simulator this is represented by storing a reference to the `Thread` and the `Thread.execute` coroutine.
 Switching context has a cost and this is also simulated, although currently only for switching between `Module`s.
-The `_Status` has a `context.Chain` (`schedsi/context.py`), which is a stack of contexts representing the scheduling chain.
+The `_Status` has a `context.Chain` (`schedsi/cpu/context.py`), which is a stack of contexts representing the scheduling chain.
 
-There's also the `_KernelTimerOnlyStatus` (`schedsi/cpu.py`), which implements a single-timer approach that restarts scheduling threads. In this case, whenever threads are popped of the `context.Chain`, `finish()` is called on them to stop execution and let them be restarted at a later time.
+There's also the `_KernelTimerOnlyStatus` (`schedsi/cpu/core.py`), which implements a single-timer approach that restarts scheduling threads. In this case, whenever threads are popped of the `context.Chain`, `finish()` is called on them to stop execution and let them be restarted at a later time.
+Additionally, only kernel threads may set timers.
 
 The `Core` and the `Thread` record various statistics (mostly on timing).
 
@@ -34,26 +39,28 @@ All actions of the `Core` are logged in a logger class.
 These logger classes are not loggers in the sense that they expect a string and store it somewhere, instead there is a function for each relevant event and the log will aggregate the relevant information for that event to store or present it how it sees fit.
 The `TextLog` is the easiest to understand, since it simply pulls out some information from the `Core` it received the event from and formats it to a string. It also prints the `Thread` statistics as JSON and the `Core` statistics as a simple list.
 The `BinaryLog` is less straight-forward; It aggregates 'relevant' information in a dictionary of primitive types and writes that to a MessagePack stream.
-The `GraphLog` also needs to keep track of some state for drawing, for instance what the current hierarchy depth is. Since switching the way `Core`s execute this could also be pulled from the context stack, but before that change this was not possible otherwise.
+The `GraphLog` creates an SVG plot. It needs to keep track of some state for drawing, for instance what the current hierarchy depth is. Since switching the way `Core`s execute this could also be pulled from the context stack, but before that change this was not possible otherwise.
+The `ModuleGraphLog` acts as a proxy for the `GraphLog`, filtering events for a certain `Module`, allowing the plotting of a sub-hierarchy.
+The `Multiplexer` forwards the data to multiple other logs. It can stop forwarding to certain logs at individually configurable times.
 
-I expect the main logger will be the binary logger (`schedsi/binarylog.py`, `class BinaryLog`), since it has a `replay()` function to replay a binary log file to another logger (see `replay.py').
+I expect the main logger will be the binary logger (`schedsi/log/binarylog.py`, `class BinaryLog`), since it has a `replay()` function to replay a binary log file to another logger (see `replay.py`).
 Replaying is a bit of a hack and relies on Pythons duck-typing to work via "emulation classes" that pretend to be the real deal.
 A context stack is also maintained while replaying, which is used to setup parent-child relationships between emulated `Module`s.
 If the emulation classes prove to be insufficient we might have to implement a "replay scheduler" and (probably) also store the hierarchy and simulation parameters in the log file.
 Proper schedsi classes can be used then and scheduling decisions by the "replay scheduler" would come from the parsed log.
 
-There is a single-thread scheduler (as in supports only a single thread in the queue), which also serves as a base class for the other schedulers (`schedsi/scheduler.py`).
-Other schedulers implemented are a multi-level feedback queue (`schedsi/multilevel_feedback_queue.py`), a "completely fair scheduler" (`schedsi/cfs.py`), a preemptible, fixed time-slice round robin scheduler and a shortest job first scheduler (`schedsi/shortest_job_first.py`).
+There is a single-thread scheduler (as in supports only a single thread in the queue), which also serves as a base class for the other schedulers (`schedsi/scheduler/scheduler.py`).
+Other schedulers implemented are a multi-level feedback queue (`schedsi/schedulers/multilevel_feedback_queue.py`), a "completely fair scheduler" (`schedsi/schedulers/cfs.py`), a preemptible, fixed time-slice round robin scheduler (`schedsi/schedulers/round_robin.py`), a first come first serve scheduler (`schedsi/schedulers/first_come_first_serve.py`) and a shortest job first scheduler with non-preemptive (`schedsi/schedulers/shortest_job_first.py`) and a preemptive (`schedsi/schedulers/preemptive_shortest_job_first.py`)variant.
 The "completely fair scheduler" implements the scheduling algorithm used by Linux's process scheduler of the same name. It is an implementation of the weighted fair queueing algorithm.
 The SJF scheduler peeks directly into the `Thread`s to find their remaining time, which on a real system is not likely to be available information.
-The round robin scheduler is implemented using the multi-level feedback queue with a single queue (`schedsi/round_robin.py`).
+The round robin scheduler is implemented using the multi-level feedback queue with a single queue.
 
 Process hierarchies are built by creating the root of the hierarchy (the kernel) and adding further modules onto it.
-The `tests/simple_example.py` should give you a good idea on how it works.
+The `example/localtimer_kernel.py` example should be a good starting point to illustrate how to setup a simulation.
 
 Each `Module` (`schedsi/module.py`) has some threads. It has at least one, the `SchedulerThread` (`schedsi/threads.py`), which forwards execution to the scheduler.
 For each child `Module`, the parent should provide a `VCPUThread`, which is used to `execute()` the children's `SchedulerThread`. If `Module`s decide to not employ their own scheduler for some threads, they can be added directly to the parent module.
 There are two thread classes to simulate load:
 	* the bare `Thread`, which will just continuously execute until its workload is finisheed (`Thread.remaining`)
-	* the `PeriodicWorkThread`, which describes its workload in regular appearing bursts
+	* the `PeriodicWorkThread`, which simulates a workload with periodic bursts
 Furthermore, each thread can have a `start_time` at which it will begin execution.
