@@ -49,11 +49,6 @@ class RCU:
         On failure you typically want to obtain a fresh :class:`RCUCopy`
         and reapply your modifications to try again.
         """
-        # pylint: disable=protected-access
-        # see if we can fail quick
-        if self._uid != new._uid:
-            return False
-
         with self._lock:
             if self._uid != new._uid:
                 return False
