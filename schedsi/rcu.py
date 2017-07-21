@@ -69,8 +69,7 @@ class RCU:
 
         Do not modify the data with the looker.
         """
-        with self._lock:
-            return looker(self._data)
+        return looker(self.copy().data)
 
 
 class RCUCopy:  # pylint: disable=too-few-public-methods
