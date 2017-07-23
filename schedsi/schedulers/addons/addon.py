@@ -135,8 +135,6 @@ class AddonScheduler(AddonSchedulerBase):
         if self._repeat[0] is not None:
             assert self._repeat[0] is rcu_copy
             assert rcu_copy.data.last_idx != -1
-            if last_chain_idx == -1:
-                last_chain_idx = None
             return rcu_copy.data.last_idx, self._repeat[1]
         return (yield from super()._sched_loop(rcu_copy, last_chain_queue, last_chain_idx))
 
