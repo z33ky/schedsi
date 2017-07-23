@@ -233,8 +233,8 @@ class Scheduler:
         assert len(next_ready_time) == 1
         assert next_ready_time[0] is None
         while True:
-            rcu_copy, *rest = yield from self._start_schedule(*prev_run_time)
-            idx, time_slice = yield from self._sched_loop(rcu_copy, *rest)
+            rcu_copy, *_ = yield from self._start_schedule(*prev_run_time)
+            idx, time_slice = yield from self._sched_loop(rcu_copy)
 
             yield from self._schedule(idx, time_slice, next_ready_time, rcu_copy)
 

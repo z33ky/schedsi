@@ -13,7 +13,7 @@ class FCFS(scheduler.Scheduler):
             raise RuntimeError('FCFS does not use a time-slice.')
         super().__init__(module, **kwargs)
 
-    def _sched_loop(self, rcu_copy, _last_chain_queue, _last_chain_idx):
+    def _sched_loop(self, rcu_copy):
         """Schedule the next :class:`~schedsi.threads.Thread`.
 
         See :meth:`~schedsi.scheduler.Scheduler._sched_loop`.

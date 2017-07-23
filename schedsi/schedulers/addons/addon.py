@@ -127,7 +127,7 @@ class AddonScheduler(AddonSchedulerBase):
 
         self._repeat = (rcu_copy, time_slice)
 
-    def _sched_loop(self, rcu_copy, last_chain_queue, last_chain_idx):
+    def _sched_loop(self, rcu_copy):
         """See :meth:`Scheduler._sched_loop`.
 
         Takes care of repeating the last decision, if desired.
@@ -136,7 +136,7 @@ class AddonScheduler(AddonSchedulerBase):
             assert self._repeat[0] is rcu_copy
             assert rcu_copy.data.last_idx != -1
             return rcu_copy.data.last_idx, self._repeat[1]
-        return (yield from super()._sched_loop(rcu_copy, last_chain_queue, last_chain_idx))
+        return (yield from super()._sched_loop(rcu_copy))
 
     def _start_schedule(self, prev_run_time):
         """See :meth:`AddonSchedulerBase._start_schedule`.

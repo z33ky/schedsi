@@ -14,9 +14,9 @@ class PSJF(shortest_job_first.SJF):
     invocations, which can result in delayed preemption.
     """
 
-    def _sched_loop(self, rcu_copy, last_chain_queue, last_chain_idx):  # pylint: disable=no-self-use
+    def _sched_loop(self, rcu_copy):  # pylint: disable=no-self-use
         """See :meth:`FCFS._sched_loop`."""
-        idx, time_slice = yield from super()._sched_loop(rcu_copy, last_chain_queue, last_chain_idx)
+        idx, time_slice = yield from super()._sched_loop(rcu_copy)
         if idx != -1:
             assert idx == 0
             threads = (c.bottom for c in rcu_copy.data.waiting_chains)

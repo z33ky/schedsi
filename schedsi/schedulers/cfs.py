@@ -242,18 +242,12 @@ class CFS(scheduler.Scheduler):
         period = max(len(rcu_data.ready_chains) * self.min_slice, self.min_period)
         return period * self._get_ratio(thread, rcu_data)
 
-    def _sched_loop(self, rcu_copy, last_thread_queue, last_thread_idx):
+    def _sched_loop(self, rcu_copy):
         """Schedule the next :class:`Thread <schedsi.threads.Thread>`.
 
         See :meth:`Scheduler.schedule() <schedsi.scheduler.Scheduler._sched_loop>`.
         """
         rcu_data = rcu_copy.data
-
-        if last_thread_queue is rcu_data.ready_chains:
-            assert last_thread_idx == 0
-            if len(rcu_data.ready_chains) == 1:
-                thread = rcu_data.ready_chains[0].bottom
-                return 0, max(self._get_slice(thread, rcu_data), self.min_slice)
 
         if not rcu_data.ready_chains:
             return -1, None
