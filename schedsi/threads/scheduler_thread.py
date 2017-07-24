@@ -40,9 +40,8 @@ class SchedulerThread(_BGStatThread):
                 if scheduler_ready_time[0] is not None:
                     self.ready_time = scheduler_ready_time[0]
                 else:
-                    self.ready_time = -1
                     self.remaining = 0
-                    #self.end()
+                    self.end()
 
             answer = yield request
 

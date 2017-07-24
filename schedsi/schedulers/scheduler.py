@@ -85,7 +85,7 @@ class Scheduler:
         cls._update_ready_chain_queues(time, rcu_data.ready_chains, rcu_data.waiting_chains)
 
         # do a sanity check while we're here
-        assert not (0, -1) in ((c.bottom.remaining, c.bottom.ready_time)
+        assert not (0, None) in ((c.bottom.remaining, c.bottom.ready_time)
                                for c in rcu_data.ready_chains)
         assert all(ctx.bottom.is_finished() for ctx in rcu_data.finished_chains)
 

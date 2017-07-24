@@ -550,7 +550,7 @@ Thread stats:
 											}
 										},
 										"ctxsw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-										"finished_time": null,
+										"finished_time": 223,
 										"remaining": 0,
 										"response_time": null,
 										"run": [[], [], [], [], [], [], [], []],
