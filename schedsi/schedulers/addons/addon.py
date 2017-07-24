@@ -66,7 +66,7 @@ class AddonSchedulerBase(Scheduler):
         idx = rcu_copy.data.last_idx
 
         self._update_ready_chains((yield CPURequest.current_time()), rcu_copy.data)
-        rcu_copy.data.last_idx = -1
+        rcu_copy.data.last_idx = None
         return rcu_copy, rcu_copy.data.ready_chains, idx
 
 
@@ -112,7 +112,7 @@ class AddonScheduler(AddonSchedulerBase):
             rcu_copy = self._rcu.copy()
 
         rcu_data = rcu_copy.data
-        if rcu_data.last_idx == -1:
+        if rcu_data.last_idx is None:
             return
 
         chain = rcu_data.ready_chains[rcu_data.last_idx]
@@ -134,7 +134,7 @@ class AddonScheduler(AddonSchedulerBase):
         """
         if self._repeat[0] is not None:
             assert self._repeat[0] is rcu_copy
-            assert rcu_copy.data.last_idx != -1
+            assert rcu_copy.data.last_idx is not None
             return rcu_copy.data.last_idx, self._repeat[1]
         return (yield from super()._sched_loop(rcu_copy))
 

@@ -31,7 +31,7 @@ class TimeSliceMaxer(time_slice_fixer.TimeSliceFixer):
     def repeat(self, rcu_data, prev_run_time, done):
         """See :meth:`Addon.repeat`."""
         idx = rcu_data.last_idx
-        if idx == -1 or rcu_data.blocked:
+        if idx is None or rcu_data.blocked:
             assert not rcu_data.repeat_time_slices
             return None, None
         if done:
@@ -55,14 +55,14 @@ class TimeSliceMaxer(time_slice_fixer.TimeSliceFixer):
         """See :meth:`Addon.schedule`."""
         if idx in rcu_data.repeat_time_slices:
             assert rcu_data.repeat_time_slices[idx] == time_slice
-            proceed, *rest = super().schedule(-1, time_slice, rcu_data)
+            proceed, *rest = super().schedule(None, time_slice, rcu_data)
         else:
-            if idx == -1:
+            if idx is None:
                 rcu_data.repeat_time_slices.clear()
             assert not rcu_data.repeat_time_slices
             proceed, *rest = super().schedule(idx, time_slice, rcu_data)
 
-        if proceed and idx != -1:
+        if proceed and idx is not None:
             rcu_data.repeat_time_slices[idx] = time_slice
             rcu_data.blocked = False
         else:

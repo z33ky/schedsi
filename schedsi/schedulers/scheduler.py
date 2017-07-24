@@ -19,7 +19,7 @@ class SchedulerData:  # pylint: disable=too-few-public-methods
         self.ready_chains = []
         self.waiting_chains = []
         self.finished_chains = []
-        self.last_idx = -1
+        self.last_idx = None
 
 
 class Scheduler:
@@ -145,7 +145,7 @@ class Scheduler:
             # move to a different queue is necessary
             dest = None
             last_idx = None
-            if rcu_data.last_idx != -1:
+            if rcu_data.last_idx is not None:
                 last_idx = rcu_data.last_idx
                 last_context = rcu_data.ready_chains[last_idx]
 
@@ -166,7 +166,7 @@ class Scheduler:
 
             self._update_ready_chains(current_time, rcu_data)
 
-            rcu_data.last_idx = -1
+            rcu_data.last_idx = None
 
             return rcu_copy, dest, last_idx
 
@@ -181,7 +181,7 @@ class Scheduler:
     def _schedule(self, idx, time_slice, next_ready_time, rcu_copy):
         """Update :attr:`_rcu` and schedule the chain at `idx`.
 
-        If `idx` is -1, yield an idle request.
+        If `idx` is `None`, yield an idle request.
 
         `next_ready_time` should be forwarded from :meth:`schedule`.
 
@@ -196,7 +196,7 @@ class Scheduler:
         if not self._rcu.update(rcu_copy):
             return
 
-        if idx == -1:
+        if idx is None:
             next_chain = self.get_next_waiting(rcu_copy.data)
             if next_chain:
                 next_ready_time[0] = next_chain.bottom.ready_time
@@ -245,14 +245,14 @@ class Scheduler:
         This function will only deal with a single :class:`context.Chain <schedsi.context.Chain>`.
         If more are present, a :exc:`RuntimeError` is raised.
 
-        Returns the selected chain index, or -1 if none.
+        Returns the selected chain index, or `None`.
         Yields a :class:`~schedsi.cpurequest.Request`.
         Consumes the current time.
         """
         num_chains = len(rcu_copy.data.ready_chains)
         idx = 0
         if num_chains == 0:
-            idx = -1
+            idx = None
         elif num_chains != 1:
             raise RuntimeError('Scheduler cannot make scheduling decision.')
         return idx, self.time_slice

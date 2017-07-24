@@ -250,7 +250,7 @@ class CFS(scheduler.Scheduler):
         rcu_data = rcu_copy.data
 
         if not rcu_data.ready_chains:
-            return -1, None
+            return None, None
 
         thread = rcu_data.ready_chains[0].bottom
         time_slice = self._get_slice(thread, rcu_data)

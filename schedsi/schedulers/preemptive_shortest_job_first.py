@@ -17,7 +17,7 @@ class PSJF(shortest_job_first.SJF):
     def _sched_loop(self, rcu_copy):  # pylint: disable=no-self-use
         """See :meth:`FCFS._sched_loop`."""
         idx, time_slice = yield from super()._sched_loop(rcu_copy)
-        if idx != -1:
+        if idx is not None:
             assert idx == 0
             threads = (c.bottom for c in rcu_copy.data.waiting_chains)
             next_thread = next(threads, None)

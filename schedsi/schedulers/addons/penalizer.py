@@ -101,7 +101,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
         Checks the niceness for the selected chain and blocks it
         if it's below the :attr:`tolerance`.
         """
-        if idx == -1:
+        if idx is None:
             return super().schedule(idx, time_slice, rcu_data)
 
         tid = id(rcu_data.ready_chains[idx].bottom)
@@ -117,7 +117,7 @@ class Penalizer(time_slice_fixer.TimeSliceFixer):
                 # we don't set it to None because another addon may have
                 # repeated the thread previously, so we need to keep the time-slice
                 # rcu_data.last_time_slice = None
-                super().schedule(-1, None, rcu_data)
+                super().schedule(None, None, rcu_data)
                 return False, None
 
         rcu_data.last_time_slice = time_slice

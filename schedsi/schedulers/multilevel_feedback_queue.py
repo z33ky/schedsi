@@ -280,7 +280,7 @@ class MLFQ(scheduler.Scheduler):
         rcu_data = rcu_copy.data
 
         if not rcu_data.ready_chains:
-            return -1, None
+            return None, None
 
         # important: == vs is; empty arrays will compare equal with ==
         level = next(i for i, v in enumerate(rcu_data.ready_queues)
