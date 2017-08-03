@@ -7,7 +7,7 @@ this tool supports building process hierarchies and stacking schedulers along th
 Each process, referred to as `Module`, has its own scheduler, which gets executed by a `VCPUThread` of the parent.
 A single scheduler taking care of a bunch of threads is easily done by just using a single `Module` owning all threads.
 
-The graph gets written as a SVG and to present hierarchical scheduling they are not in the usual Gnatt chart where time is on the horizontal axis and the threads have fixed positions on the vertical axis.
+The graph gets written as a SVG and to present hierarchical scheduling they are not in the usual Gantt chart where time is on the horizontal axis and the threads have fixed positions on the vertical axis.
 Time still flows horizontally, but the vertical axis represents the depth of the hierarchy. Threads can be differentiated by their ID written on the bar.
 Context switches are also modeled to take time (though it can be set to 0) and are also drawn as triangles going up or down the vertical axis.
 
