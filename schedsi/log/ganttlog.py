@@ -33,6 +33,8 @@ BOX_HEIGHT = 2
 BOX_DISTANCE = BOX_HEIGHT / 5
 # height lines on boxes (finish, yield)
 BOX_LINE_SIZE = 1.5
+# time scaling
+TIME_SCALE = 1
 
 
 class Indexer:
@@ -66,7 +68,7 @@ class GanttLog:
     Drawing is stateful, so we keep the current drawing position in self.cursor.
     """
 
-    def __init__(self, *, text_scale=1, exec_colors=None, name_module=True):
+    def __init__(self, *, draw_scale=1, text_scale=1, exec_colors=None, name_module=True):
         """Create a :class:`GraphLog`."""
         pyx.text.set(cls=pyx.text.LatexRunner)
         pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
@@ -75,9 +77,12 @@ class GanttLog:
         self.cursor = [0, 0]
         self.threads = Indexer()
         self.interrupts = []
+
+        text_scale /= draw_scale
         # TODO: the translation is not brilliant
         self.text_attr = TEXT_ATTR + [pyx.trafo.scale(text_scale),
                                       pyx.trafo.translate(0, -text_scale / 10)]
+        self.scaled = [pyx.trafo.scale(draw_scale)]
         if name_module:
             self._name_thread = self._name_thread_module
         else:
@@ -97,26 +102,30 @@ class GanttLog:
     def write(self, stream):
         """Generate SVG output of the current graph."""
         # since we draw additional things (like axes), let's do this on a temporary canvas
-        canvas = pyx.canvas.canvas()
-        canvas.insert(self.canvas)
-
-        # insert the top layer
-        canvas.insert(self.top)
+        overlay = pyx.canvas.canvas()
 
         # draw interrupts
         total_height = len(self.threads) * (BOX_HEIGHT + BOX_DISTANCE) - BOX_DISTANCE
         for y in self.interrupts:
             line = pyx.path.line(y, 0, y, total_height)
-            canvas.stroke(line, TIMER_COLOR)
+            overlay.stroke(line, TIMER_COLOR)
 
         # draw axes
         path = pyx.path.path(pyx.path.moveto(0, 0), pyx.path.rlineto(self.cursor[0], 0))
-        canvas.stroke(path, [pyx.style.linecap.square, pyx.style.linewidth.THICk,
+        overlay.stroke(path, [pyx.style.linecap.square, pyx.style.linewidth.THICk,
                              pyx.color.rgb.black])
-        for point in range(0, int(self.cursor[0] + 1), 5):
+        for point in range(0, int(self.cursor[0] / TIME_SCALE + 1), 5):
+            tick = point
+            point *= TIME_SCALE
             line = pyx.path.line(point, 0, point, -0.5)
-            canvas.stroke(line, [pyx.style.linewidth.THICk, pyx.color.rgb.black])
-            canvas.text(point, -1.1, point, self.text_attr)
+            overlay.stroke(line, [pyx.style.linewidth.THICk, pyx.color.rgb.black])
+            overlay.text(point, -1.1, tick, self.text_attr)
+
+        # add everything together
+        canvas = pyx.canvas.canvas()
+        canvas.insert(self.canvas, self.scaled)
+        canvas.insert(self.top, self.scaled)
+        canvas.insert(overlay, self.scaled)
 
         # and done
         canvas.writeSVGfile(stream)
@@ -215,7 +224,7 @@ class GanttLog:
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
-        self._draw_block(EXEC_COLORS, cpu.status.chain.top, runtime)
+        self._draw_block(EXEC_COLORS, cpu.status.chain.top, runtime * TIME_SCALE)
         self.task_executed = True
 
     def thread_yield(self, cpu):
@@ -232,13 +241,13 @@ class GanttLog:
 
     def cpu_idle(self, _cpu, idle_time):
         """Log an CPU idle event."""
-        self._move(idle_time, 0)
+        self._move(idle_time * TIME_SCALE, 0)
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
         if cpu.status.chain.top.is_finished():
             self.thread_yield(cpu)
-        self.interrupts.append(cpu.status.current_time - delay)
+        self.interrupts.append((cpu.status.current_time - delay) * TIME_SCALE)
 
     def thread_statistics(self, stats):
         """Log thread statistics.
