@@ -9,8 +9,10 @@ from schedsi import module, threads
 class ModuleBuilder:
     """Build static hierarchies."""
 
-    def __init__(self, name='0', parent=None, *, scheduler):
+    def __init__(self, name=None, parent=None, *, scheduler):
         """Create a :class:`ModuleBuilder`."""
+        if name is None:
+            name = '0'
         self.module = module.Module(name, parent, scheduler)
         self.vcpus = []
 
