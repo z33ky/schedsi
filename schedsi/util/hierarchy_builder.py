@@ -42,7 +42,7 @@ class ModuleBuilder:
 
         return madder
 
-    def add_thread(self, thread, add_args=None, **kwargs):
+    def add_thread(self, thread, add_args=None, *, tid=None, **kwargs):
         """Add a :class:`Thread`.
 
         `thread` is the class.
@@ -52,7 +52,7 @@ class ModuleBuilder:
         """
         if add_args is None:
             add_args = {}
-        self.module.add_thread(thread(self.module, **kwargs), **add_args)
+        self.module.add_thread(thread(self.module, tid, **kwargs), **add_args)
         return self
 
     def add_vcpus(self):
