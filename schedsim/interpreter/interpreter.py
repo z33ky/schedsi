@@ -150,13 +150,10 @@ def load_log(nodes):
 
         params = {}
         #FIXME: param types
-        for param in ('draw_scale', 'text_scale', 'name_module'):
+        for param in ('draw_scale', 'text_scale', 'time_scale', 'name_module'):
             if param in kwargs:
                 params[param] = kwargs.pop(param)
 
-        time_scale = kwargs.pop('time_scale', None)
-        if time_scale is not None:
-            log.GanttLog.time_scale = time_scale
         logger = log.GanttLog(**params)
 
         def finish(_the_world):

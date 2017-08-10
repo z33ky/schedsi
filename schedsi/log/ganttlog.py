@@ -33,8 +33,6 @@ BOX_HEIGHT = 2
 BOX_DISTANCE = BOX_HEIGHT / 5
 # height lines on boxes (finish, yield)
 BOX_LINE_SIZE = 1.5
-# time scaling
-TIME_SCALE = 1
 
 
 class Indexer:
@@ -68,7 +66,7 @@ class GanttLog:
     Drawing is stateful, so we keep the current drawing position in self.cursor.
     """
 
-    def __init__(self, *, draw_scale=1, text_scale=1, exec_colors=None, name_module=True):
+    def __init__(self, *, draw_scale=1, text_scale=1, time_scale=1, exec_colors=None, name_module=True):
         """Create a :class:`GraphLog`."""
         pyx.text.set(cls=pyx.text.LatexRunner)
         pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
@@ -83,6 +81,7 @@ class GanttLog:
         self.text_attr = TEXT_ATTR + [pyx.trafo.scale(text_scale),
                                       pyx.trafo.translate(0, -text_scale / 10)]
         self.scaled = [pyx.trafo.scale(draw_scale)]
+        self.time_scale = time_scale
         if name_module:
             self._name_thread = self._name_thread_module
         else:
@@ -114,9 +113,9 @@ class GanttLog:
         path = pyx.path.path(pyx.path.moveto(0, 0), pyx.path.rlineto(self.cursor[0], 0))
         overlay.stroke(path, [pyx.style.linecap.square, pyx.style.linewidth.THICk,
                              pyx.color.rgb.black])
-        for point in range(0, int(self.cursor[0] / TIME_SCALE + 1), 5):
+        for point in range(0, int(self.cursor[0] / self.time_scale + 1), 5):
             tick = point
-            point *= TIME_SCALE
+            point *= self.time_scale
             line = pyx.path.line(point, 0, point, -0.5)
             overlay.stroke(line, [pyx.style.linewidth.THICk, pyx.color.rgb.black])
             overlay.text(point, -1.1, tick, self.text_attr)
@@ -224,7 +223,7 @@ class GanttLog:
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
-        self._draw_block(EXEC_COLORS, cpu.status.chain.top, runtime * TIME_SCALE)
+        self._draw_block(EXEC_COLORS, cpu.status.chain.top, runtime * self.time_scale)
         self.task_executed = True
 
     def thread_yield(self, cpu):
@@ -241,13 +240,13 @@ class GanttLog:
 
     def cpu_idle(self, _cpu, idle_time):
         """Log an CPU idle event."""
-        self._move(idle_time * TIME_SCALE, 0)
+        self._move(idle_time * self.time_scale, 0)
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
         if cpu.status.chain.top.is_finished():
             self.thread_yield(cpu)
-        self.interrupts.append((cpu.status.current_time - delay) * TIME_SCALE)
+        self.interrupts.append((cpu.status.current_time - delay) * self.time_scale)
 
     def thread_statistics(self, stats):
         """Log thread statistics.

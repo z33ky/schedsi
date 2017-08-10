@@ -56,7 +56,8 @@ class GraphLog:
     so that we can draw a single contiguous block when the children finish.
     """
 
-    def __init__(self, *, text_scale=1, exec_colors=None, bg_colors=None, name_module=True):
+    def __init__(self, *, draw_scale=1, text_scale=1, time_scale=1, exec_colors=None, bg_colors=None,
+                 name_module=True):
         """Create a :class:`GraphLog`."""
         pyx.text.set(cls=pyx.text.LatexRunner)
         pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
@@ -66,9 +67,13 @@ class GraphLog:
         self.level = 0
         self.background_tasks = []
         self.task_executed = False
+
+        text_scale /= draw_scale
         # TODO: the translation is not brilliant
         self.text_attr = TEXT_ATTR + [pyx.trafo.scale(text_scale),
                                       pyx.trafo.translate(0, -text_scale / 10)]
+        self.scaled = [pyx.trafo.scale(draw_scale)]
+        self.time_scale = time_scale
         if name_module:
             self._name_thread = self._name_thread_module
         else:
@@ -89,27 +94,31 @@ class GraphLog:
     def write(self, stream):
         """Generate SVG output of the current graph."""
         # since we draw additional things (like axes), let's do this on a temporary canvas
-        canvas = pyx.canvas.canvas()
-        canvas.insert(self.canvas)
+        temp = pyx.canvas.canvas()
 
         # draw the yet undrawn background tasks
         # TODO: we should leverage _draw_background_tasks
         for idx in reversed(range(0, len(self.background_tasks))):
             self._move(0, -LEVEL)
-            self._draw_recent(idx, canvas)
+            self._draw_recent(idx, temp)
         self._move(0, LEVEL * len(self.background_tasks))
-
-        # insert the top layer
-        canvas.insert(self.top)
 
         # draw axes
         path = pyx.path.path(pyx.path.moveto(0, 0), pyx.path.rlineto(self.cursor[0], 0))
-        canvas.stroke(path, [pyx.style.linecap.square, pyx.style.linewidth.THICk,
+        temp.stroke(path, [pyx.style.linecap.square, pyx.style.linewidth.THICk,
                              pyx.color.rgb.black])
-        for point in range(0, int(self.cursor[0] + 1), 5):
+        for point in range(0, int(self.cursor[0] / self.time_scale + 1), 5):
+            tick = point
+            point *= self.time_scale
             line = pyx.path.line(point, 0, point, -0.5)
-            canvas.stroke(line, [pyx.style.linewidth.THICk, pyx.color.rgb.black])
-            canvas.text(point, -1.1, point, self.text_attr)
+            temp.stroke(line, [pyx.style.linewidth.THICk, pyx.color.rgb.black])
+            temp.text(point, -1.1, tick, self.text_attr)
+
+        # add everything together
+        canvas = pyx.canvas.canvas()
+        canvas.insert(self.canvas, self.scaled)
+        canvas.insert(temp, self.scaled)
+        canvas.insert(self.top, self.scaled)
 
         # and done
         canvas.writeSVGfile(stream)
@@ -284,6 +293,7 @@ class GraphLog:
     def context_switch(self, cpu, split_index, appendix, time):
         """Log an context switch event."""
         thread_diff = None
+        time *= self.time_scale
 
         if appendix:
             ctx_func = self._ctx_up
@@ -311,6 +321,7 @@ class GraphLog:
 
     def thread_execute(self, cpu, runtime):
         """Log an thread execution event."""
+        runtime *= self.time_scale
         self._update_background_tasks(runtime)
         self._draw_block(EXEC_COLORS, cpu.status.chain.top, runtime)
         self.task_executed = True
@@ -321,10 +332,11 @@ class GraphLog:
 
     def cpu_idle(self, _cpu, idle_time):
         """Log an CPU idle event."""
-        self._draw_line(IDLE_COLOR, idle_time, 0)
+        self._draw_line(IDLE_COLOR, idle_time * self.time_scale, 0)
 
     def timer_interrupt(self, cpu, idx, delay):
         """Log an timer interrupt event."""
+        delay *= self.time_scale
         # calculate depth of the module at idx from the top
         current = cpu.status.chain.top
         thread_diff = (ctx.thread for ctx in reversed(cpu.status.chain.contexts[idx:]))
