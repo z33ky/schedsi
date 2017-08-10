@@ -17,6 +17,8 @@ There are two very similar examples in `examples/`, the only difference is the u
 `examples/penalty_scheduler.py` provides a variation that uses the penalty scheduler addon, as well as the MLFQ scheduler on the single scheduler timer strategy.
 Finally there are two examples showcasing the CFS scheduler: `examples/cfs.py`, which uses the local timer stragegy and `examples/penalty_cfs.py`, which uses the penalty scheduler addon.
 
+An alternative way to define simulations is using the schedsim DSL. See `schedsim/README`.
+
 The example scripts produce a binary log file (MessagePack). To get a human readable version of the log `./replay.py` can be used to convert it to either a text log or a SVG graph. There are also various make targets to directly produce these logs from the examples.
 The text log also prints statistics. Thread statistics are in JSON and histograms of it can be plotted using `./plot.py`. `./plot.py` can also parse binary log files for the statistics.
 The `replay` and `plot` tools are installed as `schedsi-replay` and `schedsi-plot` by the `./setup.py` file (or the `install` make target).

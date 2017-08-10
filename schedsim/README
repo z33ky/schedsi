@@ -1,12 +1,16 @@
-The schedsim file format consists of parenthesized tuples. Many of these are used in key-value style, where value can be a singular value, a tuple or nothing.
-There are two types of values: String and Symbols.
+The schedsim DSL can be used to define and run schedsi simulations.
+The DSL consists of parenthesized tuples. The elements of a tuple are referred to as "nodes". Many tuples are used in key-value style, where the key is a Symbol and the value can be a singular value, a tuple or nothing.
+
+There are two types of nodes: String and Symbols.
 Strings are sequences of printable characters (except `"`) surrounded by `"`.
 Symbols are also character sequences. There are four types of Symbols: identifier, integer, decimal and fraction.
 Identifier Symbols start with a letter or an underscore and continue with any number of letters, digits or underscores.
 Integer Symbols are simply sequences of digits, possibly preceded by a `+` or `-`.
 Decimal Symbols are similar, except they include a `.`, the decimal separator. Leaving out digits on either side is permitted, but not both, so `.`, `+.` and `-.` are not valid Symbols, while `0.` and `.0` are.
-Fraction Symbols are Symbols with a `/`, the numerator on the left and the denominator on the right side of the character. The numerator and denominator must be valid Integer Symbols by themselves. A zero denominator will parse, but likely raise an Exception when it is interpreted.
+Fraction Symbols consist of a `/`, the numerator on the left and the denominator on the right side of the character. The numerator and denominator must be valid Integer Symbols by themselves. A zero denominator will parse, but likely raise an Exception when it is interpreted.
+
 A `;` starts a comment that extends to the end of line where it occurs, except in a String, in which case it is part of the String's contents and serves no special purpose. The Parser simply ignores comments.
+
 The following are examples of valid tuples:
 ```
 ; this is a comment
@@ -19,6 +23,7 @@ The following are examples of valid tuples:
 ("string key with empty tuple" ())
 (5) ; as we don't require key-value style tuples, this is fine also
 ```
+
 The root elements must be tuples.
 
 Schedsim simulations only define a single simulation, hence can only have a single root element.
@@ -26,4 +31,5 @@ The root element should be a tuple with `Simulation` as key.
 The simulation has 4 parameters: `log` to specify a log, `local_timer` to specify whether to enable the local timer scheduling mechanism, `time_limit` to set a time-limit for the simulation and the kernel, which is simply a tuple with `Module` as key.
 The `Module` tuple declares a module. It requires specification of a scheduler and may have any number of threads and child-modules.
 Available parameters can be obtained from the schedsi documentation.
+
 Exemplary schedsim files can be found in the `examples/` directory.
