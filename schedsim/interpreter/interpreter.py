@@ -163,6 +163,28 @@ def load_log(nodes):
 
         if kwargs:
             raise InterpreterError(f'Unknown GanttLog parameters: {(*kwargs.keys(),)}')
+    elif log_name == 'GraphLog':
+        svg_file = kwargs.pop('file', None)
+        if svg_file is None:
+            svg_file = io.BytesIO()
+        else:
+            svg_file = open(svg_file, 'wb')
+
+        params = {}
+        #FIXME: param types
+        for param in ('draw_scale', 'text_scale', 'time_scale', 'name_module'):
+            if param in kwargs:
+                params[param] = kwargs.pop(param)
+
+        logger = log.GraphLog(**params)
+
+        def finish(_the_world):
+            logger.write(svg_file)
+            if type(svg_file) == io.BytesIO:
+                sys.stdout.buffer.write(svg_file.getvalue())
+
+        if kwargs:
+            raise InterpreterError(f'Unknown GraphLog parameters: {(*kwargs.keys(),)}')
     else:
         raise InterpreterError(f'Unknown log type {log_name}')
 
