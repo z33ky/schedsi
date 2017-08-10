@@ -115,7 +115,12 @@ def load_log(nodes):
         else:
             log_file = open(log_file, 'w')
 
-        logger = log.TextLog(log_file, time_precision=kwargs.pop('time_precision'))
+        args = kwargs.pop('align', None)
+        if args is None:
+            args = ()
+        else:
+            args = (log.TextLogAlign(*args),)
+        logger = log.TextLog(log_file, *args, time_precision=kwargs.pop('time_precision'))
 
         def finish(the_world):
             the_world.log_statistics()
