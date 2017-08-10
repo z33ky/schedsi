@@ -5,19 +5,44 @@ from gmpy2 import mpq as Fraction
 from parser import String, Symbol, Tuple
 from .error import InterpreterError
 
+class NodeTypeError(InterpreterError):
+    """This class represents type-errors occurring while interpreting schedsim expressions."""
+
+    def __init__(self, msg, node):
+        """Create a :class:`NodeTypeError`."""
+        if type(msg) == type:
+            super().__init__(f'Expected {msg.__name__}, got {node}', node)
+        else:
+            super().__init__(msg, node)
+
+class NodeValueError(InterpreterError):
+    """This class represents value-errors occurring while interpreting schedsim expressions."""
+
+    def __init__(self, msg, node):
+        """Create a :class:`NodeValueError`."""
+        super().__init__(msg, node)
+
+class TupleLengthError(InterpreterError):
+    """This class represents an error due to invalid tuple length while interpreting
+    schedsim expressions.
+    """
+
+    def __init__(self, msg, node):
+        """Create a :class:`TupleLengthError`."""
+        super().__init__(msg, node)
+
 def check_type(node, tp, msg=None):
-    """Check that `node` is of type `tp` or raise an :exc:`InterpreterError`.
+    """Check that `node` is of type `tp` or raise an :exc:`NodeTypeError`.
 
     Returns `node`.
     """
     if type(node) != tp:
-        raise InterpreterError(msg if msg is not None else f'Expection {tp.__name__}, got {node}',
-                               node)
+        raise NodeTypeError(msg if msg is not None else tp, node)
     return node
 
 def check_tuple_len(tup, *, type_msg=None, len_msg=None, least=None, exact=None):
     """Check that `tup` is a :class:`Tuple` of a certain (minimum) length or raise an
-    :exc:`InterpreterError`.
+    :exc:`NodeTypeError` or :exc:`TupleLengthError`.
 
     Either `least` or `exact` must be set.
 
@@ -44,7 +69,7 @@ def check_tuple_len(tup, *, type_msg=None, len_msg=None, least=None, exact=None)
     assert check is not None
 
     if not check:
-        raise InterpreterError(len_msg, tup)
+        raise TupleLengthError(len_msg, tup)
 
     return length
 
@@ -65,7 +90,7 @@ def get_value(node, tp):
     tuple/list thereof. It may be nested. `None` or an empty tuple specifies that anything is
     allowed.
 
-    If the value cannot be parsed from `node`, a :exc:`InterpreterError` is raised.
+    If the value cannot be parsed from `node`, a :exc:`NodeValueError` is raised.
     """
     if tp in (None, ()):
         tp = ((), bool, float, str)
@@ -117,7 +142,7 @@ def get_value(node, tp):
     else:
         values_str = f'{", ".join(values_str[:-1])} or {values_str[-1]}'
 
-    raise InterpreterError(f'Expected {values_str}, got {node}', node)
+    raise NodeValueError(f'Expected {values_str}, got {node}', node)
 
 def get_single_param(tup, tp):
     """Extract a (`key`, `value`)-pair from `tup`.

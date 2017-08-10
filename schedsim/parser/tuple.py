@@ -6,12 +6,12 @@ from .node import Node
 class Tuple(Node):
     """A tuple-node with multiple sub-nodes."""
 
-    def __init__(self, nodes=None):
+    def __init__(self, cursor, nodes=None):
         """Create a :class:`Tuple`.
 
         `nodes` is a `list` of :class:`Node`.
         """
-        super().__init__()
+        super().__init__(cursor)
         self._nodes = nodes if nodes is not None else []
         assert isinstance(self._nodes, list)
         assert all(isinstance(n, Node) for n in self._nodes)
@@ -30,7 +30,10 @@ class Tuple(Node):
     def __getitem__(self, key):
         item = self._nodes.__getitem__(key)
         if type(key) == slice:
-            item = Tuple(item)
+            if item:
+                item = Tuple((item[0].cursor[0], item[-1].cursor[1]), item)
+            else:
+                item = Tuple((self.cursor[1], self.cursor[1]))
         return item
 
     def __len__(self):

@@ -9,12 +9,12 @@ class String(Node):
     The contained string is in :attr:`self.string`.
     """
 
-    def __init__(self, string=''):
+    def __init__(self, cursor, string=''):
         """Create a :class:`String`.
 
         `string` specifies the contents of the string.
         """
-        super().__init__()
+        super().__init__(cursor)
         self.string = string
 
     def __repr__(self):
@@ -28,7 +28,7 @@ class String(Node):
         return False
 
     def __add__(self, value):
-        return String(self.string.__add__(value))
+        return String(self.cursor, self.string.__add__(value))
 
     def __iadd__(self, value):
         #self.string.__iadd__(value)
@@ -36,7 +36,7 @@ class String(Node):
         return self
 
     def __mul__(self, value):
-        return String(self.string.__mul__(value))
+        return String(self.cursor, self.string.__mul__(value))
 
     def __imul__(self, value):
         #self.string.__imul__(value)
@@ -44,11 +44,17 @@ class String(Node):
         return self
 
     def __getitem__(self, key):
-        return String(self.string.__getitem__(key))
+        return String(self.cursor, self.string.__getitem__(key))
 
     def __len__(self):
         return self.string.__len__()
 
     def isvalid(self):
         """Check whether the :class:`String`'s contents are well formed."""
-        return all(ch.isprintable() or ch == "" for ch in self.string)
+        return next(self.invalid_indices(), None) is None
+
+    def invalid_indices(self):
+        """Yield each index at which the :class:`String` has invalid characters."""
+        for idx, ch in enumerate(self.string):
+            if not ch.isprintable() or ch == '"':
+                yield idx

@@ -6,7 +6,8 @@ import sys
 from parser import String, Symbol, Tuple
 from schedsi import schedulers, threads, log
 from .error import InterpreterError
-from .util import check_type, check_tuple_len, get_params, get_single_param, set_once
+from .util import (check_type, check_tuple_len, get_params, get_single_param, set_once,
+                   NodeValueError)
 
 _ADDON_SCHEDULER_CACHE = {}
 
@@ -91,7 +92,7 @@ def load_module(nodes):
         elif ident == 'Module':
             modules.append(load_module(node[1:]))
         else:
-            raise InterpreterError(f'Unknown key', node[0])
+            raise NodeValueError(f'Unknown key', node[0])
 
     if scheduler is None:
         scheduler = schedulers.Single
@@ -167,12 +168,16 @@ def load_log(nodes):
 
 def load_simulation(nodes):
     """Return a `dict` describing the simulation declared in `nodes`."""
+    if len(nodes) != 1:
+        raise InterpreterError('There must be exactly one root node')
+    check_tuple_len(nodes[0], least=1,
+                    type_msg='Root node must be a tuple',
+                    len_msg='Root node must be a tuple with Simulation key')
+    if check_type(nodes[0][0], Symbol).symbol != 'Simulation':
+        raise InterpreterError('Root node must be a tuple with Simulation key')
+
     sim = {}
 
-    assert len(nodes) == 1
-    assert type(nodes[0]) == Tuple
-    assert len(nodes[0]) > 0
-    assert nodes[0][0] == Symbol('Simulation')
     for node in nodes[0][1:]:
         check_tuple_len(node, least=1,
                         type_msg='Simulation can only contain tuple-values',
@@ -193,6 +198,6 @@ def load_simulation(nodes):
             set_once(sim, 'kernel', load_module(node[1:]),
                      'Simulation cannot contain more than one module')
         else:
-            raise InterpreterError(f'Unknown key', node[0])
+            raise NodeValueError(f'Unknown key', node[0])
 
     return sim
