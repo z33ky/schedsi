@@ -36,6 +36,7 @@ test: .PHONY
 	PYTHONPATH=. tests/examples.py
 	PYTHONPATH=. tests/simple.py
 	PYTHONPATH=. tests/graphs.py
+	PYTHONPATH=. tests/schedsim.py
 
 update-docs:
 	rm -f docs/source/schedsi.rst
