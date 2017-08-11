@@ -124,9 +124,6 @@ def load_log(nodes):
 
         def finish(the_world):
             the_world.log_statistics()
-
-        if kwargs:
-            raise InterpreterError(f'Unknown TextLog parameters: {(*kwargs.keys(),)}')
     elif log_name == 'BinaryLog':
         log_file = kwargs.pop('file', None)
         if log_file is None:
@@ -138,9 +135,6 @@ def load_log(nodes):
 
         def finish(the_world):
             the_world.log_statistics()
-
-        if kwargs:
-            raise InterpreterError(f'Unknown BinaryLog parameters: {(*kwargs.keys(),)}')
     elif log_name == 'GanttLog':
         svg_file = kwargs.pop('file', None)
         if svg_file is None:
@@ -160,9 +154,6 @@ def load_log(nodes):
             logger.write(svg_file)
             if type(svg_file) == io.BytesIO:
                 sys.stdout.buffer.write(svg_file.getvalue())
-
-        if kwargs:
-            raise InterpreterError(f'Unknown GanttLog parameters: {(*kwargs.keys(),)}')
     elif log_name == 'GraphLog':
         svg_file = kwargs.pop('file', None)
         if svg_file is None:
@@ -182,11 +173,11 @@ def load_log(nodes):
             logger.write(svg_file)
             if type(svg_file) == io.BytesIO:
                 sys.stdout.buffer.write(svg_file.getvalue())
-
-        if kwargs:
-            raise InterpreterError(f'Unknown GraphLog parameters: {(*kwargs.keys(),)}')
     else:
         raise InterpreterError(f'Unknown log type {log_name}')
+
+    if kwargs:
+        raise InterpreterError(f'Unknown {log_name} parameters: {", ".join(kwargs.keys())}')
 
     return logger, finish
 
