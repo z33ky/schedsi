@@ -4,3 +4,16 @@ Written in 2016 by Alexander 'z33ky' Hirsch <1zeeky@gmail.com>
 
 To the extent possible under law, the author(s) have dedicated all copyright and related and neighboring rights to this software to the public domain worldwide. This software is distributed without any warranty.
 You should have received a copy of the CC0 Public Domain Dedication along with this software. If not, see <http://creativecommons.org/publicdomain/zero/1.0/>.
+
+This software makes use of projects that are licensed differently, requiring some components of this software to be licensed differently.
+
+Some licenses require the components to be made available under a different license. These components are:
+	* schedsi/log/graphlog.py, schedsi/log/modulegraphlog.py, schedsi/log/ganttlog.py: Due to usage of PyX licensed under GPL2 (http://pyx.sourceforge.net/license.html)
+
+Furthermore, this project makes use of the following libraries:
+	* Python, licensed under the PSF (https://docs.python.org/3/license.html)
+	* gmpy2, licensed under the LGPL3 (https://github.com/aleaxit/gmpy/blob/master/COPYING.LESSER)
+	* msgpack-python, licensed under Apache-2 (https://github.com/msgpack/msgpack-python/blob/master/COPYING)
+
+The auxiliary tool plot.py also uses:
+	* matplotlib, licenced under a PSF-like license (http://matplotlib.org/users/license.html)
