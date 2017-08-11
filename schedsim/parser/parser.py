@@ -218,7 +218,7 @@ class Parser:
         symbol = Symbol(self.cursor, init)
         while True:
             ch = self._peek()
-            if ch.isspace() or ch in ('', ')', ';'):
+            if ch.isspace() or ch in ('', '(', ')', ';'):
                 break
             else:
                 symbol += self._getch()
