@@ -8,7 +8,7 @@ import sys
 from schedsi import world
 from schedsi.util import hierarchy_builder
 from parser import (Cursor, MalformedString, MalformedSymbol, Parser, ParserError, Symbol,
-                    SymbolKind, UntermiatedString)
+                    SymbolKind, UnexpectedEof, UntermiatedString)
 from interpreter import InterpreterError, load_log, load_simulation
 
 def append_modules(children, parent):
@@ -67,7 +67,21 @@ def main():
         token_spacing = ''.join(c if c.isspace() else ' ' for c in line_to_token)
         # sfile.seek(end.byte)
 
-        if isinstance(error, UntermiatedString):
+        if isinstance(error, UnexpectedEof):
+            if error.node is not None:
+                # only print the first line of what we read
+                assert line_rest == '\n', 'On EOF line_rest should be empty'
+
+                newline_in_token = tokenstr.find('\n')
+                if newline_in_token >= 0:
+                    tokenstr = tokenstr[:newline_in_token + 1]
+
+                if tokenstr[-1:] != '\n':
+                    tokenstr += '\n'
+
+                print(f'\t{line_to_token}{tokenstr}\t{token_spacing}^-- beginning here',
+                      file=sys.stderr)
+        elif isinstance(error, UntermiatedString):
             assert tokenstr == '"' + error.node.string
             print(f'\t{line_to_token}{tokenstr}{line_rest}\t{token_spacing}^-- beginning here',
                   file=sys.stderr)
