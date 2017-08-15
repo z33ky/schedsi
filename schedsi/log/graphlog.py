@@ -2,6 +2,7 @@
 """Defines the :class:`GraphLog`."""
 
 import pyx
+import typing
 
 
 pyx_color = pyx.color
@@ -56,8 +57,8 @@ class GraphLog:
     so that we can draw a single contiguous block when the children finish.
     """
 
-    def __init__(self, *, draw_scale=1, text_scale=1, time_scale=1, exec_colors=None, bg_colors=None,
-                 name_module=True):
+    def __init__(self, *, draw_scale: float = 1, text_scale: float = 1, time_scale: float = 1,
+                 exec_colors=None, bg_colors=None, name_module: bool = True):
         """Create a :class:`GraphLog`."""
         pyx.text.set(cls=pyx.text.LatexRunner)
         pyx.text.preamble(r"\usepackage[helvet]{sfmath}")
@@ -91,7 +92,7 @@ class GraphLog:
         """Return a string identifying the thread with module."""
         return thread.module.name + '|' + cls._name_thread_only(thread)
 
-    def write(self, stream):
+    def write(self, stream: typing.BinaryIO):
         """Generate SVG output of the current graph."""
         # since we draw additional things (like axes), let's do this on a temporary canvas
         temp = pyx.canvas.canvas()

@@ -27,6 +27,9 @@ class Tuple(Node):
     def __repr__(self):
         return f'Tuple({", ".join(repr(n) for n in self._nodes)})'
 
+    def __iter__(self):
+        return iter(self._nodes)
+
     def __getitem__(self, key):
         item = self._nodes.__getitem__(key)
         if type(key) == slice:

@@ -106,7 +106,7 @@ def get_value(node, tp):
             if symbol == 'False':
                 return False
 
-        if float in tp:
+        if float in tp or Fraction in tp:
             try:
                 value = Fraction(symbol)
                 if value.denominator == 1:
@@ -173,4 +173,19 @@ def get_params(tup, tp):
     for param in tup:
         key, value = get_single_param(param, tp)
         set_once(params, key, value)
+    return params
+
+def get_param_keys(tup):
+    """Extract (`key`, `value`)-pairs from `tup`.
+
+    `tup` must be a :class:`Tuple` containing :class:`Tuple <Tuples>` of length 2,
+    otherwise an :exc:`InterpreterError` is raised.
+
+    `value` will stay a :class:`Node` and needs to be retrieved using :func:`get_value`.
+    """
+    check_type(tup, Tuple)
+    params = {}
+    for param in tup:
+        check_tuple_len(param, exact=2)
+        set_once(params, check_type(param[0], Symbol).symbol, param[1])
     return params

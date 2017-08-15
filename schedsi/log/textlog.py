@@ -3,9 +3,18 @@
 
 import collections
 import itertools
+import typing
 from schedsi.cpu.time import TimeType
 
-Align = collections.namedtuple('Align', 'cpu time module thread')
+class Align:  # pylint: disable=too-few-public-methods
+    """:class:`TextLog` component alignments."""
+
+    def __init__(self, cpu: int, time: int, module: int, thread: int):
+        """Create a :class:`Align`."""
+        self.cpu = cpu
+        self.time = time
+        self.module = module
+        self.thread = thread
 
 
 class TextLog:
@@ -14,12 +23,12 @@ class TextLog:
     Outputs the events in a text file.
     """
 
-    def __init__(self, stream, align=Align(0, 0, 0, 0), *, time_precision):
+    def __init__(self, stream: typing.TextIO, align: Align = None, *, time_precision: int):
         """Create a :class:`TextLog`."""
         self.stream = stream
-        self.align = align
+        self.align = align or Align(0, 0, 0, 0)
         # the +1 is for the decimal separator
-        self.align = self.align._replace(time=self.align.time + time_precision + 1)
+        self.align.time += time_precision + 1
         self.time_prec = time_precision
 
     def _timespan(self, cost):

@@ -4,6 +4,7 @@
 import collections
 import enum
 import msgpack
+import typing
 from schedsi.cpu.time import Time, TimeType
 
 _EntryType = enum.Enum('_EntryType', ['event', 'thread_statistics', 'cpu_statistics'])
@@ -128,7 +129,7 @@ def _encode_stats(stats):
 class BinaryLog:
     """Binary logger using MessagePack."""
 
-    def __init__(self, stream):
+    def __init__(self, stream: typing.BinaryIO):
         """Create a :class:`BinaryLog`."""
         self.stream = stream
         self.packer = msgpack.Packer()

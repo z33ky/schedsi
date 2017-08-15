@@ -15,8 +15,6 @@ class TestExample(unittest.TestCase):
 
     Comparison is done via the text log, so that divergences can easily be checked.
     """
-    textlog_align = textlog.Align(cpu=1, time=3, module=7, thread=9)
-
     @staticmethod
     def _get_kernel(name):
         """Load the kernel module from `name`."""
@@ -28,8 +26,9 @@ class TestExample(unittest.TestCase):
 
     def exec_world(self, log, *world_args, **world_kwargs):
         """Create and run a world and test the produced log against a reference."""
+        textlog_align = textlog.Align(cpu=1, time=3, module=7, thread=9)
         text_buf = io.StringIO()
-        text_log = textlog.TextLog(text_buf, self.textlog_align, time_precision=16)
+        text_log = textlog.TextLog(text_buf, textlog_align, time_precision=16)
 
         the_world = world.World(*world_args, text_log, **world_kwargs)
         while the_world.step() <= 400:
